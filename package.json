@@ -1,0 +1,10 @@
+{
+  "name": "fpv-drone-pilot-trainer",
+  "version": "1.0.0",
+  "description": "Browser-based FPV drone acro-mode flight training simulator.",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080"
+  },
+  "license": "MIT"
+}
