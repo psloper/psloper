@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FPV Drone Pilot Trainer</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305070a'/%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%2339ff6a' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%2339ff6a'/%3E%3C/svg%3E" />
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./js/vendor/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <!-- ============ In-flight OSD (heads-up display) ============ -->
+  <div id="hud" class="hud hidden">
+    <div class="hud-top-left">
+      <div class="hud-row"><span class="label">STATUS</span><span data-hud="armed" class="value" data-state="disarmed">DISARMED</span></div>
+      <div class="hud-row"><span class="label">CALLSIGN</span><span data-hud="callsign" class="value">TRAINEE-1</span></div>
+      <div class="hud-row"><span class="label">INPUT</span><span data-hud="input" class="value">KEYBOARD</span></div>
+    </div>
+
+    <div class="hud-top-right">
+      <div class="hud-row"><span class="label">FLIGHT</span><span data-hud="timer" class="value mono">00:00.000</span></div>
+      <div class="hud-row battery-row">
+        <span class="label">BATT</span>
+        <span data-hud="battery" class="value mono">16.80V</span>
+        <div class="battery-bar"><div data-hud="battery-fill" class="battery-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="hud-bottom-left">
+      <div class="hud-row"><span class="label">SPD</span><span data-hud="speed" class="value mono">0.0 m/s</span></div>
+      <div class="hud-row"><span class="label">ALT</span><span data-hud="altitude" class="value mono">0.0 m</span></div>
+    </div>
+
+    <div class="hud-bottom-right" data-hud-section="course">
+      <div class="hud-row"><span class="label">GATE</span><span data-hud="gate" class="value mono">--</span></div>
+      <div class="hud-row"><span class="label">LAP</span><span data-hud="lap" class="value mono">0</span></div>
+      <div class="hud-row"><span class="label">TIME</span><span data-hud="lap-time" class="value mono">00:00.000</span></div>
+      <div class="hud-row"><span class="label">BEST</span><span data-hud="best-lap" class="value mono">--:--.---</span></div>
+    </div>
+
+    <div class="throttle-gauge">
+      <div class="throttle-track"><div data-hud="throttle-fill" class="throttle-fill"></div></div>
+      <span data-hud="throttle-value" class="throttle-label">0%</span>
+    </div>
+
+    <div class="crosshair" aria-hidden="true">
+      <span class="ch-h"></span><span class="ch-v"></span>
+    </div>
+
+    <div data-hud="message" class="hud-message hidden"></div>
+  </div>
+
+  <!-- ============ Main menu ============ -->
+  <div id="menu" class="overlay-screen">
+    <div class="panel menu-panel">
+      <h1>FPV Drone Pilot Trainer</h1>
+      <p class="subtitle">Acro-mode stick time, right in your browser. Keyboard or gamepad/transmitter supported.</p>
+
+      <div class="menu-grid">
+        <button class="mode-card" data-start-mode="free">
+          <h3>Free Flight</h3>
+          <p>Open field, no timers. Get comfortable with throttle, rates, and orientation.</p>
+        </button>
+        <button class="mode-card" data-start-mode="gateway">
+          <h3>Gateway Loop</h3>
+          <p>7-gate introductory course. Wide gates, generous spacing.</p>
+        </button>
+        <button class="mode-card" data-start-mode="slalom">
+          <h3>Tight Slalom</h3>
+          <p>Narrow zig-zag gates. Precision roll/yaw coordination.</p>
+        </button>
+      </div>
+
+      <div class="menu-footer">
+        <button id="open-settings" class="link-btn">Settings</button>
+        <button id="open-help" class="link-btn">Controls</button>
+        <button id="reset-stats" class="link-btn">Reset Stats</button>
+      </div>
+
+      <div class="stats-strip" id="stats-strip"></div>
+    </div>
+  </div>
+
+  <!-- ============ Pause menu ============ -->
+  <div id="pause" class="overlay-screen hidden">
+    <div class="panel">
+      <h2>Paused</h2>
+      <div class="menu-footer">
+        <button id="resume-btn" class="primary-btn">Resume</button>
+        <button id="pause-settings-btn" class="link-btn">Settings</button>
+        <button id="quit-btn" class="link-btn">Quit to Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Settings panel ============ -->
+  <div id="settings" class="overlay-screen hidden">
+    <div class="panel settings-panel">
+      <h2>Settings</h2>
+
+      <label class="field">
+        <span>Stick Mode</span>
+        <select id="set-mode">
+          <option value="2">Mode 2 (throttle/yaw left, pitch/roll right)</option>
+          <option value="1">Mode 1 (pitch/yaw left, throttle/roll right)</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Max Rate <output id="out-rate"></output>&deg;/s</span>
+        <input type="range" id="set-rate" min="100" max="900" step="10" />
+      </label>
+
+      <label class="field">
+        <span>Rate Expo <output id="out-expo"></output></span>
+        <input type="range" id="set-expo" min="0" max="0.9" step="0.05" />
+      </label>
+
+      <label class="field">
+        <span>Throttle Expo <output id="out-texpo"></output></span>
+        <input type="range" id="set-texpo" min="0" max="0.9" step="0.05" />
+      </label>
+
+      <label class="field">
+        <span>Stick Deadzone <output id="out-deadzone"></output></span>
+        <input type="range" id="set-deadzone" min="0" max="0.2" step="0.01" />
+      </label>
+
+      <label class="field">
+        <span>Camera FOV <output id="out-fov"></output>&deg;</span>
+        <input type="range" id="set-fov" min="80" max="150" step="1" />
+      </label>
+
+      <label class="field">
+        <span>Camera Tilt <output id="out-tilt"></output>&deg;</span>
+        <input type="range" id="set-tilt" min="0" max="45" step="1" />
+      </label>
+
+      <label class="field checkbox-field">
+        <input type="checkbox" id="set-invert" />
+        <span>Invert Pitch</span>
+      </label>
+
+      <label class="field checkbox-field">
+        <input type="checkbox" id="set-horizon" />
+        <span>Beginner Assist (self-level)</span>
+      </label>
+
+      <div class="menu-footer">
+        <button id="close-settings" class="primary-btn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Help / controls overlay ============ -->
+  <div id="help" class="overlay-screen hidden">
+    <div class="panel">
+      <h2>Controls</h2>
+      <div class="help-columns">
+        <div>
+          <h3>Gamepad / Transmitter</h3>
+          <ul>
+            <li>Left stick — Throttle (Y) / Yaw (X)</li>
+            <li>Right stick — Pitch (Y) / Roll (X)</li>
+            <li>Start / Options — Arm / Disarm</li>
+            <li>Select / Back — Respawn</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Keyboard</h3>
+          <ul>
+            <li>W / S — Throttle up / down</li>
+            <li>A / D — Yaw left / right</li>
+            <li>&uarr; / &darr; — Pitch forward / back</li>
+            <li>&larr; / &rarr; — Roll left / right</li>
+            <li>Enter — Arm / Disarm</li>
+            <li>Backspace — Respawn</li>
+            <li>C — Toggle FPV / Chase camera</li>
+            <li>Esc / P — Pause</li>
+            <li>H — Toggle this help</li>
+          </ul>
+        </div>
+      </div>
+      <p class="hint">Tip: real FCs refuse to arm with the throttle raised — keep it at zero before arming here too.</p>
+      <div class="menu-footer">
+        <button id="close-help" class="primary-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="crash-flash" class="crash-flash hidden"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
