@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Design to CAD to Print</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Design &rarr; CAD &rarr; Print</h1>
+    <p class="subtitle">Describe a part. Review the 3D model. Send it to the printer.</p>
+  </header>
+
+  <main>
+    <section class="panel prompt-panel">
+      <label for="prompt">Describe what you want made</label>
+      <textarea id="prompt" rows="4" placeholder="e.g. a phone stand for a 6-inch phone, angled at 60 degrees, with a slot for a charging cable"></textarea>
+      <button id="generate-btn">Generate model</button>
+      <p id="generate-status" class="status"></p>
+    </section>
+
+    <section class="panel viewer-panel">
+      <div id="viewer"></div>
+      <p id="viewer-empty" class="empty-hint">No model yet</p>
+    </section>
+
+    <section class="panel actions-panel">
+      <div class="job-info">
+        <div><strong>Job:</strong> <span id="job-id">-</span></div>
+        <div><strong>Status:</strong> <span id="job-status">-</span></div>
+      </div>
+      <button id="print-btn" disabled>Slice &amp; send to printer</button>
+      <button id="cancel-btn" class="secondary" disabled>Cancel print</button>
+      <div id="print-progress" class="progress hidden">
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+        <span id="progress-label"></span>
+      </div>
+      <p id="print-status" class="status"></p>
+      <details id="code-details">
+        <summary>Generated CadQuery code</summary>
+        <pre id="code-block"></pre>
+      </details>
+    </section>
+
+    <section class="panel history-panel">
+      <h2>Previous jobs</h2>
+      <ul id="job-list"></ul>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/STLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

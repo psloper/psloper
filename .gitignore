@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+generated/*.stl
+generated/*.gcode
+!generated/.gitkeep

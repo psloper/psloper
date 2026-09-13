@@ -1,0 +1,130 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f5f5f4;
+  --panel: #ffffff;
+  --text: #1c1c1c;
+  --muted: #6b6b6b;
+  --accent: #2f6fed;
+  --accent-text: #ffffff;
+  --border: #e2e2e0;
+  --error: #c0392b;
+  --ok: #1e8e3e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17181a;
+    --panel: #212226;
+    --text: #ececec;
+    --muted: #9a9a9a;
+    --border: #34353a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+header {
+  padding: 24px 32px 8px;
+}
+
+h1 { margin: 0 0 4px; font-size: 1.5rem; }
+.subtitle { margin: 0; color: var(--muted); }
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 32px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.prompt-panel { grid-column: 1 / -1; }
+.history-panel { grid-column: 1 / -1; }
+
+label { display: block; font-weight: 600; margin-bottom: 6px; }
+
+textarea {
+  width: 100%;
+  font: inherit;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.secondary { background: var(--border); color: var(--text); margin-left: 8px; }
+
+.status { color: var(--muted); min-height: 1.2em; }
+.status.error { color: var(--error); }
+.status.ok { color: var(--ok); }
+
+.viewer-panel { min-height: 320px; position: relative; }
+#viewer { width: 100%; height: 320px; }
+.empty-hint {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  color: var(--muted);
+}
+
+.job-info { display: flex; gap: 24px; margin-bottom: 8px; color: var(--muted); }
+.job-info span { color: var(--text); }
+
+.progress { margin-top: 12px; }
+.progress.hidden { display: none; }
+.progress-bar { background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; }
+#progress-fill { background: var(--accent); height: 100%; width: 0%; transition: width 0.4s; }
+#progress-label { color: var(--muted); font-size: 0.9rem; }
+
+#code-details { margin-top: 14px; }
+#code-block {
+  white-space: pre-wrap;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 300px;
+  overflow: auto;
+  font-size: 0.85rem;
+}
+
+#job-list { list-style: none; padding: 0; margin: 8px 0 0; }
+#job-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+#job-list li:hover { color: var(--accent); }
+
+@media (max-width: 800px) {
+  main { grid-template-columns: 1fr; }
+}
