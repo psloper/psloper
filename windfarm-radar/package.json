@@ -1,0 +1,12 @@
+{
+  "name": "windfarm-radar-assessor",
+  "version": "1.0.0",
+  "description": "3D wind farm / radar interference and mitigation assessment tool.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/",
+    "start": "python3 -m http.server 8080 --directory .."
+  },
+  "license": "MIT"
+}

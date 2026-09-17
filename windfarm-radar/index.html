@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wind Farm / Radar Interference Assessor</title>
+<meta name="description" content="3D screening tool for wind turbine effects on primary surveillance radar, and the mitigations available." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0d10'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%2345b8d8' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='5' fill='none' stroke='%2345b8d8' stroke-width='1'/%3E%3Cpath d='M16 16 L26 11' stroke='%233fd18b' stroke-width='2'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+<script type="importmap">
+{ "imports": { "three": "../js/vendor/three.module.js" } }
+</script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <h1>Wind Farm / Radar Interference Assessor</h1>
+      <p class="brand-sub">First-order screening model &mdash; primary surveillance radar</p>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict" role="status" aria-live="polite">
+    <span class="verdict-chip" data-level="info" id="verdict-chip">Ready</span>
+    <span class="verdict-text" id="verdict-text">Set up a scenario to run an assessment.</span>
+  </div>
+
+  <div class="topbar-actions">
+    <button class="btn" id="btn-baseline" title="Compare the current mitigation set against no mitigation">Mitigation delta</button>
+    <button class="btn" id="btn-export">Export</button>
+    <button class="btn" id="btn-method">Method &amp; limits</button>
+    <button class="btn ghost" id="btn-reset">Reset</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ===================================================== control rail -->
+  <aside class="rail" id="rail">
+    <nav class="rail-tabs" role="tablist">
+      <button class="rail-tab is-active" data-tab="radar" role="tab">Radar</button>
+      <button class="rail-tab" data-tab="farm" role="tab">Wind farm</button>
+      <button class="rail-tab" data-tab="site" role="tab">Terrain</button>
+      <button class="rail-tab" data-tab="flight" role="tab">Flight</button>
+      <button class="rail-tab" data-tab="mitigation" role="tab">Mitigation</button>
+    </nav>
+    <div class="rail-body" id="rail-body"><!-- built by ui.js --></div>
+  </aside>
+
+  <!-- ========================================================= viewport -->
+  <section class="stage">
+    <div class="viewport" id="viewport">
+      <canvas id="scene3d"></canvas>
+
+      <div class="vp-overlay vp-top-left">
+        <div class="seg" role="group" aria-label="Camera preset">
+          <button class="seg-btn is-active" data-view="orbit">Orbit</button>
+          <button class="seg-btn" data-view="radar">From radar</button>
+          <button class="seg-btn" data-view="plan">Plan</button>
+          <button class="seg-btn" data-view="profile">Section</button>
+        </div>
+        <div class="seg" role="group" aria-label="Terrain shading">
+          <button class="seg-btn is-active" data-shade="terrain">Elevation</button>
+          <button class="seg-btn" data-shade="coverage">Detection margin</button>
+          <button class="seg-btn" data-shade="delta">Loss vs clear site</button>
+        </div>
+      </div>
+
+      <div class="vp-overlay vp-top-right">
+        <div class="toggles" id="layer-toggles"><!-- built by ui.js --></div>
+      </div>
+
+      <div class="vp-overlay vp-bottom-left">
+        <div class="legend" id="legend"><!-- built by ui.js --></div>
+      </div>
+
+      <div class="vp-overlay vp-bottom-right">
+        <div class="readout" id="readout">
+          <span class="readout-hint">Drag to orbit &middot; scroll to zoom &middot; hover a turbine for its numbers</span>
+        </div>
+      </div>
+
+      <div class="vp-overlay vp-scale"><div class="scalebar" id="scalebar"></div></div>
+    </div>
+
+    <div class="displays">
+      <figure class="display">
+        <figcaption>
+          <span>Plan position indicator</span>
+          <span class="cap-note" id="ppi-note"></span>
+        </figcaption>
+        <canvas id="ppi"></canvas>
+      </figure>
+      <figure class="display">
+        <figcaption>
+          <span>Vertical section along <span id="profile-bearing">&mdash;</span></span>
+          <span class="cap-note">curvature applied at the modelled k-factor</span>
+        </figcaption>
+        <canvas id="profile"></canvas>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ========================================================= findings -->
+  <aside class="panel" id="panel">
+    <div class="panel-metrics" id="metrics"><!-- built by ui.js --></div>
+
+    <div class="panel-section">
+      <h2>Findings</h2>
+      <div class="findings" id="findings"></div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Turbines <span class="count" id="turbine-count"></span></h2>
+      <div class="table-wrap">
+        <table class="data" id="turbine-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Range</th><th>Brg</th><th>Sight</th>
+              <th>Aspect</th><th>Doppler</th><th>Return</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- ============================================================= dialogs -->
+<dialog id="dlg-method" class="dlg">
+  <form method="dialog">
+    <header><h2>Method, sources and limits</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="method-body"></div>
+</dialog>
+
+<dialog id="dlg-export" class="dlg">
+  <form method="dialog">
+    <header><h2>Export</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body">
+    <p class="dlg-lead">Everything runs locally in your browser. Nothing is uploaded.</p>
+    <div class="export-grid">
+      <button class="btn" data-export="report">Assessment report (.md)</button>
+      <button class="btn" data-export="json">Full results (.json)</button>
+      <button class="btn" data-export="turbines">Turbine table (.csv)</button>
+      <button class="btn" data-export="track">Flight track results (.csv)</button>
+      <button class="btn" data-export="scenario">Scenario only (.json)</button>
+      <label class="btn file-btn">Load scenario<input type="file" id="import-scenario" accept="application/json" hidden /></label>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlg-delta" class="dlg">
+  <form method="dialog">
+    <header><h2>Mitigation delta</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="delta-body"></div>
+</dialog>
+
+<noscript><p class="noscript">This tool needs JavaScript and WebGL.</p></noscript>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
