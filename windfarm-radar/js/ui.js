@@ -5,8 +5,11 @@
 // touching event wiring.
 
 import {
-  RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS,
+  RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS, REFRACTION_PRESETS,
+  TARGET_GROUPS,
 } from './model.js';
+import { WIND_ROSE_PRESETS, operatingState as windState } from './wind.js';
+import { cylinderRcsDbsm } from './rf.js';
 import { SEVERITY_LABELS } from './findings.js';
 import { M_PER_FT } from './geo.js';
 
@@ -84,16 +87,30 @@ export const TABS = {
       { type: 'select', path: 'farm.preset', label: 'Turbine class', options: opts(TURBINE_PRESETS), preset: 'turbine' },
       { type: 'range', path: 'farm.hubHeightM', label: 'Hub height', min: 20, max: 200, step: 1, fmt: (v) => `${v} m` },
       { type: 'range', path: 'farm.rotorDiameterM', label: 'Rotor diameter', min: 20, max: 280, step: 2, fmt: (v) => `${v} m` },
-      { type: 'range', path: 'farm.rpm', label: 'Rotor speed', min: 2, max: 40, step: 0.5, fmt: (v) => `${v} rpm` },
+      { type: 'range', path: 'farm.rpm', label: 'Rated rotor speed', min: 2, max: 40, step: 0.5, fmt: (v) => `${v} rpm` },
       { type: 'note', id: 'tip-note' },
+    ] },
+    { group: 'Structure', fields: [
+      { type: 'range', path: 'farm.towerBaseDiameterM', label: 'Tower diameter at base', min: 1, max: 14, step: 0.1, fmt: (v) => `${v.toFixed(1)} m` },
+      { type: 'range', path: 'farm.towerTopDiameterM', label: 'Tower diameter at nacelle', min: 0.8, max: 10, step: 0.1, fmt: (v) => `${v.toFixed(1)} m` },
+      { type: 'range', path: 'farm.bladeChordM', label: 'Blade chord (width)', min: 0.3, max: 8, step: 0.1, fmt: (v) => `${v.toFixed(1)} m` },
+      { type: 'range', path: 'farm.bladeCount', label: 'Blades per rotor', min: 1, max: 5, step: 1, fmt: (v) => `${v}` },
+      { type: 'note', id: 'structure-note' },
+      { type: 'hint', text: 'Tower diameter sets how much of the first Fresnel zone the tower blocks, so '
+        + 'it changes the shadow a turbine casts. Blade chord and count set rotor solidity, which is how '
+        + 'much of the swept disc is actually blade rather than air.' },
     ] },
     { group: 'Radar cross-section (assumed)', fields: [
       { type: 'range', path: 'farm.towerRcsDbsm', label: 'Tower and nacelle', min: 5, max: 55, step: 1, fmt: (v) => `${v} dBsm` },
-      { type: 'range', path: 'farm.bladeRcsDbsm', label: 'Blades (rotating part)', min: -5, max: 50, step: 1, fmt: (v) => `${v} dBsm` },
+      { type: 'range', path: 'farm.bladeRcsDbsm', label: 'Blades, rotor face-on', min: -5, max: 50, step: 1, fmt: (v) => `${v} dBsm` },
+      { type: 'range', path: 'farm.bladeRcsEdgeOnDbsm', label: 'Blades, rotor edge-on', min: -5, max: 50, step: 1, fmt: (v) => `${v} dBsm` },
+      { type: 'note', id: 'rcs-ceiling-note' },
       { type: 'hint', text: 'CAP 764 states that no standard RCS can be identified for wind turbines, because too '
         + 'many factors affect it. These defaults sit inside the 20 to 45 dBsm range reported in the open '
         + 'literature and exist only so the tool starts somewhere. Replace them with figures for your machine '
-        + 'at your radar frequency before drawing a conclusion.' },
+        + 'at your radar frequency before drawing a conclusion. Blade RCS is interpolated between the '
+        + 'face-on and edge-on values by the sine squared of the rotor aspect angle; leaving them equal '
+        + 'gives an aspect-independent RCS.' },
     ] },
     { group: 'Layout', fields: [
       { type: 'select', path: 'farm.layout', label: 'Arrangement', options: [
@@ -115,11 +132,21 @@ export const TABS = {
     ] },
   ],
 
-  site: [
-    { group: 'Propagation', fields: [
-      { type: 'range', path: 'environment.kFactor', label: 'Effective earth radius factor', min: 0.6, max: 2.0, step: 0.01,
+  terrain: [
+    { group: 'Propagation and weather', fields: [
+      { type: 'select', path: 'weather.refractionPreset', label: 'Refraction condition',
+        options: [...opts(REFRACTION_PRESETS), { value: 'custom', label: 'Custom k-factor' }], preset: 'refraction' },
+      { type: 'note', id: 'refraction-note' },
+      { type: 'range', path: 'environment.kFactor', label: 'Effective earth radius factor', min: 0.6, max: 5.0, step: 0.01,
         fmt: (v) => `k = ${v.toFixed(2)}` },
       { type: 'note', id: 'k-note' },
+      { type: 'range', path: 'weather.atmosphericLossDbPerKm', label: 'Atmospheric loss (two-way)', min: 0, max: 0.5, step: 0.005,
+        fmt: (v) => `${v.toFixed(3)} dB/km` },
+      { type: 'range', path: 'weather.rainRateMmH', label: 'Rain rate (recorded only)', min: 0, max: 100, step: 1, fmt: (v) => `${v} mm/h` },
+      { type: 'hint', text: 'Gaseous absorption and rain are taken together as a single loss figure you '
+        + 'supply. This tool does not assert ITU-R P.676 or P.838 coefficients it has not read: take the '
+        + 'dB/km for your band and conditions from those recommendations and enter it here. Rain rate is '
+        + 'recorded in the report for traceability, not modelled separately.' },
       { type: 'hint', text: 'k = 4/3 is the standard-atmosphere value. Run k = 1.0 and lower to check whether a '
         + 'masking argument survives sub-refractive conditions; run higher for ducting.' },
     ] },
@@ -150,7 +177,10 @@ export const TABS = {
 
   flight: [
     { group: 'Reference target', fields: [
-      { type: 'select', path: 'target.preset', label: 'Aircraft type', options: opts(TARGET_PRESETS), preset: 'target' },
+      { type: 'select', path: 'target.preset', label: 'Aircraft type', preset: 'target',
+        groups: TARGET_GROUPS, options: Object.entries(TARGET_PRESETS)
+          .map(([k, v]) => ({ value: k, label: v.label, group: v.group })) },
+      { type: 'note', id: 'target-note' },
       { type: 'range', path: 'target.rcsDbsm', label: 'Target RCS', min: -20, max: 30, step: 1, fmt: (v) => `${v} dBsm` },
       { type: 'range', path: 'target.speedKt', label: 'Groundspeed', min: 30, max: 500, step: 5, fmt: (v) => `${v} kt` },
       { type: 'range', path: 'target.samples', label: 'Track samples', min: 20, max: 400, step: 10, fmt: (v) => `${v}` },
@@ -182,6 +212,81 @@ export const TABS = {
         fmt: (v) => `${(v / 1000).toFixed(0)} km` },
       { type: 'hint', text: 'The aircraft flies inbound on the reciprocal of the threshold bearing, so set the '
         + 'threshold on the opposite side of the radar from the farm to fly an approach over it.' },
+    ] },
+  ],
+
+  site: [
+    { group: 'Where the site is', fields: [
+      { type: 'select', path: 'site.environment', label: 'Surface between radar and farm', options: [
+        { value: 'onshore', label: 'Onshore (land)' },
+        { value: 'offshore', label: 'Offshore (sea)' },
+      ] },
+      { type: 'note', id: 'site-note' },
+      { type: 'number', path: 'site.originLat', label: 'Site origin latitude (deg)', step: 0.0001 },
+      { type: 'number', path: 'site.originLon', label: 'Site origin longitude (deg)', step: 0.0001 },
+      { type: 'number', path: 'site.radarEasting', label: 'Radar easting (grid)', step: 1 },
+      { type: 'number', path: 'site.radarNorthing', label: 'Radar northing (grid)', step: 1 },
+      { type: 'hint', text: 'These place imported data. A schedule in eastings and northings is read '
+        + 'relative to the radar grid position; a schedule in latitude and longitude is projected about '
+        + 'the site origin. The projection is equirectangular, accurate to well under a metre over these '
+        + 'distances, and is NOT a national grid transformation.' },
+    ] },
+    { group: 'Import real data', fields: [
+      { type: 'action', id: 'import-turbines', label: 'Turbine schedule', button: 'Choose .xlsx or .csv',
+        note: 'Reads ID, position, ground level, hub height, rotor diameter, tip height, rotor speed and '
+          + 'tower dimensions. Title blocks above the table are skipped automatically.' },
+      { type: 'action', id: 'import-terrain', label: 'Elevation data', button: 'Choose .xlsx or .csv',
+        note: 'Point elevations as easting/northing/level or latitude/longitude/level. Replaces the '
+          + 'synthetic surface entirely.' },
+      { type: 'note', id: 'import-status' },
+      { type: 'action', id: 'clear-imports', label: 'Imported data', button: 'Clear and return to synthetic' },
+      { type: 'hint', text: 'Nothing is uploaded. Files are parsed in the page. Sample files showing the '
+        + 'expected shape are in the samples folder of the repository.' },
+    ] },
+    { group: 'Sea surface', fields: [
+      { type: 'check', path: 'site.waveFromWind', label: 'Derive wave height from wind speed',
+        note: 'Fully developed sea. Real sites are fetch and duration limited, so measured or hindcast '
+          + 'wave data is better where you have it.' },
+      { type: 'range', path: 'site.significantWaveHeightM', label: 'Significant wave height', min: 0, max: 12, step: 0.1, fmt: (v) => `${v.toFixed(1)} m` },
+      { type: 'note', id: 'sea-state-note' },
+      { type: 'check', path: 'site.multipath.enabled', label: 'Model surface multipath',
+        note: 'Direct and surface-reflected rays interfering. A calm sea is a good mirror and puts deep '
+          + 'nulls in low-level coverage; a rough sea washes the lobing out.' },
+      { type: 'check', path: 'site.seaClutter.enabled', label: 'Model sea clutter' },
+      { type: 'range', path: 'site.seaClutter.sigmaZeroRefDb', label: 'Reference sigma-zero', min: -70, max: -25, step: 1, fmt: (v) => `${v} dB` },
+      { type: 'range', path: 'site.seaClutter.maxRejectionDb', label: 'Max clutter rejection', min: 5, max: 50, step: 1, fmt: (v) => `${v} dB` },
+      { type: 'hint', text: 'Sigma-zero here is parametric: the reference value applies at 1 degree '
+        + 'grazing, sea state 3, 3 GHz, and is scaled from there. It is a starting point, not authority. '
+        + 'Take it from a validated model or measured data for the band and polarisation you are '
+        + 'assessing.' },
+    ] },
+  ],
+
+  wind: [
+    { group: 'Condition being assessed', fields: [
+      { type: 'range', path: 'wind.directionDeg', label: 'Wind from', min: 0, max: 359, step: 5, fmt: (v) => `${String(v).padStart(3, '0')}\u00b0` },
+      { type: 'range', path: 'wind.speedMs', label: 'Wind speed', min: 0, max: 32, step: 0.5, fmt: (v) => `${v} m/s` },
+      { type: 'note', id: 'wind-state-note' },
+      { type: 'range', path: 'wind.yawMisalignDeg', label: 'Yaw misalignment', min: -30, max: 30, step: 1, fmt: (v) => `${v}\u00b0` },
+      { type: 'hint', text: 'Turbines yaw to face into the wind, so direction sets the angle between the '
+        + 'radar line of sight and the rotor axis, and peak blade Doppler goes as the sine of that angle. '
+        + 'A rotor pointed at the radar shows almost no blade Doppler; one edge-on shows all of it.' },
+    ] },
+    { group: 'Turbine control envelope', fields: [
+      { type: 'range', path: 'wind.cutInMs', label: 'Cut-in wind speed', min: 1, max: 8, step: 0.5, fmt: (v) => `${v} m/s` },
+      { type: 'range', path: 'wind.ratedMs', label: 'Rated wind speed', min: 7, max: 20, step: 0.5, fmt: (v) => `${v} m/s` },
+      { type: 'range', path: 'wind.cutOutMs', label: 'Cut-out wind speed', min: 15, max: 35, step: 1, fmt: (v) => `${v} m/s` },
+      { type: 'range', path: 'wind.idleFraction', label: 'Idle speed when not generating', min: 0, max: 0.4, step: 0.02, fmt: (v) => `${(v * 100).toFixed(0)}% of rated` },
+      { type: 'note', id: 'tsr-note' },
+    ] },
+    { group: 'Wind climate', fields: [
+      { type: 'select', path: 'wind.rosePreset', label: 'Wind rose', options: opts(WIND_ROSE_PRESETS), preset: 'rose' },
+      { type: 'range', path: 'wind.weibullK', label: 'Weibull shape k', min: 1.2, max: 3.2, step: 0.1, fmt: (v) => `k = ${v.toFixed(1)}` },
+      { type: 'action', id: 'run-rose', label: 'Sweep every direction', button: 'Run wind rose sweep' },
+      { type: 'note', id: 'rose-note' },
+      { type: 'hint', text: 'The single-condition view answers what happens in this wind. The sweep '
+        + 'answers how often it happens across the whole climate, and which direction is worst. The '
+        + 'roses here are illustrative shapes, not site data.' },
     ] },
   ],
 
@@ -302,6 +407,29 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
     return p;
   }
 
+  if (f.type === 'action') {
+    const wrap = document.createElement('div');
+    wrap.className = 'field action-field';
+    const head = document.createElement('span');
+    head.className = 'field-label';
+    head.innerHTML = `<span>${f.label}</span>`;
+    wrap.append(head);
+    const btn = document.createElement('button');
+    btn.className = 'btn action-btn';
+    btn.type = 'button';
+    btn.textContent = f.button;
+    btn.dataset.action = f.id;
+    wrap.append(btn);
+    if (f.note) {
+      const n = document.createElement('p');
+      n.className = 'hint';
+      n.style.marginTop = '6px';
+      n.textContent = f.note;
+      wrap.append(n);
+    }
+    return wrap;
+  }
+
   if (f.type === 'check') {
     const label = document.createElement('label');
     label.className = 'check';
@@ -329,11 +457,25 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
   if (f.type === 'select') {
     val.remove();
     const sel = document.createElement('select');
-    for (const o of f.options) {
-      const opt = document.createElement('option');
-      opt.value = String(o.value);
-      opt.textContent = o.label;
-      sel.append(opt);
+    if (f.groups) {
+      for (const g of f.groups) {
+        const og = document.createElement('optgroup');
+        og.label = g;
+        for (const o of f.options.filter((x) => x.group === g)) {
+          const opt = document.createElement('option');
+          opt.value = String(o.value);
+          opt.textContent = o.label;
+          og.append(opt);
+        }
+        sel.append(og);
+      }
+    } else {
+      for (const o of f.options) {
+        const opt = document.createElement('option');
+        opt.value = String(o.value);
+        opt.textContent = o.label;
+        sel.append(opt);
+      }
     }
     sel.value = String(getPath(scenario, f.path));
     sel.addEventListener('change', () => {
@@ -374,7 +516,7 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
 
 // --------------------------------------------------------------- live notes
 
-export function updateNotes(noteEls, result) {
+export function updateNotes(noteEls, result, extra = {}) {
   if (!result) return;
   const r = result.radar;
   const set = (id, text) => { if (noteEls[id]) noteEls[id].textContent = text; };
@@ -407,6 +549,71 @@ export function updateNotes(noteEls, result) {
   set('k-note', `Surface horizon for a ${r.heightAgl} m antenna: ${(r.horizonM / 1000).toFixed(1)} km. `
     + `A ${(result.scenario.farm.hubHeightM + result.scenario.farm.rotorDiameterM / 2).toFixed(0)} m tip is visible to `
     + `${((r.horizonM + Math.sqrt(2 * result.ae * (result.scenario.farm.hubHeightM + result.scenario.farm.rotorDiameterM / 2))) / 1000).toFixed(1)} km over a smooth surface.`);
+
+  // --- site, sea, wind and structure
+  const sc = result.scenario;
+  const surf = result.surface;
+  set('site-note', sc.site.environment === 'offshore'
+    ? 'Offshore: no terrain masking, and the sea is a good reflector, so surface multipath and sea '
+      + 'clutter are modelled. Ducting is also more common over water.'
+    : 'Onshore: terrain masking applies and surface multipath is off by default, because a two-ray '
+      + 'model does not describe a rough vegetated surface well.');
+
+  if (surf) {
+    set('sea-state-note', sc.site.environment === 'offshore'
+      ? `Sea state ${surf.seaState.code} (${surf.seaState.label}), Hs `
+        + `${surf.significantWaveHeightM.toFixed(2)} m, RMS surface ${surf.rmsHeightM.toFixed(2)} m. `
+        + 'A calmer sea deepens the multipath nulls; a rougher one raises clutter.'
+      : 'Sea settings apply only when the site is offshore.');
+  }
+
+  const windCfg = sc.wind;
+  const st = windState(windCfg.speedMs, windCfg);
+  const t0 = result.turbineResults.length ? result.turbineResults[0] : null;
+  set('wind-state-note', t0
+    ? `${st} \u2014 rotor at ${t0.rpm.toFixed(1)} rpm, tip speed ${t0.vTipMs.toFixed(0)} m/s, `
+      + `rotor aspect ${t0.aspectDeg.toFixed(0)}\u00b0 off face-on, peak blade Doppler `
+      + `${result.summary.maxDopplerHz.toFixed(0)} Hz.`
+    : '');
+
+  const tsr = t0 && t0.ratedTipSpeedMs ? t0.ratedTipSpeedMs / Math.max(windCfg.ratedMs, 0.1) : NaN;
+  set('tsr-note', Number.isFinite(tsr)
+    ? `Tip-speed ratio at rated: ${tsr.toFixed(1)}. Modern three-blade machines sit around 7 to 9; a `
+      + 'figure far outside that usually means rated rpm and rated wind speed came from different machines.'
+    : '');
+
+  set('structure-note', `Rotor solidity ${(result.turbines[0]?.solidity * 100 || 0).toFixed(1)}% `
+    + `(${sc.farm.bladeCount} blades of ${sc.farm.bladeChordM} m chord across the swept disc). `
+    + `Tower tapers ${sc.farm.towerBaseDiameterM} m to ${sc.farm.towerTopDiameterM} m.`);
+
+  set('rcs-ceiling-note', `Specular ceiling for this tower geometry at `
+    + `${(r.freqHz / 1e9).toFixed(2)} GHz: ${cylinderRcsDbsm(sc.farm.towerBaseDiameterM / 2, sc.farm.hubHeightM, r.lambdaM).toFixed(0)} dBsm. `
+    + 'Assumed values well below that are expected; above it is not physical.');
+
+  const refr = REFRACTION_PRESETS[sc.weather.refractionPreset];
+  set('refraction-note', refr
+    ? `${refr.note} k = ${refr.k.toFixed(2)}.`
+    : 'Custom k-factor: set it directly below.');
+
+  set('import-status', extra.importedTerrain
+    ? `Imported terrain active: ${sc.environment.terrain.importMeta?.file || 'file'}, `
+      + `${(extra.importedTerrain.coverage * 100).toFixed(0)}% coverage, `
+      + `${extra.importedTerrain.min.toFixed(0)} to ${extra.importedTerrain.max.toFixed(0)} m.`
+    : (sc.farm.manual ? `${sc.farm.manual.length} imported turbines active. Terrain is still synthetic.`
+      : 'No data imported. Terrain is synthetic and the layout is generated.'));
+
+  set('rose-note', extra.roseResult
+    ? `Swept: plots present ${(extra.roseResult.exposureWithPlots * 100).toFixed(0)}% of the year, `
+      + `track degraded ${(extra.roseResult.exposureUntracked * 100).toFixed(0)}%. Worst direction `
+      + `${String(Math.round(extra.roseResult.worstPlots.directionDeg)).padStart(3, '0')}\u00b0.`
+    : 'Not swept yet. The single-direction view can easily land on a benign case.');
+
+  const tp = TARGET_PRESETS[sc.target.preset];
+  set('target-note', tp
+    ? `${tp.group}. Representative RCS for the class, not a figure for any particular aircraft: real `
+      + 'values swing by tens of decibels with aspect and frequency, and figures for specific military '
+      + 'platforms are controlled. Use it to explore sensitivity, not to assert performance.'
+    : '');
 
   const first = result.points[0];
   const last = result.points[result.points.length - 1];

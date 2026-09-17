@@ -1,13 +1,21 @@
 // Application entry point: wires the scenario, the assessment engine, the 3D
 // view, the two flat displays and the results panel into one running tool.
 
-import { analyse } from './analysis.js';
+import { analyse, analyseWindRose } from './analysis.js';
 import {
   defaultScenario, loadScenario, saveScenario, mergeDeep,
   applyRadarPreset, applyTurbinePreset, applyTargetPreset, applyTerrainPreset,
 } from './model.js';
 import { SceneView } from './scene.js';
-import { PpiDisplay, ProfileDisplay } from './displays.js';
+import { PpiDisplay, ProfileDisplay, WindRoseDisplay } from './displays.js';
+import { deriveWindRoseFindings } from './findings.js';
+import { WIND_ROSE_PRESETS } from './wind.js';
+import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
+import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
+import {
+  readTable, readElevationFile, parseTurbineRows, buildImportedTerrain,
+  FREE_ELEVATION_SOURCES,
+} from './importers.js';
 import {
   buildRail, updateNotes, renderMetrics, renderFindings, renderTurbineTable,
   renderVerdict, renderReadout, renderLegend,
@@ -23,6 +31,11 @@ let result = null;
 let noteEls = {};
 let activeTab = 'radar';
 let fullTimer = null;
+let importedTerrain = null;     // held outside the scenario: a raster is not a setting
+let roseResult = null;
+let roseFindings = [];
+let sweepResult = null;
+let sweepLayout = null;
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -44,11 +57,14 @@ const el = {
   scalebar: $('#scalebar'),
   ppiNote: $('#ppi-note'),
   profileBearing: $('#profile-bearing'),
+  windrose: $('#windrose'),
+  roseCaption: $('#rose-caption'),
 };
 
 const view = new SceneView(el.canvas3d);
 const ppi = new PpiDisplay(el.ppi);
 const profile = new ProfileDisplay(el.profile);
+const windrose = new WindRoseDisplay(el.windrose);
 
 view.onHover = (tr) => {
   renderReadout(el.readout, tr, result);
@@ -62,7 +78,7 @@ view.onHover = (tr) => {
 function run(skipCoverage) {
   const t0 = performance.now();
   try {
-    result = analyse(scenario, { skipCoverage });
+    result = analyse(scenario, { skipCoverage, importedTerrain });
   } catch (err) {
     console.error(err);
     el.verdictChip.dataset.level = 'critical';
@@ -77,11 +93,16 @@ function run(skipCoverage) {
   profile.setResult(result);
 
   renderMetrics(el.metrics, result);
-  renderFindings(el.findings, result.findings);
+  renderFindings(el.findings, [...result.findings, ...roseFindings]);
   renderTurbineTable(el.turbineTable, result, (id) => view.highlight(id));
-  renderVerdict(el.verdictChip, el.verdictText, result);
+  renderVerdict(el.verdictChip, el.verdictText,
+    { ...result, findings: [...result.findings, ...roseFindings] });
+  windrose.setRose(roseResult, scenario.wind.directionDeg);
+  el.roseCaption.textContent = roseResult
+    ? `${(roseResult.exposureWithPlots * 100).toFixed(0)}% of the year`
+    : 'not yet swept';
   renderLegend(el.legend, view.shadeMode, result);
-  updateNotes(noteEls, result);
+  updateNotes(noteEls, result, { importedTerrain, roseResult });
 
   el.turbineCount.textContent = `${result.turbineResults.length}`;
   el.profileBearing.textContent = `${profile.activeBearing.toFixed(0).padStart(3, '0')}°`;
@@ -105,7 +126,127 @@ function schedule() {
 
 function rebuildRail() {
   noteEls = buildRail(el.rail, activeTab, scenario, schedule, applyPreset);
-  updateNotes(noteEls, result);
+  updateNotes(noteEls, result, { importedTerrain, roseResult });
+  el.rail.querySelectorAll('[data-action]').forEach((btn) => {
+    btn.addEventListener('click', () => railAction(btn.dataset.action, btn));
+  });
+}
+
+// ------------------------------------------------------------ file imports
+
+function pickFile(accept) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.addEventListener('change', () => resolve(input.files[0] || null), { once: true });
+    input.click();
+  });
+}
+
+function importStatus(text, level) {
+  const n = noteEls['import-status'];
+  if (!n) return;
+  n.textContent = text;
+  n.style.color = level === 'error' ? 'var(--bad)' : level === 'ok' ? 'var(--ok)' : '';
+}
+
+async function importTurbines() {
+  const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
+  if (!file) return;
+  importStatus(`Reading ${file.name}...`);
+  try {
+    const sheets = await readTable(file);
+    const { turbines, warnings } = parseTurbineRows(sheets[0].rows, {
+      origin: { lat: scenario.site.originLat, lon: scenario.site.originLon },
+      radarEasting: scenario.site.radarEasting,
+      radarNorthing: scenario.site.radarNorthing,
+      defaults: scenario.farm,
+    });
+    scenario.farm.manual = turbines;
+    scenario.farm.count = turbines.length;
+    run(false);
+    rebuildRail();
+    importStatus(`${turbines.length} turbines imported from ${file.name}.`
+      + (warnings.length ? ` ${warnings.join(' ')}` : ''), 'ok');
+  } catch (err) {
+    importStatus(err.message, 'error');
+  }
+}
+
+async function importTerrain() {
+  const file = await pickFile('.asc,.grd,.kml,.kmz,.xlsx,.xlsm,.csv,.tsv,.txt');
+  if (!file) return;
+  importStatus(`Reading ${file.name}...`);
+  try {
+    const { points, note } = await readElevationFile(file, {
+      origin: { lat: scenario.site.originLat, lon: scenario.site.originLon },
+      radarEasting: scenario.site.radarEasting,
+      radarNorthing: scenario.site.radarNorthing,
+    });
+    const extent = result ? result.extent : 20000;
+    importedTerrain = buildImportedTerrain(points, {
+      halfExtent: extent, size: 384,
+      fallbackHeight: scenario.environment.terrain.baseHeight,
+    });
+    scenario.environment.terrain.source = 'imported';
+    scenario.environment.terrain.importMeta = {
+      file: file.name,
+      points: points.length,
+      coverage: importedTerrain.coverage,
+      minM: importedTerrain.min,
+      maxM: importedTerrain.max,
+      note,
+    };
+    run(false);
+    rebuildRail();
+    const cov = importedTerrain.coverage;
+    importStatus(`${note} Covers ${(cov * 100).toFixed(0)}% of the modelled area`
+      + (cov < 0.95 ? '; the rest falls back to the base elevation and is NOT real data.' : '.'),
+      cov < 0.6 ? 'error' : 'ok');
+  } catch (err) {
+    importedTerrain = null;
+    importStatus(err.message, 'error');
+  }
+}
+
+function clearImports() {
+  importedTerrain = null;
+  scenario.environment.terrain.source = 'synthetic';
+  scenario.environment.terrain.importMeta = null;
+  scenario.farm.manual = null;
+  run(false);
+  rebuildRail();
+  importStatus('Imported data cleared. Back to the synthetic surface and generated layout.');
+}
+
+// ------------------------------------------------------------ rose sweep
+
+async function runRoseSweep(btn) {
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Sweeping all 12 directions...';
+  await new Promise((r) => setTimeout(r, 20));
+  try {
+    roseResult = analyseWindRose(scenario, { importedTerrain });
+    roseFindings = deriveWindRoseFindings(scenario, roseResult);
+    run(false);
+  } catch (err) {
+    console.error(err);
+    roseResult = null;
+    roseFindings = [];
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+    rebuildRail();
+  }
+}
+
+function railAction(id, btn) {
+  if (id === 'import-turbines') importTurbines();
+  else if (id === 'import-terrain') importTerrain();
+  else if (id === 'clear-imports') clearImports();
+  else if (id === 'run-rose') runRoseSweep(btn);
 }
 
 function applyPreset(kind, key) {
@@ -113,6 +254,18 @@ function applyPreset(kind, key) {
   else if (kind === 'turbine') scenario = applyTurbinePreset(scenario, key);
   else if (kind === 'target') scenario = applyTargetPreset(scenario, key);
   else if (kind === 'terrain') scenario = applyTerrainPreset(scenario, key);
+  else if (kind === 'rose') {
+    const r = WIND_ROSE_PRESETS[key];
+    if (r) {
+      scenario.wind.rosePreset = key;
+      scenario.wind.rose = JSON.parse(JSON.stringify(r.rose));
+      scenario.wind.weibullK = r.weibullK;
+      roseResult = null;
+      roseFindings = [];
+    }
+  } else if (kind === 'refraction') {
+    scenario.weather.refractionPreset = key;
+  }
   run(false);
   rebuildRail();
 }
@@ -230,6 +383,24 @@ if (!canDownload) {
 
 $('#btn-export').addEventListener('click', () => $('#dlg-export').showModal());
 
+// Views export as images. The 3D view has to be captured in the same tick as a
+// render, or the drawing buffer has already been cleared.
+document.querySelectorAll('[data-image]').forEach((btn) => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const kind = btn.dataset.image;
+    let url;
+    if (kind === 'scene') {
+      view.render(0);
+      url = view.renderer.domElement.toDataURL('image/png');
+    } else {
+      const c = { ppi: el.ppi, profile: el.profile, windrose: el.windrose }[kind];
+      url = c ? c.toDataURL('image/png') : null;
+    }
+    if (url) saveOrShow(`${kind}-${Date.now()}.png`, 'image/png', url, true);
+  });
+});
+
 document.querySelectorAll('[data-export]').forEach((btn) => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -319,10 +490,173 @@ $('#btn-baseline').addEventListener('click', () => {
   $('#dlg-delta').showModal();
 });
 
+// ------------------------------------------------------------ sweep dialog
+
+function fillSelect(sel, entries, current) {
+  sel.innerHTML = '';
+  for (const [key, def] of entries) {
+    const o = document.createElement('option');
+    o.value = key;
+    o.textContent = def.label + (def.unit ? ` (${def.unit})` : '');
+    sel.append(o);
+  }
+  sel.value = current;
+}
+
+function drawSweepCanvas(hover) {
+  const c = $('#sweep-canvas');
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const w = c.clientWidth || 900;
+  const h = c.clientHeight || 520;
+  c.width = Math.round(w * dpr);
+  c.height = Math.round(h * dpr);
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!sweepResult) {
+    ctx.fillStyle = '#080b0e';
+    ctx.fillRect(0, 0, w, h);
+    return;
+  }
+  sweepLayout = drawSweep(ctx, sweepResult, {
+    width: w, height: h, hover, scale: 1,
+    title: `${SWEEP_METRICS[sweepResult.metricKey].label} across `
+      + `${SWEEP_PARAMS[sweepResult.xParam].label.toLowerCase()} and `
+      + `${SWEEP_PARAMS[sweepResult.yParam].label.toLowerCase()}`,
+    subtitle: sweepSubtitle(),
+  });
+}
+
+function sweepSubtitle() {
+  const r = scenario;
+  return `${r.radar.label || r.radar.preset} \u00b7 ${r.farm.count} x ${r.farm.preset} \u00b7 `
+    + `${r.site.environment} \u00b7 wind ${r.wind.directionDeg}\u00b0 at ${r.wind.speedMs} m/s \u00b7 `
+    + `k=${r.environment.kFactor.toFixed(2)} \u00b7 screening model, not a technical assessment`;
+}
+
+async function doSweep() {
+  const btn = $('#sweep-run');
+  const bar = $('#sweep-bar');
+  const prog = $('#sweep-progress');
+  btn.disabled = true;
+  prog.hidden = false;
+  bar.style.width = '0%';
+  $('#sweep-readout').textContent = 'Running...';
+  try {
+    sweepResult = await runSweep(scenario, {
+      xParam: $('#sweep-x').value,
+      yParam: $('#sweep-y').value,
+      metric: $('#sweep-metric').value,
+      steps: Number($('#sweep-steps').value),
+      onProgress: (t) => { bar.style.width = `${(t * 100).toFixed(0)}%`; },
+    });
+    drawSweepCanvas(null);
+    const n = sweepResult.steps * sweepResult.steps;
+    $('#sweep-readout').textContent = `${n} analyses. `
+      + `${sweepResult.metric.label} ranges from ${sweepResult.metric.format(sweepResult.min)} to `
+      + `${sweepResult.metric.format(sweepResult.max)} ${sweepResult.metric.unit}. `
+      + 'Hover a cell for its values; the outlined cell is the scenario you have set up.';
+  } catch (err) {
+    $('#sweep-readout').textContent = `Sweep failed: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+    prog.hidden = true;
+  }
+}
+
+$('#export-to-sweep')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  $('#dlg-export').close();
+  $('#btn-sweep').click();
+});
+
+$('#btn-sweep').addEventListener('click', () => {
+  fillSelect($('#sweep-x'), Object.entries(SWEEP_PARAMS), $('#sweep-x').value || 'distance');
+  fillSelect($('#sweep-y'), Object.entries(SWEEP_PARAMS), $('#sweep-y').value || 'tipHeight');
+  fillSelect($('#sweep-metric'), Object.entries(SWEEP_METRICS), $('#sweep-metric').value || 'plots');
+  $('#sweep-steps-out').textContent = `${$('#sweep-steps').value} x ${$('#sweep-steps').value}`;
+  $('#dlg-sweep').showModal();
+  requestAnimationFrame(() => drawSweepCanvas(null));
+});
+
+$('#sweep-steps').addEventListener('input', (e) => {
+  $('#sweep-steps-out').textContent = `${e.target.value} x ${e.target.value}`;
+});
+$('#sweep-run').addEventListener('click', doSweep);
+
+$('#sweep-canvas').addEventListener('pointermove', (e) => {
+  if (!sweepResult || !sweepLayout) return;
+  const r = e.target.getBoundingClientRect();
+  const cell = cellAt(sweepLayout, e.clientX - r.left, e.clientY - r.top);
+  drawSweepCanvas(cell);
+  if (!cell) return;
+  const v = sweepResult.values[cell.j * sweepResult.steps + cell.i];
+  const px = SWEEP_PARAMS[sweepResult.xParam];
+  const py = SWEEP_PARAMS[sweepResult.yParam];
+  $('#sweep-readout').textContent =
+    `${px.label} ${sweepResult.xs[cell.i]} ${px.unit} \u00b7 `
+    + `${py.label} ${sweepResult.ys[cell.j]} ${py.unit} \u2192 `
+    + `${Number.isFinite(v) ? sweepResult.metric.format(v) : 'no result'} ${sweepResult.metric.unit}`;
+});
+$('#sweep-canvas').addEventListener('pointerleave', () => drawSweepCanvas(null));
+
+function saveOrShow(name, mime, content, isDataUrl) {
+  if (canDownload) {
+    const a = document.createElement('a');
+    a.href = isDataUrl ? content : URL.createObjectURL(new Blob([content], { type: mime }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return;
+  }
+  // Sandboxed: downloads are inert, so show the content instead.
+  if (isDataUrl) {
+    const win = window.open();
+    if (win) {
+      win.document.write(`<img src="${content}" style="max-width:100%">`);
+    } else {
+      $('#text-title').textContent = name;
+      $('#text-body').value = content;
+      $('#dlg-text').showModal();
+    }
+    return;
+  }
+  $('#text-title').textContent = name;
+  $('#text-body').value = content;
+  $('#dlg-text').showModal();
+}
+
+$('#sweep-png').addEventListener('click', () => {
+  if (!sweepResult) return;
+  saveOrShow(`sweep-${Date.now()}.png`, 'image/png',
+    sweepToPng(sweepResult, {
+      title: `${sweepResult.metric.label} across ${SWEEP_PARAMS[sweepResult.xParam].label.toLowerCase()} `
+        + `and ${SWEEP_PARAMS[sweepResult.yParam].label.toLowerCase()}`,
+      subtitle: sweepSubtitle(),
+    }), true);
+});
+$('#sweep-svg').addEventListener('click', () => {
+  if (!sweepResult) return;
+  saveOrShow(`sweep-${Date.now()}.svg`, 'image/svg+xml',
+    sweepToSvg(sweepResult, {
+      title: `${sweepResult.metric.label} across ${SWEEP_PARAMS[sweepResult.xParam].label.toLowerCase()} `
+        + `and ${SWEEP_PARAMS[sweepResult.yParam].label.toLowerCase()}`,
+      subtitle: sweepSubtitle(),
+    }), false);
+});
+$('#sweep-csv').addEventListener('click', () => {
+  if (!sweepResult) return;
+  saveOrShow(`sweep-${Date.now()}.csv`, 'text/csv', sweepToCsv(sweepResult), false);
+});
+
 $('#btn-reset').addEventListener('click', () => {
   if (!confirm('Discard this scenario and return to the defaults?')) return;
   scenario = defaultScenario();
   profile.bearingDeg = null;
+  importedTerrain = null;
+  roseResult = null;
+  roseFindings = [];
+  sweepResult = null;
   run(false);
   rebuildRail();
 });
@@ -336,6 +670,7 @@ function frame(now) {
   view.render(dt);
   ppi.draw(view.time);
   profile.draw();
+  windrose.draw();
   requestAnimationFrame(frame);
 }
 

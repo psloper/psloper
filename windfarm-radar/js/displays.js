@@ -467,3 +467,125 @@ export class ProfileDisplay {
     ctx.fillText(`section on ${brg.toFixed(0).padStart(3, '0')}°  ·  k = ${r.scenario.environment.kFactor.toFixed(2)}`, w - pad.r, 4);
   }
 }
+
+// ============================================================== wind rose
+
+/**
+ * The wind climate, and what the radar sees in each direction.
+ *
+ * Two things are encoded on one rose because they have to be read together:
+ * the petal length is how often the wind blows from that direction, and its
+ * fill is the severity of the interference when it does. A direction that is
+ * bad but rare and one that is bad and common look different here, which is
+ * the distinction an assessment turns on.
+ */
+export class WindRoseDisplay {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.rose = null;
+    this.assessedDeg = null;
+    this.metric = 'plots';
+  }
+
+  setRose(rose, assessedDeg) {
+    this.rose = rose;
+    this.assessedDeg = assessedDeg;
+  }
+
+  draw() {
+    const { ctx, w, h } = fitCanvas(this.canvas);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = CSS.bg;
+    ctx.fillRect(0, 0, w, h);
+    if (w < 60 || h < 60) return;
+
+    const cx = w / 2;
+    const cy = h / 2 + 4;
+    const R = Math.min(w, h) / 2 - 26;
+
+    if (!this.rose) {
+      ctx.fillStyle = CSS.mute;
+      ctx.font = MONO_SM;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Run the wind rose sweep on the Wind tab', cx, cy - 6);
+      ctx.fillText('to see every direction, not just this one', cx, cy + 8);
+      return;
+    }
+
+    const sectors = this.rose.sectors;
+    const maxFreq = Math.max(...sectors.map((s) => s.frequency), 1e-6);
+    const maxPlots = Math.max(...sectors.map((s) => s.plots), 1);
+    const half = (360 / sectors.length) / 2;
+
+    // Frequency rings
+    ctx.strokeStyle = CSS.rule;
+    ctx.lineWidth = 1;
+    ctx.font = MONO_SM;
+    ctx.fillStyle = CSS.mute;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    for (const frac of [0.25, 0.5, 0.75, 1]) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * frac, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillText(`${(maxFreq * frac * 100).toFixed(0)}%`, cx + 3, cy - R * frac);
+    }
+
+    // Petals
+    for (const s of sectors) {
+      const a0 = (s.directionDeg - half - 90) * DEG;
+      const a1 = (s.directionDeg + half - 90) * DEG;
+      const r = R * (s.frequency / maxFreq);
+      const sev = s.plots / maxPlots;
+      // Sequential severity fill: one hue, brighter means worse.
+      const alpha = 0.25 + 0.6 * sev;
+      ctx.fillStyle = s.plots > 0
+        ? `rgba(232,82,74,${alpha.toFixed(3)})`
+        : 'rgba(63,209,139,0.35)';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, a0, a1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = s.plots > 0 ? CSS.bad : CSS.ok;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // The direction currently being assessed
+    if (Number.isFinite(this.assessedDeg)) {
+      const a = (this.assessedDeg - 90) * DEG;
+      ctx.strokeStyle = CSS.ink;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * 1.06 * Math.cos(a), cy + R * 1.06 * Math.sin(a));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Cardinals
+    ctx.fillStyle = CSS.dim;
+    ctx.font = MONO_SM;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const [deg, label] of [[0, 'N'], [90, 'E'], [180, 'S'], [270, 'W']]) {
+      const a = (deg - 90) * DEG;
+      ctx.fillText(label, cx + (R + 13) * Math.cos(a), cy + (R + 13) * Math.sin(a));
+    }
+
+    // Read-out
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = CSS.mute;
+    ctx.fillText(`plots ${(this.rose.exposureWithPlots * 100).toFixed(0)}% of year`, 6, 6);
+    ctx.fillStyle = this.rose.exposureUntracked > 0.01 ? CSS.warn : CSS.mute;
+    ctx.fillText(`track degraded ${(this.rose.exposureUntracked * 100).toFixed(0)}%`, 6, 18);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = CSS.mute;
+    ctx.fillText(`petal = how often`, w - 6, 6);
+    ctx.fillText(`fill = severity`, w - 6, 18);
+  }
+}

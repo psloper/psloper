@@ -183,6 +183,8 @@ export class SceneView {
     this.renderer = new THREE.WebGLRenderer({
       canvas, antialias: true, powerPreference: 'high-performance',
       logarithmicDepthBuffer: true,
+      // Needed so the view can be captured to a PNG after the frame is drawn.
+      preserveDrawingBuffer: true,
     });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.setClearColor(0x080b0e, 1);

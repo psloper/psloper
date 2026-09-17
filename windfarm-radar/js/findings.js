@@ -12,9 +12,17 @@
 import { M_PER_FT, M_PER_NM } from './geo.js';
 import { cylinderRcsDbsm, wavelength } from './rf.js';
 import { operatingState, tipSpeedRatioAtRated, operatingFractions } from './wind.js';
-import { REFRACTION_PRESETS } from './model.js';
+import { REFRACTION_PRESETS, TARGET_PRESETS } from './model.js';
 
 const SEV_ORDER = { critical: 0, major: 1, minor: 2, info: 3 };
+
+// Radial velocity as a single-PRF processor reports it: folded into the
+// unambiguous interval, signed.
+function foldedSigned(v, blindSpeed) {
+  if (!(blindSpeed > 0)) return v;
+  const m = ((v % blindSpeed) + blindSpeed) % blindSpeed;
+  return m > blindSpeed / 2 ? m - blindSpeed : m;
+}
 
 const km = (m) => `${(m / 1000).toFixed(1)} km`;
 const nm = (m) => `${(m / M_PER_NM).toFixed(1)} NM`;
@@ -623,6 +631,79 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
       basis: 'check',
       metrics: { Pd: `${radar.pd}`, Pfa: radar.pfa.toExponential(0) },
     });
+  }
+
+  // ------------------------------------------------------------ blind speeds
+  //
+  // Nothing to do with the wind farm, but it will dominate any result it
+  // touches, and a tool that silently produced "target not detected" without
+  // saying why would be actively misleading.
+  const notched = points.filter((p) => !p.outOfRange && Math.abs(p.targetMtiDb) > 3);
+  if (notched.length) {
+    const worst = notched.reduce((a, p) => (p.targetMtiDb < a.targetMtiDb ? p : a), notched[0]);
+    const vb = radar.firstBlindSpeedMs;
+    const tangential = notched.filter((p) => Math.abs(p.radialMs) < radar.mtiNotchMs * 1.5).length;
+    add({
+      id: 'blind-speed',
+      severity: notched.length > points.length * 0.2 ? 'critical' : 'major',
+      title: tangential > notched.length / 2
+        ? `Target is flying tangentially for ${notched.length} samples, inside the clutter notch`
+        : `Target radial speed folds into the clutter notch for ${notched.length} samples`,
+      detail: tangential > notched.length / 2
+        ? 'A target crossing the radar\u2019s line of sight has almost no radial velocity, so a Doppler '
+          + 'clutter filter cannot separate it from stationary ground. This is a property of the geometry, '
+          + 'not of the wind farm, but it stacks with turbine clutter in exactly the wrong way.'
+        : `At ${radar.prfHz.toFixed(0)} Hz PRF and ${(radar.lambdaM * 100).toFixed(1)} cm wavelength the `
+          + `first blind speed is ${vb.toFixed(1)} m/s (${(vb / 0.514444).toFixed(0)} kt). The target is `
+          + `flying at ${scenario.target.speedKt} kt, whose radial component folds to `
+          + `${foldedSigned(worst.radialMs, vb).toFixed(1)} m/s, `
+          + `inside the \u00b1${radar.mtiNotchMs} m/s notch. The radar rejects it as clutter. Real systems `
+          + 'stagger the PRF or use multiple PRFs precisely to avoid this; if the radar you are modelling '
+          + 'does that, this finding is an artefact of a single-PRF model and should be discounted.',
+      basis: 'computed',
+      metrics: {
+        'Samples affected': `${notched.length} of ${points.length}`,
+        'Worst rejection': `${worst.targetMtiDb.toFixed(1)} dB`,
+        'First blind speed': `${vb.toFixed(1)} m/s (${(vb / 0.514444).toFixed(0)} kt)`,
+        'Target speed': `${scenario.target.speedKt} kt`,
+      },
+    });
+  }
+
+  // ------------------------------------------------------- target sensitivity
+  //
+  // The same farm can be harmless against one class of traffic and decisive
+  // against another, so the assessment is only as good as the target it used.
+  const tgt = TARGET_PRESETS[scenario.target.preset];
+  if (summary.worstPoint && Number.isFinite(summary.worstPoint.effectiveMarginDb)) {
+    const margin = summary.worstPoint.effectiveMarginDb;
+    // How much smaller a target could be before the worst point drops below
+    // threshold. Two-way, so RCS maps one-for-one onto margin in dB.
+    const headroomDb = margin;
+    const breakEven = scenario.target.rcsDbsm - headroomDb;
+    const smaller = Object.entries(TARGET_PRESETS)
+      .filter(([, t]) => t.rcsDbsm < breakEven)
+      .sort((a, b) => b[1].rcsDbsm - a[1].rcsDbsm);
+    if (headroomDb > 0 && smaller.length) {
+      add({
+        id: 'target-sensitivity',
+        severity: 'info',
+        title: `This result holds for a ${(tgt ? tgt.label : 'target').toLowerCase()}; `
+          + `${smaller.length} smaller classes would be lost`,
+        detail: `The worst point on the track clears the threshold by ${db(margin)}, and RCS maps one for `
+          + `one onto that margin. A target below about ${breakEven.toFixed(0)} dBsm would not clear it at `
+          + `the same point. That includes ${smaller.slice(0, 4).map(([, t]) => t.label.toLowerCase()).join(', ')}`
+          + `${smaller.length > 4 ? ` and ${smaller.length - 4} others` : ''}. Assess against the smallest `
+          + 'traffic the radar is relied on to see, not the largest.',
+        basis: 'computed',
+        metrics: {
+          'Assessed target': `${tgt ? tgt.label : 'custom'} at ${scenario.target.rcsDbsm} dBsm`,
+          'Margin at the worst point': db(margin),
+          'Break-even target RCS': `${breakEven.toFixed(0)} dBsm`,
+          'Classes that would be lost': `${smaller.length}`,
+        },
+      });
+    }
   }
 
   // -------------------------------------------------- regulatory framework

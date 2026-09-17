@@ -28,6 +28,7 @@
   </div>
 
   <div class="topbar-actions">
+    <button class="btn" id="btn-sweep">Sweep &amp; heat map</button>
     <button class="btn" id="btn-baseline" title="Compare the current mitigation set against no mitigation">Mitigation delta</button>
     <button class="btn" id="btn-export">Export</button>
     <button class="btn" id="btn-method">Method &amp; limits</button>
@@ -42,7 +43,9 @@
     <nav class="rail-tabs" role="tablist">
       <button class="rail-tab is-active" data-tab="radar" role="tab">Radar</button>
       <button class="rail-tab" data-tab="farm" role="tab">Wind farm</button>
-      <button class="rail-tab" data-tab="site" role="tab">Terrain</button>
+      <button class="rail-tab" data-tab="site" role="tab">Site &amp; data</button>
+      <button class="rail-tab" data-tab="terrain" role="tab">Terrain</button>
+      <button class="rail-tab" data-tab="wind" role="tab">Wind</button>
       <button class="rail-tab" data-tab="flight" role="tab">Flight</button>
       <button class="rail-tab" data-tab="mitigation" role="tab">Mitigation</button>
     </nav>
@@ -98,6 +101,13 @@
           <span class="cap-note">curvature applied at the modelled k-factor</span>
         </figcaption>
         <canvas id="profile"></canvas>
+      </figure>
+      <figure class="display display-narrow">
+        <figcaption>
+          <span>Wind rose</span>
+          <span class="cap-note" id="rose-caption">not yet swept</span>
+        </figcaption>
+        <canvas id="windrose"></canvas>
       </figure>
     </div>
   </section>
@@ -172,6 +182,17 @@
           <button class="btn" data-export="scenario" data-mode="download">Download</button>
           <button class="btn ghost" data-export="scenario" data-mode="view">View</button>
         </span></li>
+      <li class="export-head"><span class="export-name">Images</span></li>
+      <li><span class="export-name">3D view <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="scene">Capture</button></span></li>
+      <li><span class="export-name">Plan position indicator <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="ppi">Capture</button></span></li>
+      <li><span class="export-name">Vertical section <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="profile">Capture</button></span></li>
+      <li><span class="export-name">Wind rose <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="windrose">Capture</button></span></li>
+      <li><span class="export-name">Heat maps <code>.png</code> <code>.svg</code></span>
+        <span class="export-actions"><button class="btn ghost" id="export-to-sweep">Open sweep</button></span></li>
       <li><span class="export-name">Load a saved scenario</span>
         <span class="export-actions">
           <label class="btn file-btn">Choose file<input type="file" id="import-scenario" accept="application/json" hidden /></label>
@@ -192,6 +213,36 @@
   </form>
   <div class="dlg-body">
     <textarea id="text-body" class="export-text" readonly spellcheck="false"></textarea>
+  </div>
+</dialog>
+
+<dialog id="dlg-sweep" class="dlg dlg-wide">
+  <form method="dialog">
+    <header>
+      <h2>Parameter sweep</h2>
+      <span class="dlg-head-actions">
+        <button class="btn" id="sweep-png" type="button">PNG</button>
+        <button class="btn" id="sweep-svg" type="button">SVG</button>
+        <button class="btn" id="sweep-csv" type="button">CSV</button>
+        <button class="btn ghost" value="close">Close</button>
+      </span>
+    </header>
+  </form>
+  <div class="dlg-body">
+    <div class="sweep-controls">
+      <label class="field"><span class="field-label"><span>Horizontal axis</span></span>
+        <select id="sweep-x"></select></label>
+      <label class="field"><span class="field-label"><span>Vertical axis</span></span>
+        <select id="sweep-y"></select></label>
+      <label class="field"><span class="field-label"><span>Colour</span></span>
+        <select id="sweep-metric"></select></label>
+      <label class="field"><span class="field-label"><span>Grid</span><span class="val" id="sweep-steps-out"></span></span>
+        <input type="range" id="sweep-steps" min="6" max="26" step="2" value="14" /></label>
+      <button class="btn" id="sweep-run" type="button">Run sweep</button>
+    </div>
+    <div class="sweep-progress" id="sweep-progress" hidden><div class="sweep-bar" id="sweep-bar"></div></div>
+    <div class="sweep-canvas-wrap"><canvas id="sweep-canvas"></canvas></div>
+    <p class="sweep-readout" id="sweep-readout">Every cell is a complete re-analysis. Pick two parameters and a metric, then run.</p>
   </div>
 </dialog>
 

@@ -536,6 +536,285 @@ export function parseTerrainRows(rows, opts = {}) {
 }
 
 // ===========================================================================
+// ESRI ASCII Grid (.asc)
+// ===========================================================================
+//
+// The format almost every public elevation model exports to: SRTM, OS Terrain
+// 50, EA LIDAR, and most GIS packages. A six-line header then a raster of
+// values, north row first.
+
+export function readAsciiGrid(text) {
+  const lines = text.split(/\r?\n/);
+  const header = {};
+  let row = 0;
+  const wanted = ['ncols', 'nrows', 'xllcorner', 'yllcorner', 'xllcenter', 'yllcenter',
+    'cellsize', 'nodata_value'];
+
+  while (row < lines.length) {
+    const m = lines[row].trim().match(/^([A-Za-z_]+)\s+(-?[\d.eE+-]+)\s*$/);
+    if (!m || !wanted.includes(m[1].toLowerCase())) break;
+    header[m[1].toLowerCase()] = Number(m[2]);
+    row += 1;
+  }
+
+  const ncols = header.ncols;
+  const nrows = header.nrows;
+  const cellsize = header.cellsize;
+  if (!ncols || !nrows || !cellsize) {
+    throw new Error('Not a valid ESRI ASCII Grid: expected ncols, nrows and cellsize in the header.');
+  }
+  // Corner and centre references differ by half a cell.
+  const x0 = header.xllcorner !== undefined ? header.xllcorner + cellsize / 2 : header.xllcenter;
+  const y0 = header.yllcorner !== undefined ? header.yllcorner + cellsize / 2 : header.yllcenter;
+  if (x0 === undefined || y0 === undefined) {
+    throw new Error('Not a valid ESRI ASCII Grid: no xll/yll origin in the header.');
+  }
+  const nodata = header.nodata_value ?? -9999;
+
+  const values = [];
+  for (; row < lines.length; row++) {
+    const line = lines[row].trim();
+    if (!line) continue;
+    for (const tok of line.split(/\s+/)) {
+      const v = Number(tok);
+      values.push(Number.isFinite(v) ? v : nodata);
+    }
+  }
+  if (values.length < ncols * nrows) {
+    throw new Error(`ASCII grid is short: header declares ${ncols}x${nrows} = ${ncols * nrows} `
+      + `values but only ${values.length} were found.`);
+  }
+
+  // Row 0 of the file is the NORTHERNMOST row, so northing decreases with row.
+  const points = [];
+  for (let j = 0; j < nrows; j++) {
+    for (let i = 0; i < ncols; i++) {
+      const z = values[j * ncols + i];
+      if (z === nodata) continue;
+      points.push({
+        easting: x0 + i * cellsize,
+        northing: y0 + (nrows - 1 - j) * cellsize,
+        elevation: z,
+      });
+    }
+  }
+  return { points, header, cellsize, ncols, nrows };
+}
+
+// ===========================================================================
+// KML and KMZ
+// ===========================================================================
+//
+// What comes out of Google Earth. Google Earth has no public API this tool can
+// call for bulk elevation, and the Elevation API needs a paid key, a network
+// connection and comes with terms on storing what it returns, none of which
+// suits an offline tool. Exporting from Google Earth as KML or KMZ and reading
+// it here needs none of that.
+//
+// A caution the tool repeats in the findings: KML altitudes are often clamped
+// to the ground or are the altitude of a drawn placemark, NOT a terrain
+// measurement. Points digitised in Google Earth inherit its own elevation
+// model, whose vertical accuracy varies and is not survey grade. For anything
+// load-bearing, use a published DEM or a real survey.
+
+export function readKml(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) {
+    throw new Error('That KML file could not be parsed as XML.');
+  }
+
+  const points = [];
+  let clamped = 0;
+  let named = 0;
+
+  for (const placemark of doc.getElementsByTagName('Placemark')) {
+    const nameNode = placemark.getElementsByTagName('name')[0];
+    const name = nameNode ? nameNode.textContent.trim() : '';
+    if (name) named += 1;
+
+    for (const mode of placemark.getElementsByTagName('altitudeMode')) {
+      if (/clampToGround/i.test(mode.textContent)) clamped += 1;
+    }
+
+    for (const coords of placemark.getElementsByTagName('coordinates')) {
+      // "lon,lat[,alt]" tuples separated by whitespace.
+      for (const tuple of coords.textContent.trim().split(/\s+/)) {
+        if (!tuple) continue;
+        const parts = tuple.split(',').map(Number);
+        if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) continue;
+        points.push({
+          name,
+          longitude: parts[0],
+          latitude: parts[1],
+          elevation: Number.isFinite(parts[2]) ? parts[2] : null,
+        });
+      }
+    }
+  }
+
+  if (!points.length) throw new Error('No placemark coordinates found in that KML file.');
+  const withHeight = points.filter((p) => p.elevation !== null && p.elevation !== 0).length;
+  return {
+    points,
+    named,
+    clampedPlacemarks: clamped,
+    withHeight,
+    warning: withHeight === 0
+      ? 'Every coordinate in this file has zero or missing altitude, which usually means the placemarks '
+        + 'were clamped to the ground. Positions are usable; elevations are not.'
+      : clamped > 0
+        ? `${clamped} placemarks use clampToGround, so their altitudes are not independent measurements.`
+        : null,
+  };
+}
+
+export async function readKmz(arrayBuffer) {
+  const files = await readZip(arrayBuffer);
+  const dec = new TextDecoder();
+  const kmlName = Object.keys(files).find((n) => n.toLowerCase().endsWith('.kml'));
+  if (!kmlName) throw new Error('That .kmz contains no .kml document.');
+  return readKml(dec.decode(files[kmlName]));
+}
+
+// ===========================================================================
+// Online elevation lookup
+// ===========================================================================
+//
+// OPTIONAL, OFF BY DEFAULT, AND UNTESTED. The tool is built to work offline and
+// this is the one part that is not. It was written against the documented shape
+// of the public open elevation services but could NOT be exercised, because the
+// environment it was built in has no outbound network access. Treat it as
+// unverified until you have run it yourself.
+//
+// Google's Elevation API is deliberately not the default: it needs a paid API
+// key, and its terms restrict storing the results, which is the opposite of
+// what this tool does with them.
+
+export const ELEVATION_ENDPOINTS = {
+  'open-elevation': {
+    label: 'Open-Elevation (free, no key)',
+    url: 'https://api.open-elevation.com/api/v1/lookup',
+    method: 'POST',
+    note: 'Keyless and free. Rate limited and best-effort. Roughly SRTM resolution, about 30 m.',
+  },
+  'opentopodata-srtm': {
+    label: 'OpenTopoData SRTM 30 m (free, no key)',
+    url: 'https://api.opentopodata.org/v1/srtm30m',
+    method: 'GET',
+    note: 'Keyless and free. 100 points per call, 1000 calls a day on the public instance.',
+  },
+  'opentopodata-eudem': {
+    label: 'OpenTopoData EU-DEM 25 m (free, no key)',
+    url: 'https://api.opentopodata.org/v1/eudem25m',
+    method: 'GET',
+    note: 'Europe only, 25 m. Same public limits as above.',
+  },
+  'open-meteo': {
+    label: 'Open-Meteo elevation (free, no key)',
+    url: 'https://api.open-meteo.com/v1/elevation',
+    method: 'GET-METEO',
+    note: 'Keyless and free, generous limits. Copernicus DEM based, about 90 m.',
+  },
+};
+
+// Free bulk sources worth using instead of any API, because a downloaded tile
+// is reproducible, has a known provenance, and needs no network at run time.
+// These all export formats this tool reads directly.
+export const FREE_ELEVATION_SOURCES = [
+  ['Copernicus DEM GLO-30', 'Global, 30 m, open licence. The current default choice for most of the world.'],
+  ['NASA SRTM 30 m', 'Global to 60 degrees latitude, 30 m, free. Via USGS EarthExplorer or OpenTopography.'],
+  ['OpenTopography', 'Free portal serving SRTM, Copernicus and ALOS tiles as GeoTIFF or ASCII grid.'],
+  ['OS Terrain 50 (UK)', 'Free OS OpenData, 50 m, ASCII grid. Good enough for most screening in Britain.'],
+  ['Environment Agency LIDAR (England)', 'Free 1 m and 2 m DTM. Survey grade where it exists, and far better than anything global.'],
+  ['EU-DEM / Copernicus Land', 'Europe, 25 m, free.'],
+  ['GEBCO', 'Free global bathymetry, for the seabed under an offshore array.'],
+];
+
+/**
+ * Fetch ground elevations for a list of {latitude, longitude}.
+ * Batched, because every public service caps points per request.
+ *
+ * @param {Array} coords
+ * @param {object} opts {url, batchSize, onProgress, signal}
+ */
+export async function fetchElevations(coords, opts = {}) {
+  const url = opts.url || ELEVATION_ENDPOINTS['open-elevation'].url;
+  const batchSize = Math.min(opts.batchSize || 100, 100);
+  const out = [];
+
+  for (let i = 0; i < coords.length; i += batchSize) {
+    if (opts.signal && opts.signal.aborted) throw new Error('Elevation lookup cancelled.');
+    const batch = coords.slice(i, i + batchSize);
+    const method = opts.method || 'POST';
+    let res;
+    if (method === 'GET') {
+      // OpenTopoData style: locations=lat,lon|lat,lon
+      const q = batch.map((c) => `${c.latitude.toFixed(6)},${c.longitude.toFixed(6)}`).join('|');
+      res = await fetch(`${url}?locations=${encodeURIComponent(q)}`, { signal: opts.signal });
+    } else if (method === 'GET-METEO') {
+      // Open-Meteo style: parallel latitude and longitude lists.
+      const lat = batch.map((c) => c.latitude.toFixed(6)).join(',');
+      const lon = batch.map((c) => c.longitude.toFixed(6)).join(',');
+      res = await fetch(`${url}?latitude=${lat}&longitude=${lon}`, { signal: opts.signal });
+    } else {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          locations: batch.map((c) => ({ latitude: c.latitude, longitude: c.longitude })),
+        }),
+        signal: opts.signal,
+      });
+    }
+    if (!res.ok) {
+      throw new Error(`Elevation service returned ${res.status}. Public services are rate limited; `
+        + 'wait and retry, reduce the number of points, or import a DEM file instead.');
+    }
+    const data = await res.json();
+    // Open-Meteo returns a bare array of numbers; the others return objects.
+    const results = Array.isArray(data.elevation)
+      ? data.elevation.map((e) => ({ elevation: e }))
+      : (data.results || data.data || []);
+    if (!Array.isArray(results) || results.length !== batch.length) {
+      throw new Error('Elevation service returned an unexpected response shape. '
+        + 'Public services change; import a DEM file instead if this keeps happening.');
+    }
+    results.forEach((r, k) => out.push({
+      latitude: batch[k].latitude,
+      longitude: batch[k].longitude,
+      east: batch[k].east,
+      north: batch[k].north,
+      elevation: Number(r.elevation ?? r.elev ?? NaN),
+    }));
+    if (opts.onProgress) opts.onProgress(Math.min(i + batchSize, coords.length) / coords.length);
+  }
+
+  const bad = out.filter((p) => !Number.isFinite(p.elevation)).length;
+  if (bad === out.length) throw new Error('The elevation service returned no usable values.');
+  return { points: out, missing: bad };
+}
+
+/** A regular lat/lon grid covering the modelled area, for an online lookup. */
+export function elevationGridRequest(originLat, originLon, halfExtentM, steps = 40) {
+  const coords = [];
+  const mPerDegLat = 111132.92 - 559.82 * Math.cos(2 * originLat * DEG);
+  const mPerDegLon = 111412.84 * Math.cos(originLat * DEG);
+  for (let j = 0; j < steps; j++) {
+    for (let i = 0; i < steps; i++) {
+      const east = -halfExtentM + (2 * halfExtentM * i) / (steps - 1);
+      const north = -halfExtentM + (2 * halfExtentM * j) / (steps - 1);
+      coords.push({
+        latitude: originLat + north / mPerDegLat,
+        longitude: originLon + east / mPerDegLon,
+        east,
+        north,
+      });
+    }
+  }
+  return coords;
+}
+
+// ===========================================================================
 // Entry point
 // ===========================================================================
 
@@ -549,4 +828,56 @@ export async function readTable(file) {
       + 'Save it as .xlsx or .csv and import that.');
   }
   return readCsv(await file.text());
+}
+
+/**
+ * Read any supported elevation source into points in the tool's local frame.
+ * Returns {points, note} where each point is {east, north, elevation}.
+ */
+export async function readElevationFile(file, opts = {}) {
+  const name = (file.name || '').toLowerCase();
+
+  if (name.endsWith('.asc') || name.endsWith('.grd') || name.endsWith('.txt')) {
+    const grid = readAsciiGrid(await file.text());
+    return {
+      points: grid.points.map((p) => ({
+        east: p.easting - (opts.radarEasting ?? 0),
+        north: p.northing - (opts.radarNorthing ?? 0),
+        elevation: p.elevation,
+      })),
+      note: `ESRI ASCII Grid, ${grid.ncols} x ${grid.nrows} at ${grid.cellsize} m cells. `
+        + 'Coordinates are taken as the same grid as the radar easting and northing on the Site tab.',
+    };
+  }
+
+  if (name.endsWith('.kml') || name.endsWith('.kmz')) {
+    if (!Number.isFinite(opts.origin?.lat)) {
+      throw new Error('KML is in latitude and longitude, so set the site origin on the Site tab first.');
+    }
+    const kml = name.endsWith('.kmz')
+      ? await readKmz(await file.arrayBuffer())
+      : readKml(await file.text());
+    const pts = kml.points
+      .filter((p) => Number.isFinite(p.elevation))
+      .map((p) => {
+        const l = latLonToLocal(p.latitude, p.longitude, opts.origin.lat, opts.origin.lon);
+        return { east: l.east, north: l.north, elevation: p.elevation };
+      });
+    if (pts.length < 4) {
+      throw new Error('That KML has fewer than four coordinates carrying an altitude. Google Earth '
+        + 'clamps placemarks to the ground by default, which writes zero altitude. Export with absolute '
+        + 'altitudes, or use a DEM file (.asc) instead.');
+    }
+    return {
+      points: pts,
+      note: `KML: ${pts.length} coordinates with altitude from ${kml.points.length} total.`
+        + (kml.warning ? ` ${kml.warning}` : '')
+        + ' KML altitudes come from whatever model produced them, commonly Google Earth\u2019s own '
+        + 'terrain, which is not survey grade. Use a published DEM for anything load-bearing.',
+    };
+  }
+
+  const sheets = await readTable(file);
+  const parsed = parseTerrainRows(sheets[0].rows, opts);
+  return { points: parsed.points, note: `${parsed.points.length} elevation points from a table.` };
 }
