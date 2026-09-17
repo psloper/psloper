@@ -173,7 +173,10 @@ test('turbine records distinguish a return above threshold from a plot on the di
 
 test('the method text itself names every formula the tool relies on', () => {
   for (const term of ['range equation', 'Albersheim', 'P.526', 'Doppler', 'blind speed',
-    'cosecant', 'equivalent-earth', 'solidity', 'Fresnel']) {
+    'cosecant', 'equivalent-earth', 'solidity', 'Fresnel',
+    // and the physics added later, which the report must also account for
+    'Ament', 'sigma-zero', 'Weibull', 'tip-speed ratio', 'refraction',
+    'Pierson-Moskowitz', 'equirectangular', 'ICAO', 'EUROCONTROL']) {
     assert.ok(new RegExp(term, 'i').test(METHOD_HTML), `method text does not mention ${term}`);
   }
 });

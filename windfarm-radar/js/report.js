@@ -52,6 +52,76 @@ J(v) = 6.9 + 20·log₁₀( √((v−0.1)² + 1) + v − 0.1 )   dB,  v > −0.7
       cosecant-squared elevation shaping above the beam peak.</li>
 </ul>
 
+<h3>Wind, and what it does to the turbine</h3>
+<ul>
+  <li><strong>Yaw.</strong> Turbines yaw into the wind, so wind direction sets the angle between the
+      radar line of sight and the rotor axis. Peak blade radial velocity is
+      <code>v_tip &middot; sin &theta;</code> against that angle. This part is exact geometry.</li>
+  <li><strong>Rotor speed.</strong> A variable-speed, pitch-regulated machine holds close to a constant
+      tip-speed ratio below rated wind speed, then roughly constant rotor speed from rated to cut-out,
+      and idles outside that band. Blade Doppler therefore scales with wind speed up to rated and then
+      plateaus. The idle fraction outside the operating band is a parameter, not a published figure.</li>
+  <li><strong>Wind climate.</strong> Speed within a direction sector is taken as Weibull distributed,
+      with scale from the sector mean via <code>U = c &middot; &Gamma;(1 + 1/k)</code>. The roses shipped
+      with the tool are ILLUSTRATIVE SHAPES, not site data, and every percentage derived from them
+      inherits that.</li>
+</ul>
+
+<h3>Sea surface</h3>
+<ul>
+  <li><strong>Multipath</strong> is the standard two-ray formulation. The direct and surface-reflected
+      rays combine as <code>F = |1 + &rho;<sub>s</sub>&Gamma;e<sup>-j&Delta;&phi;</sup>|</code> with a
+      two-way effect of F&#8308;, and
+      <code>&Delta;&phi; = 4&pi;h<sub>r</sub>h<sub>t</sub>/(&lambda;R)</code>. Surface roughness enters
+      through the Ament factor
+      <code>&rho;<sub>s</sub> = exp(-2(2&pi;&sigma;<sub>h</sub>sin&psi;/&lambda;)&sup2;)</code>, so wave
+      height drives the result directly: a calm sea is a good mirror and puts deep nulls in low-level
+      coverage, a rough sea washes the lobing out. Checked against theory: the lobe peak is +12.04 dB.
+      The divergence factor is neglected, which makes the modelled lobing a worst case at long range.</li>
+  <li><strong>Sea clutter</strong> is distributed, so its RCS is sigma-zero times the illuminated cell
+      area <code>R &middot; &theta;<sub>az</sub> &middot; &Delta;R &middot; sec&psi;</code>. Its rejection
+      is capped well below the radar's improvement factor against fixed clutter, because the Gaussian
+      Doppler spread assumed here has far lighter tails than real spiky sea clutter and would otherwise
+      cancel it almost perfectly.</li>
+  <li><strong>Sigma-zero itself is PARAMETRIC.</strong> Every constant is an input. A real assessment
+      takes it from a validated model (GIT, TSC) or the Nathanson tables at the relevant band,
+      polarisation, grazing angle and sea state. None of those was retrievable here, so none is
+      reproduced.</li>
+  <li><strong>Wave height from wind</strong> uses the fully-developed (Pierson-Moskowitz) form
+      <code>H<sub>s</sub> &asymp; 0.0248 U&sup2;</code>. Real sites are fetch and duration limited and a
+      swell-dominated sea does not follow it at all.</li>
+</ul>
+
+<h3>Atmosphere</h3>
+<ul>
+  <li><strong>Refraction</strong> is expressed as the effective earth radius factor. The presets span
+      sub-refractive through surface ducting so a masking argument can be tested against conditions
+      other than the standard atmosphere. Ducting is common over the sea and can defeat terrain
+      screening outright.</li>
+  <li><strong>Gaseous and rain attenuation</strong> are taken together as a single two-way dB/km figure
+      the user supplies. This tool does not assert ITU-R P.676 or P.838 coefficients it has not read.</li>
+</ul>
+
+<h3>Imported data</h3>
+<ul>
+  <li>Turbine schedules and elevation data are parsed in the page. Nothing is uploaded.</li>
+  <li>Imported terrain reports the fraction of the modelled area it actually covers. Cells with no data
+      within the search radius fall back to the base elevation and are counted as holes, because a
+      terrain model with gaps must not be mistaken for a complete one.</li>
+  <li>Latitude and longitude are projected equirectangularly about the site origin, which is accurate to
+      well under a metre at these distances but is NOT a national grid transformation.</li>
+  <li>KML altitudes come from whatever produced them. Google Earth clamps placemarks to the ground by
+      default, and its terrain is not survey grade. Use a published DEM for anything load-bearing.</li>
+  <li>The optional online elevation lookup is OFF by default and UNVERIFIED: it could not be exercised,
+      because the environment this tool was built in has no outbound network access.</li>
+</ul>
+
+<h3>Reference targets</h3>
+<p>Radar cross-section is given as a CLASS figure, never a platform figure. It varies by tens of
+decibels with aspect, frequency and polarisation, and real values for specific military platforms are
+controlled information. The library exists to show how target size interacts with turbine clutter, not
+to assert the performance of any aircraft.</p>
+
 <h3>Engineering approximations made for this tool</h3>
 <p>These are not published models. They are stated here so they can be argued with.</p>
 <ul>
@@ -87,8 +157,12 @@ J(v) = 6.9 + 20·log₁₀( √((v−0.1)² + 1) + v − 0.1 )   dB,  v > −0.7
       many dB at low elevation and is a first-order effect for low targets.</li>
   <li>Secondary surveillance radar: reflections, garbling and false replies. This tool
       is primary radar only.</li>
-  <li>Real terrain. The surface here is synthetic and controlled by the terrain panel.
-      Masking conclusions from synthetic terrain mean nothing for a real site.</li>
+  <li>Real terrain, unless you import it. The default surface is synthetic and controlled by the
+      terrain panel; masking conclusions from synthetic terrain mean nothing for a real site.</li>
+  <li><strong>Regulatory conformance.</strong> Nothing here has been checked against ICAO, EUROCONTROL
+      or any national requirement, and no such document was retrieved or read. The tool computes
+      physics. It does not know what any authority requires. Do not present any output as showing
+      conformance with anything.</li>
   <li>Wind farm effects on communications, navigation aids, or seismic arrays.</li>
   <li>Aerodrome obstacle limitation surfaces and physical safeguarding.</li>
   <li>Weather radar product corruption beyond the generic clutter treatment.</li>
