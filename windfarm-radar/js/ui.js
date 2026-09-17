@@ -8,7 +8,7 @@ import {
   RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS,
 } from './model.js';
 import { SEVERITY_LABELS } from './findings.js';
-import { M_PER_FT, M_PER_NM } from './geo.js';
+import { M_PER_FT } from './geo.js';
 
 export function getPath(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);

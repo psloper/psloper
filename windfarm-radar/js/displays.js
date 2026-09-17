@@ -9,8 +9,8 @@
 // elevation and earth curvature are all vertical effects that a plan view
 // cannot show.
 
-import { DEG, RAD, clamp, offsetByBearing, angleDelta, curvatureDrop, M_PER_FT, M_PER_NM } from './geo.js';
-import { elevationGainDb, dbToLin, knifeEdgeLossDb, fresnelParameter } from './rf.js';
+import { DEG, RAD, clamp, offsetByBearing, angleDelta, curvatureDrop } from './geo.js';
+import { elevationGainDb, dbToLin } from './rf.js';
 
 const CSS = {
   ink: '#cdd8e1', dim: '#8595a3', mute: '#5d6b78',

@@ -10,7 +10,7 @@
 // multiplier is in force.
 
 import * as THREE from 'three';
-import { curvatureDrop, DEG, RAD, clamp, lerp, offsetByBearing, hypot2 } from './geo.js';
+import { curvatureDrop, DEG, clamp, lerp, offsetByBearing, hypot2 } from './geo.js';
 import { elevationGainDb, dbToLin } from './rf.js';
 
 export const COLORS = {

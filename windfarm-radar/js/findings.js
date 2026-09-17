@@ -9,8 +9,7 @@
 // not be verified against a primary source from this environment, it says so
 // rather than implying more confidence than exists.
 
-import { M_PER_FT, M_PER_NM, RAD } from './geo.js';
-import { linToDb, dbToLin } from './rf.js';
+import { M_PER_FT, M_PER_NM } from './geo.js';
 
 const SEV_ORDER = { critical: 0, major: 1, minor: 2, info: 3 };
 

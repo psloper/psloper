@@ -16,8 +16,8 @@
 
 import {
   effectiveEarthRadius, createTerrain, rasteriseTerrain, profileObstruction,
-  viewGeometry, bearingOf, angleDelta, hypot2, clamp, lerp, horizonDistance,
-  offsetByBearing, DEG, RAD, M_PER_FT,
+  viewGeometry, angleDelta, hypot2, clamp, lerp, horizonDistance,
+  offsetByBearing, DEG, M_PER_FT,
 } from './geo.js';
 
 import {
@@ -29,7 +29,7 @@ import {
   farFieldDistance, apertureFromBeamwidth,
 } from './rf.js';
 
-import { buildTurbines, buildTrack, turbineTipHeight } from './model.js';
+import { buildTurbines, buildTrack } from './model.js';
 import { deriveFindings } from './findings.js';
 
 const COAST_SCANS = 3;       // how long a tracker holds a target through a gap
@@ -709,4 +709,3 @@ function summarise(scenario, radar, turbineResults, points, blankZone, naizZone)
   };
 }
 
-export { summarise, zoneAreaKm2, insideZone, fitBlanking };

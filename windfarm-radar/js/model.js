@@ -13,7 +13,7 @@
 // microwave frequencies) and exist so the tool starts somewhere sensible, not
 // because they are authoritative.
 
-import { DEG, RAD, offsetByBearing, bearingOf, hypot2, clamp } from './geo.js';
+import { DEG, offsetByBearing, bearingOf, hypot2, clamp } from './geo.js';
 import { wavelength, tipSpeed, rotorSolidity } from './rf.js';
 
 export const STORAGE_KEY = 'windfarm-radar-scenario-v1';

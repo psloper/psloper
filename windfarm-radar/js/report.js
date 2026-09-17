@@ -4,7 +4,7 @@
 // screening result that gets forwarded without its assumptions is worse than
 // no result.
 
-import { M_PER_FT, M_PER_NM } from './geo.js';
+import { M_PER_FT } from './geo.js';
 import { SEVERITY_LABELS } from './findings.js';
 
 export const METHOD_HTML = `
@@ -200,8 +200,11 @@ export function exportScenario(scenario) {
   download(`scenario-${stamp()}.json`, JSON.stringify(scenario, null, 2), 'application/json');
 }
 
-export function exportJson(result) {
-  const payload = {
+// Split out from exportJson so the payload can be built and checked without a
+// browser. Everything that leaves this tool goes through here or
+// buildReportMarkdown, so both are worth testing.
+export function buildAssessmentPayload(result) {
+  return {
     generated: new Date().toISOString(),
     tool: 'Wind Farm / Radar Interference Assessor',
     disclaimer: 'First-order screening model. Not a technical or safety assessment. '
@@ -255,7 +258,11 @@ export function exportJson(result) {
     })),
     mitigationZones: { blanking: result.blankZone, nonAutoInitiation: result.naizZone },
   };
-  download(`assessment-${stamp()}.json`, JSON.stringify(payload, null, 2), 'application/json');
+}
+
+export function exportJson(result) {
+  download(`assessment-${stamp()}.json`,
+    JSON.stringify(buildAssessmentPayload(result), null, 2), 'application/json');
 }
 
 export function buildReportMarkdown(result, delta) {
