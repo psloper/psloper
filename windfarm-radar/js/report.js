@@ -181,7 +181,8 @@ export function buildTrackCsv(result) {
     'time_s', 'along_track_m', 'east_m', 'north_m', 'altitude_ft', 'heading_deg',
     'ground_range_m', 'slant_range_m', 'bearing_deg', 'elevation_deg',
     'terrain_loss_db', 'turbine_shadow_loss_db', 'snr_db', 'sinr_db', 'scr_db',
-    'clutter_cost_db', 'radial_velocity_ms', 'mti_response_db',
+    'turbine_clutter_cost_db', 'sea_clutter_cost_db', 'multipath_db', 'atmospheric_loss_db',
+    'radial_velocity_ms', 'mti_response_db',
     'margin_db', 'status', 'blanked', 'in_naiz', 'plot', 'tracked', 'recovered_by_infill',
   ]];
   for (const p of result.points) {
@@ -191,7 +192,9 @@ export function buildTrackCsv(result) {
       num(p.geom.ground, 0), num(p.geom.slant, 0), num(p.geom.bearing, 2), num(p.geom.elevationDeg, 3),
       num(p.terrainLossDb, 2), num(p.shadowLossDb, 2), num(p.snrDb, 2), num(p.sinrDb, 2),
       Number.isFinite(p.scrDb) ? num(p.scrDb, 2) : 'inf',
-      num(p.clutterCostDb, 2), num(p.radialMs, 1), num(p.targetMtiDb, 2),
+      num(p.turbineClutterCostDb, 2), num(p.seaClutterCostDb, 2),
+      num(p.multipathDb, 2), num(p.atmosphericLossDb, 3),
+      num(p.radialMs, 1), num(p.targetMtiDb, 2),
       num(p.effectiveMarginDb, 2), p.status,
       p.blanked ? 'yes' : 'no', p.inNaiz ? 'yes' : 'no',
       p.plot ? 'yes' : 'no', p.tracked ? 'yes' : 'no', p.recoveredByInfill ? 'yes' : 'no',

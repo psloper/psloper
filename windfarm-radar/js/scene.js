@@ -44,10 +44,14 @@ const ELEVATION_RAMP = [
   [0.72, 0x8b8560], [0.90, 0xa89a80], [1.00, 0xd8d5cc],
 ];
 
-// Detection margin: red below threshold, amber at the margin, green above.
+// Detection margin is a signed quantity measured against a threshold, so it is
+// a DIVERGING scale: two hues with a neutral midpoint pinned to 0 dB, never a
+// rainbow. Below threshold reads red, above reads green, and the threshold
+// itself recedes into the surface.
 const MARGIN_RAMP = [
-  [0.00, 0x5a1410], [0.24, 0xe8524a], [0.42, 0xf0a83a],
-  [0.52, 0x2f5a46], [0.76, 0x3fd18b], [1.00, 0x1b3d4a],
+  [0.00, 0xe8524a], [0.22, 0xb04438], [0.38, 0x6d3a35],
+  [0.4444, 0x39424a],
+  [0.51, 0x356e56], [0.72, 0x37a274], [1.00, 0x4fdc97],
 ];
 
 // Loss caused by the farm: transparent-ish base through to deep red.
@@ -57,7 +61,9 @@ const LOSS_RAMP = [
 ];
 
 export function marginColor(db) {
-  return ramp(MARGIN_RAMP, (db + 20) / 45);        // -20 dB .. +25 dB
+  // -20 dB to +25 dB, which places 0 dB, the detection threshold, at 0.4444 -
+  // exactly where the ramp's neutral step sits.
+  return ramp(MARGIN_RAMP, (db + 20) / 45);
 }
 export function lossColor(db) {
   return ramp(LOSS_RAMP, db / 25);                 // 0 .. 25 dB of degradation

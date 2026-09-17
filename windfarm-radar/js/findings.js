@@ -10,6 +10,9 @@
 // rather than implying more confidence than exists.
 
 import { M_PER_FT, M_PER_NM } from './geo.js';
+import { cylinderRcsDbsm, wavelength } from './rf.js';
+import { operatingState, tipSpeedRatioAtRated, operatingFractions } from './wind.js';
+import { REFRACTION_PRESETS } from './model.js';
 
 const SEV_ORDER = { critical: 0, major: 1, minor: 2, info: 3 };
 
@@ -18,7 +21,7 @@ const nm = (m) => `${(m / M_PER_NM).toFixed(1)} NM`;
 const pct = (f) => `${(f * 100).toFixed(0)}%`;
 const db = (x) => `${x >= 0 ? '+' : ''}${x.toFixed(1)} dB`;
 
-export function deriveFindings(scenario, radar, turbineResults, points, summary, blankZone, naizZone, infill) {
+export function deriveFindings(scenario, radar, turbineResults, points, summary, blankZone, naizZone, infill, surface) {
   const f = [];
   const add = (x) => f.push(x);
   const mit = scenario.mitigation;
@@ -181,13 +184,18 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
   }
 
   // ------------------------------------------------------------ clutter cost
-  if (summary.worstClutter && summary.worstClutter.clutterCostDb > 1) {
+  if (summary.worstClutter && summary.worstClutter.turbineClutterCostDb > 1) {
     const w = summary.worstClutter;
     const top = w.clutterContributors[0];
     add({
       id: 'desense',
-      severity: w.clutterCostDb > 10 ? 'major' : 'minor',
-      title: `Turbine clutter costs up to ${w.clutterCostDb.toFixed(1)} dB of detection margin on the track`,
+      // Clutter only matters if it pushes detection toward the threshold. A
+      // large cost that still leaves ample margin is not an operational
+      // problem, and reporting it as one would cry wolf.
+      severity: w.effectiveMarginDb < 0 ? 'critical'
+        : w.effectiveMarginDb < 6 ? 'major'
+          : w.turbineClutterCostDb > 10 ? 'minor' : 'minor',
+      title: `Turbine clutter costs up to ${w.turbineClutterCostDb.toFixed(1)} dB of detection margin on the track`,
       detail: `Worst at ${km(w.geom.ground)} range, ${w.geom.bearing.toFixed(0)}° bearing, `
         + `${(w.amsl / M_PER_FT).toFixed(0)} ft: signal-to-clutter ${w.scrDb.toFixed(1)} dB`
         + (top ? `, dominated by ${top.id} at ${Math.abs(top.dR).toFixed(0)} m range offset and `
@@ -196,7 +204,8 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
         + 'not only directly behind it.',
       basis: 'computed',
       metrics: {
-        'Worst clutter cost': db(-w.clutterCostDb),
+        'Worst clutter cost': db(-w.turbineClutterCostDb),
+        'Detection margin there': db(w.effectiveMarginDb),
         'Worst signal-to-clutter': `${w.scrDb.toFixed(1)} dB`,
         'Range sidelobe floor': `${radar.rangeSidelobeDb} dB`,
       },
@@ -430,6 +439,178 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
     });
   }
 
+  // ------------------------------------------------- wind operating condition
+  const wind = scenario.wind;
+  const state = operatingState(wind.speedMs, wind);
+  if (state !== 'at rated') {
+    const worst = turbineResults.reduce((a, t) => Math.max(a, t.vTipMs), 0);
+    const ratedTip = turbineResults.reduce((a, t) => Math.max(a, t.ratedTipSpeedMs || 0), 0);
+    add({
+      id: 'wind-condition',
+      severity: state === 'below cut-in' || state === 'above cut-out' ? 'check' : 'minor',
+      title: `Assessed at ${wind.speedMs} m/s, which is ${state} for this machine`,
+      detail: state === 'below cut-in'
+        ? `Below the ${wind.cutInMs} m/s cut-in speed the turbine is not generating and the rotor is `
+          + 'idling, so blade Doppler is near its minimum. This is the easiest condition, not a '
+          + 'representative one. Assess at or above rated before concluding anything.'
+        : state === 'above cut-out'
+          ? `Above the ${wind.cutOutMs} m/s cut-out speed the machine shuts down and feathers. Again the `
+            + 'easiest condition, and one that occurs for a very small fraction of the year.'
+          : `Rotor speed tracks the wind below the ${wind.ratedMs} m/s rated speed, so tip speed is `
+            + `${worst.toFixed(0)} m/s against ${ratedTip.toFixed(0)} m/s at rated. Blade Doppler scales with `
+            + 'it, so this is not the worst case. Sweep the wind rose to find the worst case.',
+      basis: 'computed',
+      metrics: {
+        'Assessed wind speed': `${wind.speedMs} m/s`,
+        'Operating state': state,
+        'Tip speed now': `${worst.toFixed(0)} m/s`,
+        'Tip speed at rated': `${ratedTip.toFixed(0)} m/s`,
+      },
+    });
+  }
+
+  const tsr = tipSpeedRatioAtRated(scenario.farm.rotorDiameterM / 2, scenario.farm.rpm, wind.ratedMs);
+  if (tsr < 4 || tsr > 12) {
+    add({
+      id: 'tsr',
+      severity: 'check',
+      title: `Rated rotor speed and rated wind speed imply a tip-speed ratio of ${tsr.toFixed(1)}`,
+      detail: 'Modern three-blade machines run at a tip-speed ratio of roughly 7 to 9 at rated. A figure '
+        + 'well outside that usually means the rated rpm and the rated wind speed have come from '
+        + 'different machines, which makes every Doppler figure here unreliable. Check them against the '
+        + 'turbine datasheet.',
+      basis: 'check',
+      metrics: {
+        'Tip-speed ratio at rated': tsr.toFixed(2),
+        'Rated rotor speed': `${scenario.farm.rpm} rpm`,
+        'Rated wind speed': `${wind.ratedMs} m/s`,
+      },
+    });
+  }
+
+  // ------------------------------------------------------------- refraction
+  const refraction = REFRACTION_PRESETS[scenario.weather.refractionPreset];
+  if (scenario.weather.refractionPreset !== 'standard') {
+    add({
+      id: 'refraction',
+      severity: scenario.weather.refractionPreset === 'duct' ? 'major' : 'minor',
+      title: `Assessed under ${refraction ? refraction.label.toLowerCase() : 'custom'} conditions `
+        + `(k = ${scenario.environment.kFactor.toFixed(2)})`,
+      detail: (refraction ? `${refraction.note} ` : '')
+        + `The surface horizon is ${km(radar.horizonM)} at this k-factor, against `
+        + `${km(radar.horizonM * Math.sqrt((4 / 3) / scenario.environment.kFactor))} under standard refraction.`,
+      basis: 'computed',
+      metrics: {
+        'k-factor': scenario.environment.kFactor.toFixed(3),
+        'Surface horizon': km(radar.horizonM),
+      },
+    });
+  } else if (summary.maskedCount > 0) {
+    add({
+      id: 'masking-fragile',
+      severity: 'check',
+      title: `${summary.maskedCount} turbines are masked under standard refraction only`,
+      detail: 'Terrain screening is the strongest mitigation available, but it is an argument about '
+        + 'propagation conditions, not just geometry. Under super-refraction or in a surface duct the '
+        + 'beam bends further and masked turbines come into view. Re-run this scenario at k = 2 and at '
+        + 'the surface duct setting on the Weather tab before relying on a masking argument, and note '
+        + 'that ducting is common over the sea.',
+      basis: 'check',
+      metrics: { 'Masked at k = 4/3': `${summary.maskedCount}`, 'Re-check at': 'k = 2.0 and duct' },
+    });
+  }
+
+  // ------------------------------------------------------ sea surface effects
+  if (surface && surface.offshore) {
+    const inCover = points.filter((p) => !p.outOfRange);
+    const worstNull = inCover.reduce((a, p) => Math.min(a, p.multipathDb ?? 0), 0);
+    const bestLobe = inCover.reduce((a, p) => Math.max(a, p.multipathDb ?? 0), 0);
+    if (worstNull < -6) {
+      add({
+        id: 'multipath',
+        severity: worstNull < -15 ? 'major' : 'minor',
+        title: `Sea-surface multipath puts up to ${Math.abs(worstNull).toFixed(0)} dB of null on the track`,
+        detail: `Significant wave height ${surface.significantWaveHeightM.toFixed(1)} m (sea state `
+          + `${surface.seaState.code}, ${surface.seaState.label.toLowerCase()}). A smooth sea is a good `
+          + 'mirror, so the direct and reflected rays interfere and low-level coverage breaks into lobes '
+          + `and nulls: this run swings between ${worstNull.toFixed(0)} dB and +${bestLobe.toFixed(0)} dB `
+          + 'relative to free space. A calmer sea makes this worse, not better, because the nulls deepen. '
+          + 'The divergence factor is neglected, so the modelled lobing is a worst case at long range.',
+        basis: 'computed',
+        metrics: {
+          'Significant wave height': `${surface.significantWaveHeightM.toFixed(2)} m`,
+          'Sea state': `${surface.seaState.code} (${surface.seaState.label})`,
+          'Deepest null': `${worstNull.toFixed(1)} dB`,
+          'Strongest lobe': `+${bestLobe.toFixed(1)} dB`,
+        },
+      });
+    }
+    const worstSea = inCover.reduce((a, p) => Math.max(a, p.seaClutterCostDb || 0), 0);
+    if (worstSea > 0.5) {
+      const sample = inCover.find((p) => (p.seaClutterCostDb || 0) > worstSea - 0.01);
+      // The point where sea clutter costs the most is often directly overhead,
+      // where there is so much signal that the cost is harmless. What matters
+      // is the smallest margin it leaves anywhere on the track.
+      const tightest = inCover.reduce(
+        (a, p) => ((p.seaClutterCostDb || 0) > 0.5 && p.effectiveMarginDb < a.effectiveMarginDb ? p : a),
+        { effectiveMarginDb: Infinity });
+      const leftMargin = Number.isFinite(tightest.effectiveMarginDb)
+        ? tightest.effectiveMarginDb : Infinity;
+      add({
+        id: 'sea-clutter',
+        severity: leftMargin < 0 ? 'critical' : leftMargin < 6 ? 'major' : 'minor',
+        title: `Sea clutter costs up to ${worstSea.toFixed(1)} dB of detection margin`,
+        detail: `At sea state ${surface.seaState.code}, clutter from the sea surface competes with the `
+          + `target in the same resolution cell${sample ? ` (worst at ${km(sample.geom.ground)})` : ''}. `
+          + 'Sea clutter rises steeply with sea state and with radar frequency, and it matters most for '
+          + 'small, slow targets. A large cost where the signal is already very strong, such as directly '
+          + 'overhead, is not an operational problem; what matters is the margin it leaves. Every constant '
+          + 'in this reflectivity model is an input, not a published figure: take sigma-zero from a '
+          + 'validated model or measured data before relying on it.',
+        basis: 'screening',
+        metrics: {
+          'Worst sea clutter cost': `${worstSea.toFixed(1)} dB`,
+          'Tightest margin where it bites': Number.isFinite(leftMargin) ? db(leftMargin) : 'n/a',
+          'Sea state': `${surface.seaState.code}`,
+          'Assumed sigma-zero reference': `${scenario.site.seaClutter.sigmaZeroRefDb} dB`,
+        },
+      });
+    }
+    if (scenario.site.waveFromWind && surface.significantWaveHeightM > 8) {
+      add({
+        id: 'wave-fetch',
+        severity: 'check',
+        title: `Derived wave height of ${surface.significantWaveHeightM.toFixed(1)} m assumes unlimited fetch`,
+        detail: 'Wave height here is derived from wind speed for a fully developed sea. Real sites are '
+          + 'fetch-limited and duration-limited, and a swell-dominated sea does not follow this at all. '
+          + 'At this wind speed the figure is almost certainly too high. Set the wave height directly '
+          + 'from measured or hindcast data on the Site tab.',
+        basis: 'check',
+        metrics: { 'Derived Hs': `${surface.significantWaveHeightM.toFixed(1)} m`, 'Wind speed': `${wind.speedMs} m/s` },
+      });
+    }
+  }
+
+  // ------------------------------------------------- RCS against the geometry
+  const lambdaM = radar.lambdaM;
+  const ceiling = cylinderRcsDbsm(scenario.farm.towerBaseDiameterM / 2, scenario.farm.hubHeightM, lambdaM);
+  if (scenario.farm.towerRcsDbsm > ceiling) {
+    add({
+      id: 'rcs-ceiling',
+      severity: 'major',
+      title: `Assumed tower RCS of ${scenario.farm.towerRcsDbsm} dBsm exceeds what this geometry can return`,
+      detail: `A smooth conducting cylinder of ${scenario.farm.towerBaseDiameterM} m diameter and `
+        + `${scenario.farm.hubHeightM} m height returns at most ${ceiling.toFixed(0)} dBsm at broadside, `
+        + 'from the standard physical-optics result 2*pi*a*h^2/lambda. An assumed RCS above that ceiling '
+        + 'is not physical for the stated dimensions. Either the RCS or the geometry is wrong.',
+      basis: 'computed',
+      metrics: {
+        'Assumed tower RCS': `${scenario.farm.towerRcsDbsm} dBsm`,
+        'Specular ceiling for this geometry': `${ceiling.toFixed(1)} dBsm`,
+      },
+    });
+  }
+
   // ----------------------------------------------------------- method warnings
   if (!radar.albersheimValid) {
     add({
@@ -444,8 +625,147 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
     });
   }
 
+  // -------------------------------------------------- regulatory framework
+  //
+  // This finding is always present. It is the most important thing the tool
+  // has to say about itself, and it must not be possible to lose it in a list.
+  add({
+    id: 'regulatory',
+    severity: 'check',
+    title: 'Regulatory conformance is NOT assessed by this tool',
+    detail: 'Nothing here has been checked against ICAO, EUROCONTROL, or any national requirement. '
+      + 'The tool computes physics; it does not know what any authority requires, what thresholds '
+      + 'trigger an objection, what an aerodrome safeguarding case has to contain, or what evidence a '
+      + 'planning submission needs. Do not present any output of this tool as showing conformance with '
+      + 'anything. The instruments below are the ones an assessment of this kind normally engages with, '
+      + 'listed so they are not overlooked. THE LIST ITSELF IS UNVERIFIED: it is written from general '
+      + 'knowledge, not read from the documents, because the environment this tool was built in had no '
+      + 'access to them. Confirm the current edition, number and applicability of every one before '
+      + 'relying on it.',
+    basis: 'check',
+    source: 'Unverified. Typically engaged: ICAO Annex 14 Vol I (aerodromes and obstacle limitation '
+      + 'surfaces); ICAO Annex 10 (aeronautical telecommunications); ICAO Doc 8168 PANS-OPS (procedure '
+      + 'design); ICAO EUR Doc 015 (European guidance on building restricted areas around CNS '
+      + 'facilities); EUROCONTROL guidance on wind turbines and radar; in the UK, CAA CAP 764 (wind '
+      + 'turbine policy), CAP 670 including SUR 13 (surveillance requirements) and CAP 168 (aerodrome '
+      + 'licensing); and the relevant ITU-R P-series recommendations for propagation. None of these was '
+      + 'retrieved or read.',
+    metrics: {
+      'Conformance assessed': 'No',
+      'Documents read': 'None',
+      'Required before use': 'Engagement with the ANSP and the regulator',
+    },
+  });
+
   f.sort((a, b) => (SEV_ORDER[a.severity] ?? 2) - (SEV_ORDER[b.severity] ?? 2));
   return f;
+}
+
+/**
+ * Findings that only exist once the wind rose has been swept, because they are
+ * statements about the whole wind climate rather than one condition.
+ */
+export function deriveWindRoseFindings(scenario, rose) {
+  const out = [];
+  const pct1 = (x) => `${(x * 100).toFixed(1)}%`;
+  const brg = (d) => String(Math.round(d)).padStart(3, '0');
+
+  out.push({
+    id: 'rose-exposure',
+    severity: rose.exposureWithPlots > 0.5 ? 'critical'
+      : rose.exposureWithPlots > 0.1 ? 'major'
+        : rose.exposureWithPlots > 0 ? 'minor' : 'info',
+    title: rose.exposureWithPlots > 0
+      ? `Turbine plots are present for about ${pct1(rose.exposureWithPlots)} of the year`
+      : 'No wind direction in the modelled climate produces turbine plots',
+    detail: `Across all twelve direction sectors, weighted by how often each occurs and by how much of `
+      + `that time the machine is turning. The turbines generate ${pct1(rose.generatingFraction)} of the `
+      + 'year overall; outside that they are below cut-in or shut down above cut-out, when blade Doppler '
+      + 'largely disappears. This is the figure an operational assessment needs: not whether there is an '
+      + 'effect, but how much of the time there is one.',
+    basis: 'computed',
+    metrics: {
+      'Plots present': pct1(rose.exposureWithPlots),
+      'Turbines generating': pct1(rose.generatingFraction),
+      'Track degraded': pct1(rose.exposureUntracked),
+    },
+  });
+
+  // The classic assessment error: assessing one convenient direction.
+  const assessed = rose.assessed;
+  const worst = rose.worstPlots;
+  const worstDop = rose.worstDoppler;
+  if (worst && assessed && worst.plots > assessed.plots) {
+    out.push({
+      id: 'rose-wrong-direction',
+      severity: 'major',
+      title: `The assessed wind direction is not the worst one`,
+      detail: `You are assessing wind from ${brg(rose.assessedDirectionDeg)}°, which gives `
+        + `${assessed.plots} turbine plots and occurs about ${pct1(assessed.frequency)} of the time. Wind `
+        + `from ${brg(worst.directionDeg)}° gives ${worst.plots} and occurs about `
+        + `${pct1(worst.frequency)} of the time. Assess the worst case the climate actually produces, not `
+        + 'a single convenient direction.',
+      basis: 'computed',
+      metrics: {
+        'Assessed direction': `${brg(rose.assessedDirectionDeg)}° (${pct1(assessed.frequency)} of the time)`,
+        'Worst direction': `${brg(worst.directionDeg)}° (${pct1(worst.frequency)} of the time)`,
+        'Plots, assessed vs worst': `${assessed.plots} vs ${worst.plots}`,
+      },
+    });
+  }
+
+  if (worstDop && rose.quietest && worstDop.maxDopplerHz > rose.quietest.maxDopplerHz * 1.5) {
+    out.push({
+      id: 'rose-doppler-spread',
+      severity: 'info',
+      title: `Blade Doppler varies from ${rose.quietest.maxDopplerHz.toFixed(0)} to `
+        + `${worstDop.maxDopplerHz.toFixed(0)} Hz across the wind rose`,
+      detail: `Rotor yaw follows the wind, so the angle between the radar line of sight and the rotor `
+        + `axis changes with direction, and peak blade Doppler goes as the sine of that angle. Wind from `
+        + `${brg(worstDop.directionDeg)}° presents the rotor plane most nearly edge-on and produces the `
+        + `most Doppler; wind from ${brg(rose.quietest.directionDeg)}° points it most nearly at the radar `
+        + 'and produces the least. A single-direction assessment can land anywhere in that range.',
+      basis: 'computed',
+      metrics: {
+        'Most Doppler': `${worstDop.maxDopplerHz.toFixed(0)} Hz from ${brg(worstDop.directionDeg)}°`,
+        'Least Doppler': `${rose.quietest.maxDopplerHz.toFixed(0)} Hz from ${brg(rose.quietest.directionDeg)}°`,
+      },
+    });
+  }
+
+  if (rose.worstTrack && rose.worstTrack.untrackedFraction > 0.05) {
+    out.push({
+      id: 'rose-worst-track',
+      severity: rose.worstTrack.untrackedFraction > 0.25 ? 'critical' : 'major',
+      title: `Worst direction loses track for ${pct1(rose.worstTrack.untrackedFraction)} of the flight`,
+      detail: `Wind from ${brg(rose.worstTrack.directionDeg)}°, which occurs about `
+        + `${pct1(rose.worstTrack.frequency)} of the year. Weighted across the whole climate, the track is `
+        + `degraded for about ${pct1(rose.exposureUntracked)} of the time.`,
+      basis: 'computed',
+      metrics: {
+        'Worst direction': `${brg(rose.worstTrack.directionDeg)}°`,
+        'Track lost there': pct1(rose.worstTrack.untrackedFraction),
+        'Weighted across the year': pct1(rose.exposureUntracked),
+      },
+    });
+  }
+
+  out.push({
+    id: 'rose-source',
+    severity: 'check',
+    title: 'The wind rose used here is illustrative, not site data',
+    detail: 'The direction frequencies and mean speeds come from a shaped preset, not from measurement. '
+      + 'Every percentage above inherits that. Replace the rose with the site\u2019s own measured or '
+      + 'reanalysis wind climate before quoting any of these figures.',
+    basis: 'check',
+    metrics: {
+      'Rose': scenario.wind.rosePreset,
+      'Weibull shape k': String(scenario.wind.weibullK),
+      'Mean wind speed': `${rose.climate.meanSpeedMs.toFixed(1)} m/s`,
+    },
+  });
+
+  return out;
 }
 
 export const SEVERITY_LABELS = {

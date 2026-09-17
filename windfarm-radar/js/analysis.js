@@ -438,9 +438,14 @@ export function assessPoint(point, radar, turbineResults, turbines, terrain, ae,
   const sinrDb = linToDb(ps / (radar.noiseW + totalClutterW));
   const scrDb = totalClutterW > 0 ? linToDb(ps / totalClutterW) : Infinity;
   const marginDb = sinrDb - radar.requiredSnrDb;
+  // Attribute the cost to its cause. The turbine cost is what the wind farm
+  // alone takes; the sea cost is what adding the sea surface takes on top of
+  // that. Reporting the total against the wind farm would blame it for clutter
+  // it did not produce.
+  const withTurbinesOnlyDb = linToDb(ps / (radar.noiseW + clutter.powerW));
+  const turbineClutterCostDb = snrDb - withTurbinesOnlyDb;
+  const seaClutterCostDb = sea ? withTurbinesOnlyDb - sinrDb : 0;
   const clutterCostDb = snrDb - sinrDb;
-  const seaClutterCostDb = sea
-    ? linToDb(ps / (radar.noiseW + clutter.powerW)) - sinrDb : 0;
 
   // Target's own radial velocity decides whether it survives the clutter notch.
   const courseToRadar = (geom.bearing + 180) % 360;
@@ -464,7 +469,8 @@ export function assessPoint(point, radar, turbineResults, turbines, terrain, ae,
     geom, outOfRange,
     terrainLossDb, shadowLossDb: shadow.totalDb, shadowContributors: shadow.contributors,
     atmosphericLossDb: atmosDb, multipathDb,
-    snrDb, sinrDb, scrDb, marginDb, effectiveMarginDb, clutterCostDb, seaClutterCostDb,
+    snrDb, sinrDb, scrDb, marginDb, effectiveMarginDb,
+    clutterCostDb, turbineClutterCostDb, seaClutterCostDb,
     clutterW: clutter.powerW, clutterContributors: clutter.contributors,
     seaClutter: sea,
     radialMs, targetMtiDb, tangential,
@@ -655,7 +661,7 @@ export function analyse(scenario, opts = {}) {
     : computeCoverage(scenario, radar, infill, turbineResults, infillTurbines, turbines, terrain, ae, extent, blankZone, surface);
 
   const summary = summarise(scenario, radar, turbineResults, points, blankZone, naizZone);
-  const findings = deriveFindings(scenario, radar, turbineResults, points, summary, blankZone, naizZone, infill);
+  const findings = deriveFindings(scenario, radar, turbineResults, points, summary, blankZone, naizZone, infill, surface);
 
   return {
     scenario, ae, terrain, terrainSource, extent, surface,
@@ -842,7 +848,13 @@ function summarise(scenario, radar, turbineResults, points, blankZone, naizZone)
   }
   let worstClutter = null;
   for (const p of inCover) {
-    if (!worstClutter || p.clutterCostDb > worstClutter.clutterCostDb) worstClutter = p;
+    if (!worstClutter || p.turbineClutterCostDb > worstClutter.turbineClutterCostDb) worstClutter = p;
+  }
+  let worstSeaClutter = null;
+  for (const p of inCover) {
+    if (!worstSeaClutter || (p.seaClutterCostDb || 0) > (worstSeaClutter.seaClutterCostDb || 0)) {
+      worstSeaClutter = p;
+    }
   }
   let worstShadow = null;
   for (const p of inCover) {
@@ -887,7 +899,7 @@ function summarise(scenario, radar, turbineResults, points, blankZone, naizZone)
     recoveredCount: recovered.length,
     lostFraction: inCover.length ? lost.length / inCover.length : 0,
     untrackedFraction: inCover.length ? untracked.length / inCover.length : 0,
-    worstPoint, worstClutter, worstShadow,
+    worstPoint, worstClutter, worstSeaClutter, worstShadow,
     longestGapPoints: bestGap,
     longestGapSeconds: gapSeconds,
     longestGapMetres: gapMetres,

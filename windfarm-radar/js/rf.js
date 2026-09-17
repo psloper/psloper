@@ -233,6 +233,22 @@ export function mtiResponseDb(radialVelocityMs, { prfHz, lambdaM, notchHalfWidth
   return -Math.max(rejectionDb, 0) * depth;
 }
 
+// Monostatic RCS of a right circular cylinder at broadside (normal incidence
+// to its axis), the standard physical-optics result:
+//
+//   sigma = 2 * pi * a * h^2 / lambda
+//
+// This is the SPECULAR MAXIMUM for a smooth, perfectly conducting cylinder
+// viewed exactly broadside. A real turbine tower is tapered, is not viewed at
+// normal incidence from a radar at low elevation, and is not a perfect
+// reflector, so measured RCS sits far below this. It is useful as a ceiling:
+// an assumed RCS above it is not physical.
+export function cylinderRcsDbsm(radiusM, heightM, lambdaM) {
+  const sigma = 2 * Math.PI * Math.max(radiusM, 1e-3) * Math.pow(Math.max(heightM, 1e-3), 2)
+    / Math.max(lambdaM, 1e-6);
+  return linToDb(sigma);
+}
+
 // --------------------------------------------------------- near-field check
 // Far-field (Fraunhofer) distance for an aperture of width D.
 export function farFieldDistance(apertureM, lambdaM) {
