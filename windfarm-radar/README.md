@@ -54,19 +54,19 @@ elevation pattern, and where the aircraft actually flies.
 
 ## What you see
 
-- **3D view** — terrain with curvature applied, the radar with its rotating beam
+- **3D view.** Terrain with curvature applied, the radar with its rotating beam
   and coverage envelope, turbines to scale and turning at the modelled rate and
   yaw, lines of sight coloured by visibility, geometric shadows, the flight track
   coloured by detection state, and any mitigation zones as the volumes they are.
   The terrain can be shaded by elevation, by detection margin, or by the margin
   the wind farm takes away.
-- **Plan position indicator** — what the picture looks like: turbine plots,
+- **Plan position indicator.** What the picture looks like: turbine plots,
   desensitised regions, blanked sectors drawn as the holes they are, and the
   aircraft's plots and dropouts.
-- **Vertical section** — the view that explains *why*. Masking, beam elevation
+- **Vertical section.** The view that explains *why*. Masking, beam elevation
   and earth curvature are vertical effects that a plan view cannot show. Click
   the left or right half of the section to rotate its bearing.
-- **Findings panel** — ranked issues, each with the numbers behind it and a
+- **Findings panel.** Ranked issues, each with the numbers behind it and a
   stated basis: `computed` (falls out of the model), `screening` (a threshold you
   or a published guide set), or `check` (something the tool cannot decide).
 
@@ -111,7 +111,7 @@ summary:
 | Blind speeds | `v_b = n·PRF·λ/2`, with velocity folding. |
 | Antenna | Gaussian main beam with cosecant-squared elevation shaping. |
 
-A handful of engineering approximations are made on top of those — the
+A handful of engineering approximations are made on top of those: the
 tower/blade scatterer split, the blade Doppler distribution, rotor solidity as a
 partially filling screen, the narrow-obstacle Fresnel correction, and a
 parametric range-sidelobe skirt. They are listed explicitly in the method panel
@@ -143,7 +143,7 @@ removes the blade Doppler, and wind direction changes the answer.
 
 Heights can be multiplied for legibility, because a 185 m turbine inside a 40 km
 scene is a hairline at true scale. Every height in the view goes through the same
-multiplier — terrain, curvature drop, turbine heights, ray heights, beam
+multiplier: terrain, curvature drop, turbine heights, ray heights, beam
 envelope. Scaling all heights by one constant is a linear map, so straight lines
 stay straight and every "does A block B" relationship in the picture stays
 exactly as the maths has it. The badge at the top of the view says what

@@ -441,7 +441,7 @@ export function renderMetrics(el, result) {
     },
     {
       label: 'Worst detection margin',
-      value: worst ? `${worst.effectiveMarginDb >= 0 ? '+' : ''}${worst.effectiveMarginDb.toFixed(1)}` : '—',
+      value: worst ? `${worst.effectiveMarginDb >= 0 ? '+' : ''}${worst.effectiveMarginDb.toFixed(1)}` : 'n/a',
       sub: 'dB vs threshold',
       level: !worst ? '' : worst.effectiveMarginDb < 0 ? 'bad' : worst.effectiveMarginDb < 3 ? 'warn' : 'ok',
     },

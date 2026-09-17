@@ -19,35 +19,35 @@ export const METHOD_HTML = `
 
 <h3>What is computed from published results</h3>
 <ul>
-  <li><strong>Earth curvature and line of sight</strong> — equivalent-earth method.
+  <li><strong>Earth curvature and line of sight.</strong> Equivalent-earth method.
       Heights are reduced by <code>d²/(2·a<sub>e</sub>)</code> where
       <code>a<sub>e</sub> = k·R<sub>earth</sub></code>, so a straight line in the model
       (and in the 3D view) is a real ray. At the default <code>k = 4/3</code> this
       reproduces the familiar <code>d<sub>km</sub> = 4.12·√h<sub>m</sub></code> horizon
       rule, which the test suite checks.</li>
-  <li><strong>Radar range equation</strong> — monostatic point-target form:
+  <li><strong>Radar range equation.</strong> Monostatic point-target form:
       <span class="formula">Pr = Pt · G² · λ² · σ / ( (4π)³ · R⁴ · L )</span>
       Noise is <code>k·T₀·B·F</code> with <code>T₀ = 290 K</code>.</li>
-  <li><strong>Detection threshold</strong> — Albersheim's closed-form approximation for
+  <li><strong>Detection threshold.</strong> Albersheim's closed-form approximation for
       the single-pulse SNR needed to reach a given P<sub>d</sub> at a given
       P<sub>fa</sub> after non-coherent integration, for a non-fluctuating target.
       Quoted validity is 0.1 ≤ P<sub>d</sub> ≤ 0.9 and 1e-7 ≤ P<sub>fa</sub> ≤ 1e-3;
       the tool warns when you leave that range. Target fluctuation is handled as a
       margin you set, not as a second model.</li>
-  <li><strong>Diffraction</strong> — single knife-edge, ITU-R P.526 form:
+  <li><strong>Diffraction.</strong> Single knife-edge, ITU-R P.526 form:
       <span class="formula">v = h · √( (2/λ) · (1/d₁ + 1/d₂) )
 J(v) = 6.9 + 20·log₁₀( √((v−0.1)² + 1) + v − 0.1 )   dB,  v > −0.78</span>
       Two internal checks hold this honest: J(0) must be 6.02 dB (the textbook
       grazing value) and J(−0.78) must be exactly 0 dB. Both are in the test suite.</li>
-  <li><strong>Doppler</strong> — <code>f_d = 2·v_r·f/c</code>. For a rotor the blade
+  <li><strong>Doppler.</strong> <code>f_d = 2·v_r·f/c</code>. For a rotor the blade
       velocity is tangential, so the largest radial component over a revolution is
       <code>v_tip · sin θ</code>, where θ is the angle between the line of sight and
       the rotor axis. This is why wind direction changes the answer: a turbine facing
       the radar shows almost no blade Doppler, one presenting its rotor edge-on shows
       the full tip speed.</li>
-  <li><strong>Blind speeds</strong> — <code>v_b = n·PRF·λ/2</code>, with reported
+  <li><strong>Blind speeds.</strong> <code>v_b = n·PRF·λ/2</code>, with reported
       velocity folded into the unambiguous interval.</li>
-  <li><strong>Antenna pattern</strong> — Gaussian main beam
+  <li><strong>Antenna pattern.</strong> Gaussian main beam
       (<code>−12·(θ/θ₃dB)²</code>, exactly −3 dB at half the 3 dB beamwidth) with
       cosecant-squared elevation shaping above the beam peak.</li>
 </ul>
@@ -279,7 +279,7 @@ export function buildReportMarkdown(result, delta) {
   P('');
   const top = result.findings.filter((f) => f.severity === 'critical' || f.severity === 'major');
   if (top.length) {
-    for (const f of top) P(`- **${SEVERITY_LABELS[f.severity]}** — ${f.title}`);
+    for (const f of top) P(`- **${SEVERITY_LABELS[f.severity]}**: ${f.title}`);
   } else {
     P('- No critical or major issues found in this configuration.');
   }
@@ -306,7 +306,7 @@ export function buildReportMarkdown(result, delta) {
   P(`| Wind farm | Value |`);
   P('| --- | --- |');
   P(`| Turbines | ${sum.turbineCount} (${s.farm.layout} layout) |`);
-  P(`| Machine | ${s.farm.preset} — hub ${s.farm.hubHeightM} m, rotor ${s.farm.rotorDiameterM} m, ${s.farm.rpm} rpm |`);
+  P(`| Machine | ${s.farm.preset}: hub ${s.farm.hubHeightM} m, rotor ${s.farm.rotorDiameterM} m, ${s.farm.rpm} rpm |`);
   P(`| Tip height | ${(s.farm.hubHeightM + s.farm.rotorDiameterM / 2).toFixed(0)} m AGL |`);
   P(`| Assumed RCS | tower ${s.farm.towerRcsDbsm} dBsm, blades ${s.farm.bladeRcsDbsm} dBsm (NOT authoritative) |`);
   P(`| Distance from radar | ${(sum.nearestTurbineM / 1000).toFixed(2)} to ${(sum.farthestTurbineM / 1000).toFixed(2)} km |`);
@@ -408,7 +408,7 @@ export function exportReport(result, delta) {
 // ------------------------------------------------------- mitigation delta
 
 export function buildDelta(before, after) {
-  const fmt = (v, unit = '', d = 0) => `${Number.isFinite(v) ? v.toFixed(d) : '—'}${unit}`;
+  const fmt = (v, unit = '', d = 0) => `${Number.isFinite(v) ? v.toFixed(d) : 'n/a'}${unit}`;
   const rows = [];
   const push = (label, b, a, unit, d, lowerIsBetter = true) => {
     const change = a - b;
