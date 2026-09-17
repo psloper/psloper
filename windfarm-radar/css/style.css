@@ -250,7 +250,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .vp-top-right    { top: 10px; right: 10px; }
 .vp-bottom-left  { bottom: 10px; left: 10px; }
 .vp-bottom-right { bottom: 10px; right: 10px; max-width: 320px; }
-.vp-scale        { top: 10px; left: 50%; transform: translateX(-50%); }
 
 .seg {
   display: inline-flex;
@@ -542,7 +541,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 
   /* The overlays crowd each other once the viewport narrows, so the ones that
      duplicate information elsewhere step aside. */
-  .vp-scale { display: none; }
+  .scalebar { display: none; }
   .vp-bottom-right { display: none; }
   .vp-top-left { max-width: calc(100% - 160px); flex-direction: row; flex-wrap: wrap; }
   .toggles { padding: 5px 7px; }
