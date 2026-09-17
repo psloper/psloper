@@ -82,8 +82,8 @@ test('radar-absorbent treatment reduces effective RCS by the amount claimed', ()
 test('wind direction changes how much blade Doppler the radar sees', () => {
   // Farm on bearing 045. Wind from 045 puts rotors face-on to the radar;
   // wind from 135 puts them edge-on.
-  const faceOn = run({ farm: { windFromDeg: 45 } });
-  const edgeOn = run({ farm: { windFromDeg: 135 } });
+  const faceOn = run({ wind: { directionDeg: 45 } });
+  const edgeOn = run({ wind: { directionDeg: 135 } });
   assert.ok(edgeOn.summary.maxDopplerHz > faceOn.summary.maxDopplerHz * 3,
     `edge-on should show much more Doppler (face-on ${faceOn.summary.maxDopplerHz.toFixed(0)} Hz, `
     + `edge-on ${edgeOn.summary.maxDopplerHz.toFixed(0)} Hz)`);

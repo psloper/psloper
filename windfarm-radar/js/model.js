@@ -15,6 +15,8 @@
 
 import { DEG, offsetByBearing, bearingOf, hypot2, clamp } from './geo.js';
 import { wavelength, tipSpeed, rotorSolidity } from './rf.js';
+import { rotorRpm, WIND_ROSE_PRESETS } from './wind.js';
+import { fullyDevelopedWaveHeight } from './sea.js';
 
 export const STORAGE_KEY = 'windfarm-radar-scenario-v1';
 
@@ -75,23 +77,42 @@ export const TURBINE_PRESETS = {
   'small-850': {
     label: '0.85 MW (legacy onshore)',
     hubHeightM: 50, rotorDiameterM: 52, rpm: 28, bladeCount: 3, bladeChordM: 1.4,
+    towerBaseDiameterM: 3.0, towerTopDiameterM: 2.0,
+    cutInMs: 4.0, ratedMs: 16, cutOutMs: 25,
     towerRcsDbsm: 26, bladeRcsDbsm: 18,
   },
   'mid-2300': {
     label: '2.3 MW (typical onshore)',
     hubHeightM: 80, rotorDiameterM: 93, rpm: 16, bladeCount: 3, bladeChordM: 2.2,
+    towerBaseDiameterM: 4.2, towerTopDiameterM: 2.6,
+    cutInMs: 3.5, ratedMs: 13, cutOutMs: 25,
     towerRcsDbsm: 33, bladeRcsDbsm: 24,
   },
   'large-4500': {
     label: '4.5 MW (modern onshore)',
     hubHeightM: 110, rotorDiameterM: 150, rpm: 11, bladeCount: 3, bladeChordM: 3.0,
+    towerBaseDiameterM: 5.5, towerTopDiameterM: 3.2,
+    cutInMs: 3.0, ratedMs: 12, cutOutMs: 25,
     towerRcsDbsm: 37, bladeRcsDbsm: 28,
   },
   'offshore-15000': {
     label: '15 MW (offshore)',
     hubHeightM: 150, rotorDiameterM: 236, rpm: 7.5, bladeCount: 3, bladeChordM: 4.5,
+    towerBaseDiameterM: 10.0, towerTopDiameterM: 6.0,
+    cutInMs: 3.0, ratedMs: 11, cutOutMs: 28,
     towerRcsDbsm: 42, bladeRcsDbsm: 33,
   },
+};
+
+// Atmospheric refraction conditions, expressed as the effective earth radius
+// factor they correspond to. A masking argument that holds under standard
+// refraction can fail under super-refraction or in a duct, and ducting is
+// common over the sea, so these exist to be swept rather than assumed.
+export const REFRACTION_PRESETS = {
+  sub:      { label: 'Sub-refractive', k: 0.8,  note: 'Beam bends less than standard. The radio horizon pulls in, but so does masking: a hill screens less than you assumed.' },
+  standard: { label: 'Standard atmosphere', k: 4 / 3, note: 'The usual design assumption. Not the only condition the radar will ever see.' },
+  super:    { label: 'Super-refractive', k: 2.0,  note: 'Beam bends more than standard. Turbines beyond the standard horizon come into view.' },
+  duct:     { label: 'Surface duct', k: 5.0,  note: 'Trapping layer. Ranges extend far beyond the geometric horizon, and terrain screening arguments can fail outright. Common over the sea.' },
 };
 
 export const TARGET_PRESETS = {
@@ -105,9 +126,64 @@ export const TARGET_PRESETS = {
 export function defaultScenario() {
   return {
     name: 'Untitled assessment',
+    site: {
+      // Where the farm and radar sit, and what the surface between them is.
+      environment: 'onshore',          // 'onshore' | 'offshore'
+      originLat: 55.94,                // used only to place lat/lon imports
+      originLon: -3.20,
+      radarEasting: 412000,            // grid coordinates of the radar, for imports
+      radarNorthing: 318000,
+      seaLevelM: 0,
+      // Sea surface state. Wave height can follow the wind or be set directly.
+      waveFromWind: true,
+      significantWaveHeightM: 1.5,
+      seaClutter: {
+        enabled: true,
+        sigmaZeroRefDb: -50,           // at refGrazingDeg, refSeaState, refFreqGHz
+        refGrazingDeg: 1,
+        refSeaState: 3,
+        refFreqGHz: 3,
+        grazingExponent: 1.5,
+        perSeaStateDb: 3,
+        frequencySlopeDb: 10,
+        spreadPerWindMs: 0.1,
+        // Rejection is capped well below the radar's improvement factor
+        // against fixed clutter. The Doppler spread here is modelled as
+        // Gaussian, and real sea clutter has far heavier tails and a spiky,
+        // non-Gaussian component that a notch does not remove. Without this
+        // cap the model would cancel sea clutter almost perfectly, which is
+        // not what happens.
+        maxRejectionDb: 25,
+      },
+      multipath: {
+        enabled: false,                // on by default offshore, see normaliseScenario
+        reflectionMag: 1.0,            // ~1 for horizontal polarisation over sea
+        landReflectionMag: 0.3,
+      },
+    },
+    wind: {
+      // The operating condition being assessed.
+      directionDeg: 315,               // wind FROM this bearing; turbines yaw into it
+      speedMs: 12,
+      // Turbine control envelope. Rotor speed tracks the wind below rated,
+      // holds constant to cut-out, and idles outside that band.
+      cutInMs: 3.0, ratedMs: 12, cutOutMs: 25, idleFraction: 0.12,
+      yawMisalignDeg: 0,
+      // The site's wind climate, for sweeping every direction rather than one.
+      rosePreset: 'sw-temperate',
+      weibullK: 2.0,
+      rose: WIND_ROSE_PRESETS['sw-temperate'].rose,
+    },
+    weather: {
+      refractionPreset: 'standard',
+      atmosphericLossDbPerKm: 0,       // two-way gas plus rain; see the method notes
+      rainRateMmH: 0,                  // recorded for the report, not modelled directly
+    },
     environment: {
       kFactor: 4 / 3,
       terrain: {
+        source: 'synthetic',           // 'synthetic' | 'imported'
+        importMeta: null,
         preset: 'rolling',
         relief: 180,
         featureSize: 5200,
@@ -130,6 +206,7 @@ export function defaultScenario() {
     farm: {
       preset: 'large-4500',
       ...TURBINE_PRESETS['large-4500'],
+      bladeRcsEdgeOnDbsm: TURBINE_PRESETS['large-4500'].bladeRcsDbsm,
       layout: 'grid',
       count: 12,
       rows: 3,
@@ -138,7 +215,7 @@ export function defaultScenario() {
       centreRangeM: 9000,
       centreBearingDeg: 45,
       arrayBearingDeg: 135,
-      windFromDeg: 315,       // turbines yaw to face into this wind
+      windFromDeg: 315,       // legacy field, migrated into wind.directionDeg
       jitterM: 60,
       manual: null,            // array of {east, north} once a turbine is moved
     },
@@ -193,8 +270,9 @@ export function turbineTipHeight(farm) {
 
 export function buildTurbines(scenario, terrain) {
   const f = scenario.farm;
+  const wind = scenario.wind;
   if (f.manual && f.manual.length) {
-    return f.manual.map((p, i) => makeTurbine(i, p.east, p.north, f, terrain, p));
+    return f.manual.map((p, i) => makeTurbine(i, p.east, p.north, f, terrain, wind, p));
   }
 
   const centre = offsetByBearing(f.centreRangeM, f.centreBearingDeg);
@@ -251,15 +329,31 @@ export function buildTurbines(scenario, terrain) {
     i,
     p.east + rnd() * 2 * f.jitterM,
     p.north + rnd() * 2 * f.jitterM,
-    f, terrain,
+    f, terrain, wind,
   ));
 }
 
-function makeTurbine(index, east, north, f, terrain, override = {}) {
-  const groundM = terrain.heightAt(east, north);
+function makeTurbine(index, east, north, f, terrain, wind, override = {}) {
+  // An imported schedule usually carries its own ground levels, which are
+  // survey data and beat anything the terrain model says.
+  const groundM = Number.isFinite(override.groundLevelM)
+    ? override.groundLevelM
+    : terrain.heightAt(east, north);
   const rotorRadiusM = (override.rotorDiameterM ?? f.rotorDiameterM) / 2;
   const hubHeightM = override.hubHeightM ?? f.hubHeightM;
-  const rpm = override.rpm ?? f.rpm;
+  const ratedRpm = override.rpm ?? f.rpm;
+
+  // Rotor speed follows the wind through the machine's control curve, so the
+  // blade Doppler the radar sees is a function of the conditions, not a fixed
+  // property of the turbine.
+  const rpm = rotorRpm(wind.speedMs, {
+    cutInMs: wind.cutInMs, ratedMs: wind.ratedMs, cutOutMs: wind.cutOutMs,
+    ratedRpm, idleFraction: wind.idleFraction,
+  });
+
+  const towerBaseDiameterM = override.towerBaseDiameterM ?? f.towerBaseDiameterM ?? 5;
+  const towerTopDiameterM = override.towerTopDiameterM ?? f.towerTopDiameterM ?? 3;
+
   return {
     id: `WTG${String(index + 1).padStart(2, '0')}`,
     index,
@@ -270,14 +364,20 @@ function makeTurbine(index, east, north, f, terrain, override = {}) {
     bladeCount: override.bladeCount ?? f.bladeCount,
     bladeChordM: override.bladeChordM ?? f.bladeChordM,
     rpm,
+    ratedRpm,
+    towerBaseDiameterM,
+    towerTopDiameterM,
     towerRcsDbsm: override.towerRcsDbsm ?? f.towerRcsDbsm,
     bladeRcsDbsm: override.bladeRcsDbsm ?? f.bladeRcsDbsm,
+    bladeRcsEdgeOnDbsm: override.bladeRcsEdgeOnDbsm
+      ?? f.bladeRcsEdgeOnDbsm ?? (override.bladeRcsDbsm ?? f.bladeRcsDbsm),
     hubAmslM: groundM + hubHeightM,
     tipAmslM: groundM + hubHeightM + rotorRadiusM,
     baseAmslM: groundM,
     // Turbines yaw to face into the wind: the rotor axis points upwind.
-    yawDeg: (f.windFromDeg ?? 225) % 360,
+    yawDeg: ((wind.directionDeg ?? 315) + (wind.yawMisalignDeg ?? 0) + 360) % 360,
     tipSpeedMs: tipSpeed(rotorRadiusM, rpm),
+    ratedTipSpeedMs: tipSpeed(rotorRadiusM, ratedRpm),
     solidity: rotorSolidity({
       bladeCount: override.bladeCount ?? f.bladeCount,
       bladeChordM: override.bladeChordM ?? f.bladeChordM,
@@ -287,6 +387,52 @@ function makeTurbine(index, east, north, f, terrain, override = {}) {
     // Phase offset so the farm does not animate in lockstep.
     phase: (index * 2.399963) % (Math.PI * 2),
   };
+}
+
+// Tower diameter at a height above its base. Towers taper, so the width that
+// blocks a ray depends on where that ray passes.
+export function towerDiameterAt(turbine, heightAboveBaseM) {
+  const h = clamp(heightAboveBaseM / Math.max(turbine.hubHeightM, 1), 0, 1);
+  return turbine.towerBaseDiameterM
+    + (turbine.towerTopDiameterM - turbine.towerBaseDiameterM) * h;
+}
+
+// --------------------------------------------------------------------- setup
+//
+// Fields that are derived from other fields, or migrated from older saved
+// scenarios, are settled here so every consumer sees one consistent object.
+export function normaliseScenario(scenario) {
+  const s = scenario;
+
+  // Older saved scenarios carried wind direction on the farm.
+  if (s.farm && s.farm.windFromDeg !== undefined && s.wind
+      && s.wind.directionDeg === undefined) {
+    s.wind.directionDeg = s.farm.windFromDeg;
+  }
+  if (s.farm) s.farm.windFromDeg = s.wind.directionDeg;
+
+  // Refraction condition drives the effective earth radius factor.
+  const refraction = REFRACTION_PRESETS[s.weather.refractionPreset];
+  if (refraction && s.weather.refractionPreset !== 'custom') {
+    s.environment.kFactor = refraction.k;
+  }
+
+  // Sea state follows the wind unless it has been set by hand.
+  if (s.site.waveFromWind) {
+    s.site.significantWaveHeightM = fullyDevelopedWaveHeight(s.wind.speedMs);
+  }
+
+  // Over the sea there is no terrain to mask anything and the surface is a
+  // good reflector, so surface multipath is on by default there and off over
+  // land, where the two-ray model does not describe a real rough surface well.
+  if (s.site.multipath.autoByEnvironment !== false) {
+    s.site.multipath.enabled = s.site.environment === 'offshore';
+  }
+
+  // The rotor's rated speed and rated wind speed must belong to the same
+  // machine; the tip-speed ratio check in the findings uses both.
+  if (s.wind.ratedMs <= 0) s.wind.ratedMs = 12;
+  return s;
 }
 
 // --------------------------------------------------------------- flight path
@@ -363,10 +509,33 @@ export function loadScenario() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return mergeDeep(defaultScenario(), JSON.parse(raw));
+    return migrateScenario(JSON.parse(raw));
   } catch (err) {
     return null;
   }
+}
+
+/**
+ * Bring a scenario saved by an older build up to the current shape, then merge
+ * it onto the defaults. Migration has to happen BEFORE the merge: afterwards
+ * the defaults have already supplied a wind block, and there is no longer any
+ * way to tell a legacy save from a current one.
+ */
+export function migrateScenario(saved) {
+  const patch = JSON.parse(JSON.stringify(saved ?? {}));
+
+  // Wind direction used to live on the farm.
+  if (!patch.wind && patch.farm && patch.farm.windFromDeg !== undefined) {
+    patch.wind = { directionDeg: patch.farm.windFromDeg };
+  }
+  // Rotor speed used to be a fixed property rather than a function of wind, so
+  // a legacy save's rpm is its rated rpm. Assess it at rated, which is what
+  // the old build effectively did.
+  if (patch.farm && patch.farm.rpm !== undefined && patch.wind
+      && patch.wind.speedMs === undefined) {
+    patch.wind.speedMs = patch.wind.ratedMs ?? 12;
+  }
+  return mergeDeep(defaultScenario(), patch);
 }
 
 export function mergeDeep(base, patch) {

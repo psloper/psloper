@@ -17,7 +17,7 @@
 import {
   effectiveEarthRadius, createTerrain, rasteriseTerrain, profileObstruction,
   viewGeometry, angleDelta, hypot2, clamp, lerp, horizonDistance,
-  offsetByBearing, DEG, M_PER_FT,
+  offsetByBearing, DEG, RAD, M_PER_FT,
 } from './geo.js';
 
 import {
@@ -29,12 +29,13 @@ import {
   farFieldDistance, apertureFromBeamwidth,
 } from './rf.js';
 
-import { buildTurbines, buildTrack } from './model.js';
+import { buildTurbines, buildTrack, towerDiameterAt, normaliseScenario } from './model.js';
+import { seaState, rmsWaveHeight, multipathFactorDb, seaClutterRcsDbsm } from './sea.js';
+import { rotorRpm, roseSummary, sectorForDirection, operatingFractions } from './wind.js';
 import { deriveFindings } from './findings.js';
 
 const COAST_SCANS = 3;       // how long a tracker holds a target through a gap
 const INIT_HITS = 2;         // plots needed to start a new track
-const TOWER_WIDTH_M = 5;     // representative tower diameter at nacelle height
 const MASK_LOSS_DB = 25;     // two-way diffraction loss treated as fully masked
 
 // --------------------------------------------------------------- radar setup
@@ -67,7 +68,16 @@ export function deriveRadar(r, terrain, ae) {
     apertureM,
     farFieldM: farFieldDistance(apertureM, lambdaM),
     scanPeriodS: 60 / Math.max(r.rpm, 0.01),
+    atmosphericLossDbPerKm: r.atmosphericLossDbPerKm || 0,
   };
+}
+
+// Two-way atmospheric loss over a slant path. Gaseous absorption and rain are
+// taken together as a single dB/km figure the user supplies, because this tool
+// is not in a position to assert ITU-R P.676 or P.838 coefficients it has not
+// read.
+function atmosphericLossDb(radar, rangeM) {
+  return 2 * (radar.atmosphericLossDbPerKm || 0) * (rangeM / 1000);
 }
 
 function twoWayGain(radar, elDeg, azOffsetDeg) {
@@ -157,14 +167,22 @@ export function assessTurbine(turbine, radar, terrain, ae, mit) {
   const passFraction = clutterPassFraction(vRadMaxMs, mtiCfg);
   const staticRejectionDb = mtiResponseDb(0, mtiCfg);   // negative
 
+  // Blade RCS changes with the aspect the wind has yawed the rotor to. Rather
+  // than invent a curve, the tool interpolates between the face-on and edge-on
+  // values the user supplies, weighted by sin^2 of the aspect angle. Leaving
+  // both equal reproduces an aspect-independent RCS.
+  const sin2 = Math.pow(Math.sin(aspectDeg * DEG), 2);
+  const bladeAspectDbsm = turbine.bladeRcsDbsm
+    + ((turbine.bladeRcsEdgeOnDbsm ?? turbine.bladeRcsDbsm) - turbine.bladeRcsDbsm) * sin2;
+
   const towerEffDbsm = turbine.towerRcsDbsm - ramDb + staticRejectionDb;
-  const bladeEffDbsm = turbine.bladeRcsDbsm - ramDb + linToDb(Math.max(passFraction, 1e-9)) - dopplerGainDb;
+  const bladeEffDbsm = bladeAspectDbsm - ramDb + linToDb(Math.max(passFraction, 1e-9)) - dopplerGainDb;
   const effectiveRcsDbsm = linToDb(dbToLin(towerEffDbsm) + dbToLin(bladeEffDbsm));
-  const rawRcsDbsm = linToDb(dbToLin(turbine.towerRcsDbsm) + dbToLin(turbine.bladeRcsDbsm)) - ramDb;
+  const rawRcsDbsm = linToDb(dbToLin(turbine.towerRcsDbsm) + dbToLin(bladeAspectDbsm)) - ramDb;
 
   // Return strength when the beam is pointed straight at the turbine.
   const gain = twoWayGain(radar, hub.elevationDeg, 0);
-  const lossLin = radar.lossLin * dbToLin(terrainLossHubDb);
+  const lossLin = radar.lossLin * dbToLin(terrainLossHubDb + atmosphericLossDb(radar, hub.slant));
   const prEff = receivedPowerW({
     ptW: radar.peakPowerW, gTx: gain, gRx: gain, lambdaM,
     sigmaM2: dbToLin(effectiveRcsDbsm), rangeM: hub.slant, lossLin,
@@ -192,6 +210,7 @@ export function assessTurbine(turbine, radar, terrain, ae, mit) {
     visibility,
     terrainLossHubDb, terrainLossTipDb,
     aspectDeg,
+    bladeAspectDbsm,
     rpm,
     vTipMs,
     vRadMaxMs,
@@ -255,14 +274,17 @@ export function turbineShadowLossDb(turbines, radar, a, b, ae) {
     const rayH = lerp(a.height, bEff, d1 / D);
     const drop = (d1 * d1) / (2 * ae);
 
-    // --- tower / nacelle: solid, narrow
+    // --- tower / nacelle: solid, narrow, and tapered, so the width that
+    //     matters is the diameter at the height the ray passes.
     const towerTopEff = (t.groundM + t.hubHeightM) - drop;
     const towerClearance = towerTopEff - rayH;
-    const towerLateralHit = lateral < (TOWER_WIDTH_M / 2 + f1);
+    const rayHeightAboveBase = rayH - (t.groundM - drop);
+    const towerWidth = towerDiameterAt(t, rayHeightAboveBase);
+    const towerLateralHit = lateral < (towerWidth / 2 + f1);
     let towerDb = 0;
     if (towerLateralHit && towerClearance > -f1) {
       const full = knifeEdgeLossDb(fresnelParameter(towerClearance, d1, d2, lambdaM));
-      const fresnelFraction = clamp(TOWER_WIDTH_M / (2 * f1), 0, 1);
+      const fresnelFraction = clamp(towerWidth / (2 * f1), 0, 1);
       towerDb = full * fresnelFraction;
     }
 
@@ -319,9 +341,75 @@ export function clutterPowerW(turbineResults, radar, targetGeom) {
   return { powerW: pc, contributors: contributors.slice(0, 5) };
 }
 
+// ----------------------------------------------------------- surface effects
+
+// Everything about the surface between the radar and the target that the
+// point-level assessment needs.
+export function buildSurface(scenario) {
+  const site = scenario.site;
+  const offshore = site.environment === 'offshore';
+  const hs = site.significantWaveHeightM;
+  const state = seaState(hs);
+  return {
+    offshore,
+    surfaceAmslM: offshore ? site.seaLevelM : null,
+    significantWaveHeightM: hs,
+    seaState: state,
+    rmsHeightM: offshore ? rmsWaveHeight(hs) : 0.5,
+    windMs: scenario.wind.speedMs,
+    seaClutter: site.seaClutter,
+    multipath: {
+      enabled: !!site.multipath.enabled,
+      reflectionMag: offshore ? site.multipath.reflectionMag : site.multipath.landReflectionMag,
+    },
+  };
+}
+
+// Sea clutter competing with a target in the same resolution cell. Distributed
+// clutter, so its RCS is sigma-zero times the illuminated cell area, and it is
+// not stationary: wave motion spreads it in Doppler so a zero-velocity notch
+// does not remove all of it.
+function seaClutterAt(radar, geom, surface) {
+  if (!surface.offshore || !surface.seaClutter.enabled) return null;
+  const grazing = Math.atan2(Math.max(radar.heightAgl, 1), Math.max(geom.ground, 1));
+  const c = seaClutterRcsDbsm({
+    grazingRad: grazing,
+    seaStateCode: surface.seaState.code,
+    freqHz: radar.freqHz,
+    rangeM: geom.slant,
+    azBeamwidthDeg: radar.azBeamwidthDeg,
+    rangeResolutionM: radar.rangeResolutionM,
+    windMs: surface.windMs,
+    notchHalfWidthMs: radar.mtiNotchMs,
+    maxRejectionDb: surface.seaClutter.maxRejectionDb,
+    spreadPerWindMs: surface.seaClutter.spreadPerWindMs,
+    cfg: surface.seaClutter,
+  });
+  const gain = twoWayGain(radar, 0, 0);          // clutter sits on the surface
+  const powerW = receivedPowerW({
+    ptW: radar.peakPowerW, gTx: gain, gRx: gain, lambdaM: radar.lambdaM,
+    sigmaM2: dbToLin(c.effectiveDbsm), rangeM: geom.slant, lossLin: radar.lossLin,
+  });
+  return { ...c, powerW, grazingDeg: grazing * RAD };
+}
+
+// Surface multipath. Heights are measured above the reflecting surface, which
+// is sea level offshore and the local ground elevation over land.
+function multipathAt(radar, geom, point, surface, ae) {
+  if (!surface.multipath.enabled) return 0;
+  const base = surface.offshore ? surface.surfaceAmslM : point.groundM;
+  const hr = Math.max(radar.amslM - base, 1);
+  const ht = Math.max(point.amsl - base, 1);
+  return multipathFactorDb({
+    antennaHeightM: hr, targetHeightM: ht, rangeM: geom.slant,
+    lambdaM: radar.lambdaM, rmsHeightM: surface.rmsHeightM,
+    reflectionMag: surface.multipath.reflectionMag,
+  });
+}
+
 // -------------------------------------------------------------- track points
 
-export function assessPoint(point, radar, turbineResults, turbines, terrain, ae, target) {
+export function assessPoint(point, radar, turbineResults, turbines, terrain, ae, target, surface) {
   const p = { east: point.east, north: point.north, height: point.amsl };
   const geom = viewGeometry(radar.site, p, ae);
 
@@ -334,19 +422,25 @@ export function assessPoint(point, radar, turbineResults, turbines, terrain, ae,
   const shadow = turbineShadowLossDb(turbines, radar, radar.site, p, ae);
 
   const gain = twoWayGain(radar, geom.elevationDeg, 0);
-  const lossLin = radar.lossLin * dbToLin(terrainLossDb + shadow.totalDb);
+  const atmosDb = atmosphericLossDb(radar, geom.slant);
+  const multipathDb = surface ? multipathAt(radar, geom, point, surface, ae) : 0;
+  const lossLin = radar.lossLin * dbToLin(terrainLossDb + shadow.totalDb + atmosDb - multipathDb);
   const ps = receivedPowerW({
     ptW: radar.peakPowerW, gTx: gain, gRx: gain, lambdaM: radar.lambdaM,
     sigmaM2: dbToLin(target.rcsDbsm), rangeM: geom.slant, lossLin,
   });
 
   const clutter = clutterPowerW(turbineResults, radar, geom);
+  const sea = surface ? seaClutterAt(radar, geom, surface) : null;
+  const totalClutterW = clutter.powerW + (sea ? sea.powerW : 0);
 
   const snrDb = linToDb(ps / radar.noiseW);
-  const sinrDb = linToDb(ps / (radar.noiseW + clutter.powerW));
-  const scrDb = clutter.powerW > 0 ? linToDb(ps / clutter.powerW) : Infinity;
+  const sinrDb = linToDb(ps / (radar.noiseW + totalClutterW));
+  const scrDb = totalClutterW > 0 ? linToDb(ps / totalClutterW) : Infinity;
   const marginDb = sinrDb - radar.requiredSnrDb;
   const clutterCostDb = snrDb - sinrDb;
+  const seaClutterCostDb = sea
+    ? linToDb(ps / (radar.noiseW + clutter.powerW)) - sinrDb : 0;
 
   // Target's own radial velocity decides whether it survives the clutter notch.
   const courseToRadar = (geom.bearing + 180) % 360;
@@ -369,8 +463,10 @@ export function assessPoint(point, radar, turbineResults, turbines, terrain, ae,
     ...point,
     geom, outOfRange,
     terrainLossDb, shadowLossDb: shadow.totalDb, shadowContributors: shadow.contributors,
-    snrDb, sinrDb, scrDb, marginDb, effectiveMarginDb, clutterCostDb,
+    atmosphericLossDb: atmosDb, multipathDb,
+    snrDb, sinrDb, scrDb, marginDb, effectiveMarginDb, clutterCostDb, seaClutterCostDb,
     clutterW: clutter.powerW, clutterContributors: clutter.contributors,
+    seaClutter: sea,
     radialMs, targetMtiDb, tangential,
     status,
   };
@@ -417,6 +513,7 @@ function zoneAreaKm2(zone) {
 // ------------------------------------------------------------------ analysis
 
 export function analyse(scenario, opts = {}) {
+  normaliseScenario(scenario);
   const ae = effectiveEarthRadius(scenario.environment.kFactor);
   const tcfg = scenario.environment.terrain;
 
@@ -444,8 +541,14 @@ export function analyse(scenario, opts = {}) {
     scenario.target.approachStartRangeM * 1.25,
     14000,
   );
-  const terrain = rasteriseTerrain(terrainSource, { halfExtent: extent, size: 512 });
+  // Imported elevation data, where the user has supplied it, replaces the
+  // synthetic surface entirely. It is passed in at call time rather than held
+  // in the scenario, because a raster does not belong in a saved settings blob.
+  const terrain = (opts.importedTerrain && tcfg.source === 'imported')
+    ? opts.importedTerrain
+    : rasteriseTerrain(terrainSource, { halfExtent: extent, size: 512 });
 
+  const surface = buildSurface(scenario);
   const radar = deriveRadar(scenario.radar, terrain, ae);
   const turbines = buildTurbines(scenario, terrain);
   const track = buildTrack(scenario, terrain);
@@ -498,14 +601,14 @@ export function analyse(scenario, opts = {}) {
   let misses = 0;
 
   for (const p of track) {
-    const r = assessPoint(p, radar, turbineResults, turbines, terrain, ae, scenario.target);
+    const r = assessPoint(p, radar, turbineResults, turbines, terrain, ae, scenario.target, surface);
     r.blanked = insideZone(r.geom, blankZone);
     r.inNaiz = insideZone(r.geom, naizZone);
 
     let plot = !r.blanked && (r.status === 'detected' || r.status === 'marginal');
 
     if (infill) {
-      const ri = assessPoint(p, infill, infillTurbines, turbines, terrain, ae, scenario.target);
+      const ri = assessPoint(p, infill, infillTurbines, turbines, terrain, ae, scenario.target, surface);
       r.infill = {
         status: ri.status, marginDb: ri.effectiveMarginDb,
         slantM: ri.geom.slant, bearingDeg: ri.geom.bearing,
@@ -549,21 +652,100 @@ export function analyse(scenario, opts = {}) {
   }
 
   const coverage = opts.skipCoverage ? null
-    : computeCoverage(scenario, radar, infill, turbineResults, infillTurbines, turbines, terrain, ae, extent, blankZone);
+    : computeCoverage(scenario, radar, infill, turbineResults, infillTurbines, turbines, terrain, ae, extent, blankZone, surface);
 
   const summary = summarise(scenario, radar, turbineResults, points, blankZone, naizZone);
   const findings = deriveFindings(scenario, radar, turbineResults, points, summary, blankZone, naizZone, infill);
 
   return {
-    scenario, ae, terrain, terrainSource, extent,
+    scenario, ae, terrain, terrainSource, extent, surface,
     radar, infill, turbines, turbineResults, points, coverage,
     blankZone, naizZone, summary, findings,
   };
 }
 
+// ------------------------------------------------------------ wind rose sweep
+//
+// The single-condition view answers "what happens in this wind". The sweep
+// answers the question an assessment actually has to answer: how often does
+// this happen across the site's wind climate, and which direction is worst.
+//
+// Each sector is assessed at rated rotor speed, which is the worst case while
+// the machine is generating, and the exposure is weighted by how often that
+// direction occurs and how much of that time the turbine is actually turning.
+
+export function analyseWindRose(scenario, opts = {}) {
+  const base = JSON.parse(JSON.stringify(scenario));
+  const control = {
+    cutInMs: base.wind.cutInMs, ratedMs: base.wind.ratedMs,
+    cutOutMs: base.wind.cutOutMs, ratedRpm: base.farm.rpm,
+    idleFraction: base.wind.idleFraction,
+  };
+  const climate = roseSummary(base.wind.rose, base.wind.weibullK, control);
+
+  const sectors = climate.sectors.map((sector) => {
+    const s = JSON.parse(JSON.stringify(base));
+    s.wind.directionDeg = sector.directionDeg;
+    // Rated speed: the worst case for blade Doppler while generating.
+    s.wind.speedMs = Math.max(s.wind.ratedMs, sector.meanSpeedMs);
+    s.site.waveFromWind = base.site.waveFromWind;
+    const r = analyse(s, { ...opts, skipCoverage: true });
+    const exposure = sector.frequency * sector.generating;
+    return {
+      directionDeg: sector.directionDeg,
+      frequency: sector.frequency,
+      meanSpeedMs: sector.meanSpeedMs,
+      generating: sector.generating,
+      belowCutIn: sector.belowCutIn,
+      aboveCutOut: sector.aboveCutOut,
+      exposure,
+      plots: r.summary.displayedPlotCount,
+      returnsAboveThreshold: r.summary.falsePlotCount,
+      maxDopplerHz: r.summary.maxDopplerHz,
+      maxTurbineSnrDb: r.summary.maxTurbineSnrDb,
+      untracked: r.summary.untrackedCount,
+      trackPoints: r.summary.trackPoints,
+      untrackedFraction: r.summary.untrackedFraction,
+      worstMarginDb: r.summary.worstPoint ? r.summary.worstPoint.effectiveMarginDb : NaN,
+      maxAspectDeg: Math.max(...r.turbineResults.map((t) => t.aspectDeg)),
+    };
+  });
+
+  const withPlots = sectors.filter((x) => x.plots > 0);
+  const worstPlots = sectors.reduce((a, x) => (x.plots > a.plots ? x : a), sectors[0]);
+  const worstTrack = sectors.reduce(
+    (a, x) => (x.untrackedFraction > a.untrackedFraction ? x : a), sectors[0]);
+  const worstDoppler = sectors.reduce(
+    (a, x) => (x.maxDopplerHz > a.maxDopplerHz ? x : a), sectors[0]);
+  const quietest = sectors.reduce(
+    (a, x) => (x.maxDopplerHz < a.maxDopplerHz ? x : a), sectors[0]);
+
+  const assessedSector = sectorForDirection(base.wind.rose, scenario.wind.directionDeg);
+  const assessed = sectors.reduce((a, x) => (
+    Math.abs(angleDelta(x.directionDeg, scenario.wind.directionDeg))
+      < Math.abs(angleDelta(a.directionDeg, scenario.wind.directionDeg)) ? x : a), sectors[0]);
+
+  return {
+    sectors,
+    climate,
+    control,
+    // Fraction of the year with at least one turbine plot on the display.
+    exposureWithPlots: withPlots.reduce((a, x) => a + x.exposure, 0),
+    exposureUntracked: sectors.reduce((a, x) => a + x.exposure * x.untrackedFraction, 0),
+    generatingFraction: climate.generatingFraction,
+    worstPlots,
+    worstTrack,
+    worstDoppler,
+    quietest,
+    assessedDirectionDeg: scenario.wind.directionDeg,
+    assessed,
+    assessedFrequency: assessedSector ? assessedSector.frequency : 0,
+  };
+}
+
 // --------------------------------------------------------------- coverage map
 
-function computeCoverage(scenario, radar, infill, turbineResults, infillTurbines, turbines, terrain, ae, extent, blankZone) {
+function computeCoverage(scenario, radar, infill, turbineResults, infillTurbines, turbines, terrain, ae, extent, blankZone, surface) {
   const size = 96;
   const step = (2 * extent) / (size - 1);
   const amsl = scenario.target.altitudeFt * M_PER_FT;
@@ -592,16 +774,22 @@ function computeCoverage(scenario, radar, infill, turbineResults, infillTurbines
       const shadow = turbineShadowLossDb(turbines, radar, radar.site, p, ae);
       const gain = twoWayGain(radar, geom.elevationDeg, 0);
 
+      const atmosDb = atmosphericLossDb(radar, geom.slant);
+      const mp = surface
+        ? multipathAt(radar, geom, { amsl: p.height, groundM: terrain.heightAt(east, north) }, surface, ae)
+        : 0;
       const psClean = receivedPowerW({
         ptW: radar.peakPowerW, gTx: gain, gRx: gain, lambdaM: radar.lambdaM,
         sigmaM2: dbToLin(scenario.target.rcsDbsm), rangeM: geom.slant,
-        lossLin: radar.lossLin * dbToLin(terrainLossDb),
+        lossLin: radar.lossLin * dbToLin(terrainLossDb + atmosDb - mp),
       });
       const ps = psClean * dbToLin(-shadow.totalDb);
       const clutter = clutterPowerW(turbineResults, radar, geom);
+      const sea = surface ? seaClutterAt(radar, geom, surface) : null;
+      const totalClutterW = clutter.powerW + (sea ? sea.powerW : 0);
 
       clean[idx] = linToDb(psClean / radar.noiseW) - radar.requiredSnrDb;
-      let m = linToDb(ps / (radar.noiseW + clutter.powerW)) - radar.requiredSnrDb;
+      let m = linToDb(ps / (radar.noiseW + totalClutterW)) - radar.requiredSnrDb;
 
       if (infill) {
         const gi = viewGeometry(infill.site, p, ae);
