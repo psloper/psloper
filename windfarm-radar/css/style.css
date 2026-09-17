@@ -470,8 +470,38 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   padding: 9px 11px; margin: 8px 0 12px; white-space: pre-wrap; color: var(--ink);
 }
 .dlg-lead { color: var(--ink-dim); margin-top: 0; }
-.export-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.dlg-note {
+  border: 1px solid var(--rf); border-left-width: 3px;
+  background: color-mix(in srgb, var(--rf) 8%, transparent);
+  padding: 9px 11px; margin: 0 0 14px; border-radius: 2px;
+  font-size: 12.5px; color: var(--ink);
+}
+.dlg-head-actions { display: flex; gap: 6px; align-items: center; }
+
+.export-list { list-style: none; margin: 0; padding: 0; }
+.export-list li {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 9px 0; border-bottom: 1px solid var(--rule);
+}
+.export-list li:last-child { border-bottom: 0; }
+.export-name { font-size: 13px; }
+.export-name code {
+  font-family: var(--mono); font-size: 11px; color: var(--ink-mute);
+  background: transparent; border: 0; padding: 0 0 0 4px;
+}
+.export-actions { display: flex; gap: 6px; }
 .file-btn { text-align: center; cursor: pointer; }
+
+.export-text {
+  width: 100%; min-height: 52vh; resize: vertical;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 2px;
+  padding: 10px 12px;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
+  white-space: pre; overflow: auto;
+}
+.export-text:focus { outline: 1px solid var(--rf); border-color: var(--rf); }
 
 .delta-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
 .delta-table th { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--rule-strong); color: var(--ink-mute); font-size: 11px; }

@@ -13,8 +13,7 @@ import {
   renderVerdict, renderReadout, renderLegend,
 } from './ui.js';
 import {
-  METHOD_HTML, exportReport, exportJson, exportTurbinesCsv, exportTrackCsv,
-  exportScenario, buildDelta,
+  METHOD_HTML, buildDelta, buildExport, downloadExport, downloadsAvailable,
 } from './report.js';
 
 // ------------------------------------------------------------------- state
@@ -220,20 +219,50 @@ $('#btn-method').addEventListener('click', () => {
   $('#dlg-method').showModal();
 });
 
+// Downloads are inert inside a sandboxed frame. Rather than leave buttons that
+// silently do nothing, the tool hides them there and says why.
+const canDownload = downloadsAvailable();
+if (!canDownload) {
+  $('#download-note').hidden = false;
+  document.querySelectorAll('[data-mode="download"]').forEach((b) => b.remove());
+  document.querySelectorAll('[data-mode="view"]').forEach((b) => b.classList.remove('ghost'));
+}
+
 $('#btn-export').addEventListener('click', () => $('#dlg-export').showModal());
 
 document.querySelectorAll('[data-export]').forEach((btn) => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     if (!result) return;
-    switch (btn.dataset.export) {
-      case 'report': exportReport(result, currentDelta()); break;
-      case 'json': exportJson(result); break;
-      case 'turbines': exportTurbinesCsv(result); break;
-      case 'track': exportTrackCsv(result); break;
-      case 'scenario': exportScenario(scenario); break;
+    const kind = btn.dataset.export;
+    if (btn.dataset.mode === 'download') {
+      downloadExport(kind, result, currentDelta());
+      return;
     }
+    const built = buildExport(kind, result, currentDelta());
+    if (!built) return;
+    $('#text-title').textContent = `${built.label} (.${built.extension})`;
+    $('#text-body').value = built.text;
+    $('#dlg-export').close();
+    $('#dlg-text').showModal();
+    $('#text-body').scrollTop = 0;
   });
+});
+
+$('#btn-copy').addEventListener('click', async () => {
+  const area = $('#text-body');
+  const btn = $('#btn-copy');
+  try {
+    await navigator.clipboard.writeText(area.value);
+    btn.textContent = 'Copied';
+  } catch (err) {
+    // Clipboard access can be refused; selecting the text still lets the
+    // reader copy it themselves.
+    area.focus();
+    area.select();
+    btn.textContent = 'Selected, press Ctrl/Cmd+C';
+  }
+  setTimeout(() => { btn.textContent = 'Copy'; }, 2500);
 });
 
 $('#import-scenario').addEventListener('change', async (e) => {

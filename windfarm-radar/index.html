@@ -143,14 +143,56 @@
   </form>
   <div class="dlg-body">
     <p class="dlg-lead">Everything runs locally in your browser. Nothing is uploaded.</p>
-    <div class="export-grid">
-      <button class="btn" data-export="report">Assessment report (.md)</button>
-      <button class="btn" data-export="json">Full results (.json)</button>
-      <button class="btn" data-export="turbines">Turbine table (.csv)</button>
-      <button class="btn" data-export="track">Flight track results (.csv)</button>
-      <button class="btn" data-export="scenario">Scenario only (.json)</button>
-      <label class="btn file-btn">Load scenario<input type="file" id="import-scenario" accept="application/json" hidden /></label>
-    </div>
+    <p class="dlg-note" id="download-note" hidden>
+      This copy is running inside a sandboxed frame, which blocks downloads.
+      Use <strong>View</strong> to read or copy the content instead.
+    </p>
+    <ul class="export-list">
+      <li><span class="export-name">Assessment report <code>.md</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="report" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="report" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Full results <code>.json</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="json" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="json" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Turbine table <code>.csv</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="turbines" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="turbines" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Flight track results <code>.csv</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="track" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="track" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Scenario only <code>.json</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="scenario" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="scenario" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Load a saved scenario</span>
+        <span class="export-actions">
+          <label class="btn file-btn">Choose file<input type="file" id="import-scenario" accept="application/json" hidden /></label>
+        </span></li>
+    </ul>
+  </div>
+</dialog>
+
+<dialog id="dlg-text" class="dlg">
+  <form method="dialog">
+    <header>
+      <h2 id="text-title">Export</h2>
+      <span class="dlg-head-actions">
+        <button class="btn" id="btn-copy" type="button">Copy</button>
+        <button class="btn ghost" value="close">Close</button>
+      </span>
+    </header>
+  </form>
+  <div class="dlg-body">
+    <textarea id="text-body" class="export-text" readonly spellcheck="false"></textarea>
   </div>
 </dialog>
 

@@ -147,7 +147,7 @@ const csv = (rows) => rows.map((r) => r.map(csvCell).join(',')).join('\n');
 
 // ------------------------------------------------------------------ exports
 
-export function exportTurbinesCsv(result) {
+export function buildTurbinesCsv(result) {
   const rows = [[
     'id', 'east_m', 'north_m', 'ground_amsl_m', 'hub_height_m', 'rotor_diameter_m', 'rpm',
     'ground_range_m', 'slant_range_m', 'bearing_deg', 'elevation_deg',
@@ -169,10 +169,14 @@ export function exportTurbinesCsv(result) {
       t.falsePlot ? 'yes' : 'no', t.plotted ? 'yes' : 'no', t.saturating ? 'yes' : 'no',
     ]);
   }
-  download(`turbines-${stamp()}.csv`, csv(rows), 'text/csv');
+  return csv(rows);
 }
 
-export function exportTrackCsv(result) {
+export function exportTurbinesCsv(result) {
+  download(`turbines-${stamp()}.csv`, buildTurbinesCsv(result), 'text/csv');
+}
+
+export function buildTrackCsv(result) {
   const rows = [[
     'time_s', 'along_track_m', 'east_m', 'north_m', 'altitude_ft', 'heading_deg',
     'ground_range_m', 'slant_range_m', 'bearing_deg', 'elevation_deg',
@@ -193,7 +197,11 @@ export function exportTrackCsv(result) {
       p.plot ? 'yes' : 'no', p.tracked ? 'yes' : 'no', p.recoveredByInfill ? 'yes' : 'no',
     ]);
   }
-  download(`flight-track-${stamp()}.csv`, csv(rows), 'text/csv');
+  return csv(rows);
+}
+
+export function exportTrackCsv(result) {
+  download(`flight-track-${stamp()}.csv`, buildTrackCsv(result), 'text/csv');
 }
 
 export function exportScenario(scenario) {
@@ -410,6 +418,68 @@ function htmlToMarkdown(html) {
 
 export function exportReport(result, delta) {
   download(`assessment-report-${stamp()}.md`, buildReportMarkdown(result, delta), 'text/markdown');
+}
+
+// One definition of each export, used by both the download and the view path,
+// so the two can never drift apart. Downloads are blocked in some embedded
+// contexts, and an export you cannot read is not an export.
+export const EXPORTS = {
+  report: {
+    label: 'Assessment report',
+    filename: 'assessment-report',
+    extension: 'md',
+    mime: 'text/markdown',
+    build: (result, delta) => buildReportMarkdown(result, delta),
+  },
+  json: {
+    label: 'Full results',
+    filename: 'assessment',
+    extension: 'json',
+    mime: 'application/json',
+    build: (result) => JSON.stringify(buildAssessmentPayload(result), null, 2),
+  },
+  turbines: {
+    label: 'Turbine table',
+    filename: 'turbines',
+    extension: 'csv',
+    mime: 'text/csv',
+    build: (result) => buildTurbinesCsv(result),
+  },
+  track: {
+    label: 'Flight track results',
+    filename: 'flight-track',
+    extension: 'csv',
+    mime: 'text/csv',
+    build: (result) => buildTrackCsv(result),
+  },
+  scenario: {
+    label: 'Scenario',
+    filename: 'scenario',
+    extension: 'json',
+    mime: 'application/json',
+    build: (result) => JSON.stringify(result.scenario, null, 2),
+  },
+};
+
+export function downloadExport(kind, result, delta) {
+  const e = EXPORTS[kind];
+  if (!e) return;
+  download(`${e.filename}-${stamp()}.${e.extension}`, e.build(result, delta), e.mime);
+}
+
+export function buildExport(kind, result, delta) {
+  const e = EXPORTS[kind];
+  return e ? { text: e.build(result, delta), label: e.label, extension: e.extension } : null;
+}
+
+// Downloads started by the page are inert inside a sandboxed frame, so the
+// tool checks rather than offering a control that silently does nothing.
+export function downloadsAvailable() {
+  try {
+    return window.self === window.top;
+  } catch (err) {
+    return false;   // cross-origin frame: we are definitely embedded
+  }
 }
 
 // ------------------------------------------------------- mitigation delta
