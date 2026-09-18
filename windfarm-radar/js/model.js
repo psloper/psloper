@@ -341,12 +341,23 @@ export function defaultScenario() {
       // Turbine control envelope. Rotor speed tracks the wind below rated,
       // holds constant to cut-out, and idles outside that band.
       cutInMs: 3.0, ratedMs: 12, cutOutMs: 25, idleFraction: 0.12,
+      // Rotor speed saturates at its own wind speed, set by tip-speed ratio,
+      // and that is WELL BELOW the rated-power wind speed above.
+      designTipSpeedRatio: 7.63,
       yawMisalignDeg: 0,
       // A wind farm does not present one signature. Wakes slow the machines
       // behind, yaw deadbands leave them scattered around the wind rather than
       // on it, and some are simply not running.
       fleet: {
         wakes: true,
+        // Turbines in one farm do NOT all have the same hub height. The one
+        // real layout checked here has two of six machines 10 m lower than the
+        // other four. The magnitude is site specific, so the default is zero
+        // and the tool raises a finding about it rather than inventing a
+        // distribution from a single farm. Set it to model a mixed-height
+        // array: the shorter machines take hubHeightM minus this value.
+        hubHeightSpreadM: 0,
+        shortMachineFraction: 1 / 3,
         wakeDecay: 0,            // 0 = pick by environment: 0.075 onshore, 0.04 offshore
         thrustCoefficient: 0.8,
         yawDeadbandDeg: 8,
@@ -417,7 +428,15 @@ export function defaultScenario() {
       centreBearingDeg: 45,
       arrayBearingDeg: 135,
       windFromDeg: 315,       // legacy field, migrated into wind.directionDeg
-      jitterM: 60,
+      // Real arrays are far less regular than a generated grid. The one real
+      // six-turbine layout this tool has been checked against (Kelmarsh, from
+      // the Zenodo static data) has nearest-neighbour spacings from 2.94 to
+      // 4.29 rotor diameters, a max/min ratio of 1.46. At the previous 60 m
+      // the generator produced a ratio of 1.10, which is far too tidy; 210 m
+      // reproduces 1.46. ONE FARM is thin evidence for a default, so this is
+      // exposed rather than baked in, but 60 m asserted a regularity that the
+      // only real layout available flatly contradicts.
+      jitterM: 210,
       // Placement follows the buildable ground rather than a drawing.
       constrained: false,
       maxSlopeDeg: 12,
@@ -647,6 +666,22 @@ export function finaliseFleet(turbines, scenario) {
     seed: fleet.seed ?? 1,
   });
 
+  // Mixed hub heights, where the scenario asks for them. Applied before the
+  // rotor speed and geometry below so everything downstream sees the real
+  // height. An imported schedule already carries per-machine heights and is
+  // left alone.
+  const spread = fleet.hubHeightSpreadM ?? 0;
+  if (spread > 0 && !scenario.farm.manual) {
+    const shortEvery = Math.max(2, Math.round(1 / clamp(fleet.shortMachineFraction ?? 1 / 3, 0.05, 0.9)));
+    turbines.forEach((t, i) => {
+      if (i % shortEvery !== 0) return;
+      t.hubHeightM = Math.max(t.rotorRadiusM + 5, t.hubHeightM - spread);
+      t.hubAmslM = t.baseAmslM + t.hubHeightM;
+      t.tipAmslM = t.baseAmslM + t.hubHeightM + t.rotorRadiusM;
+      t.shortMachine = true;
+    });
+  }
+
   turbines.forEach((t, i) => {
     t.inflowMs = inflow[i].inflowMs;
     t.wakeDeficit = inflow[i].deficit;
@@ -668,7 +703,9 @@ export function finaliseFleet(turbines, scenario) {
       ? rotorRpm(t.inflowMs, {
         cutInMs: wind.cutInMs, ratedMs: wind.ratedMs, cutOutMs: wind.cutOutMs,
         ratedRpm: t.ratedRpm, idleFraction: wind.idleFraction,
-        minRunningFraction: fleet.minRunningFraction ?? 0.6,
+        rotorRadiusM: t.rotorRadiusM,
+        designTipSpeedRatio: wind.designTipSpeedRatio,
+        minRunningFraction: fleet.minRunningFraction ?? 0.60,
       })
       : 0;
     t.tipSpeedMs = tipSpeed(t.rotorRadiusM, t.rpm);
@@ -692,7 +729,8 @@ function makeTurbine(index, east, north, f, terrain, wind, override = {}) {
   // property of the turbine.
   const rpm = rotorRpm(wind.speedMs, {
     cutInMs: wind.cutInMs, ratedMs: wind.ratedMs, cutOutMs: wind.cutOutMs,
-    ratedRpm, idleFraction: wind.idleFraction,
+    ratedRpm, idleFraction: wind.idleFraction, rotorRadiusM,
+    designTipSpeedRatio: wind.designTipSpeedRatio,
   });
 
   const towerBaseDiameterM = override.towerBaseDiameterM ?? f.towerBaseDiameterM ?? 5;

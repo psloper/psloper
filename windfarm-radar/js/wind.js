@@ -41,6 +41,24 @@ export function sectorCentreDeg(i) {
  * @param {number} windMs
  * @param {object} cfg {cutInMs, ratedMs, cutOutMs, ratedRpm, idleFraction}
  */
+// Design tip-speed ratio. MEASURED, not recalled: from 6.5 to 8.5 m/s a 2.5 MW
+// machine held rotor tip speed / wind speed at 7.63 to within 0.3 per cent
+// across 154,000 ten-minute records. Modern three-blade machines sit in the 7
+// to 9 band; this is the middle of it and it is the value the data gives.
+export const DESIGN_TIP_SPEED_RATIO = 7.63;
+
+// Fallback when no rotor radius is supplied: the wind speed at which rotor
+// speed saturates, as a fraction of the rated-POWER wind speed. 9.0 / 12 for
+// the measured machine.
+export const SPEED_SATURATION_FRACTION = 0.75;
+
+// Sharpness of the knee where rotor speed reaches its limit. Fitted to the
+// measured curve; higher is a harder corner. Physically it stands for how much
+// of a ten-minute interval the machine spends against its speed limit.
+export const SPEED_KNEE_SHARPNESS = 14;
+
+const RPM_TO_RAD_S = Math.PI / 30;
+
 export function rotorRpm(windMs, cfg) {
   const v = Math.max(windMs, 0);
   const { cutInMs, ratedMs, cutOutMs, ratedRpm } = cfg;
@@ -48,17 +66,60 @@ export function rotorRpm(windMs, cfg) {
 
   if (v < cutInMs) return idle * clamp(v / Math.max(cutInMs, 0.1), 0, 1);
   if (v >= cutOutMs) return idle;
-  if (v >= ratedMs) return ratedRpm;
 
-  // Below rated the controller tracks tip-speed ratio, BUT NOT DOWN TO ZERO.
-  // A generating machine holds a minimum rotor speed, and measured SCADA shows
-  // it sitting at roughly 60 per cent of rated as soon as it is running: a
-  // 2.5 MW machine rated at 14.6 rpm sat at a median 8.8 rpm in 3 to 4 m/s
-  // wind, where a bare proportional model predicts about 5. Without this floor
-  // the model understates low-wind blade Doppler by something like 40 per cent,
-  // which is exactly the regime where it would otherwise look harmless.
-  const floor = ratedRpm * clamp(cfg.minRunningFraction ?? 0.6, 0, 1);
-  return Math.max(ratedRpm * (v / Math.max(ratedMs, 0.1)), floor);
+  // ROTOR SPEED SATURATES WELL BELOW THE RATED-POWER WIND SPEED. This is the
+  // single biggest thing a naive control curve gets wrong. A variable-speed
+  // turbine runs three regions:
+  //
+  //   Region 2    the controller tracks a constant tip-speed ratio, so rotor
+  //               speed rises in proportion to wind
+  //   Region 2.5  rotor speed is already at its maximum; torque keeps rising,
+  //               so power keeps climbing while speed does not
+  //   Region 3    rated power reached; blade pitch holds both speed and power
+  //
+  // Tying rotor speed to `ratedMs` (the RATED POWER wind speed) collapses
+  // regions 2.5 and 3 into one and puts the speed saturation 3 m/s too late.
+  // Measured against 1.07 million SCADA records from a 2.5 MW machine rated at
+  // 14.6 rpm, that error peaked at 25 per cent LOW at 7.5 m/s and stayed worse
+  // than 10 per cent low right across 6 to 10 m/s, which at most UK sites is
+  // the most probable wind band there is. Blade Doppler is linear in rotor
+  // speed, so that was a 25 per cent Doppler error where it matters most.
+  //
+  // So the speed limit comes from tip-speed ratio, not from rated power:
+  //
+  //   omega = clamp(lambda * v / R,  omega_min,  omega_rated)
+  //
+  // lambda was measured, not recalled: across 6.5 to 8.5 m/s the same dataset
+  // gives rotor tip speed / wind speed = 7.63, constant to within 0.3 per
+  // cent, which is the signature of a controller holding tip-speed ratio.
+  const radiusM = cfg.rotorRadiusM;
+  const lambda = cfg.designTipSpeedRatio ?? DESIGN_TIP_SPEED_RATIO;
+  // Minimum speed of a RUNNING machine. 0.60 is measured: median 8.76 rpm
+  // against 14.6 rated, in 3 to 5 m/s wind, over 125,000 ten-minute records.
+  // A SECOND machine type disagrees: six Senvion MM92 at Kelmarsh sit at 0.53
+  // of rated generator speed in the same wind band. Both are real; they are
+  // different machines. The parameter is exposed because 0.53 to 0.60 is the
+  // honest spread, and it moves low-wind blade Doppler by 13 per cent.
+  const floor = ratedRpm * clamp(cfg.minRunningFraction ?? 0.60, 0, 1);
+
+  // Wind speed at which the rotor reaches its own speed limit. With a radius
+  // this is physics; without one, fall back to a fraction of the rated-power
+  // wind speed, which is the same relation the measured machines show.
+  const ratedSpeedWindMs = radiusM > 0
+    ? (ratedRpm * RPM_TO_RAD_S) * radiusM / Math.max(lambda, 0.1)
+    : Math.max(ratedMs, 0.1) * SPEED_SATURATION_FRACTION;
+
+  // The approach to rated speed is SOFT, not a corner. SCADA is a ten-minute
+  // mean, and a machine in a fluctuating wind spends only part of each interval
+  // against its speed limit, so the averaged curve asymptotes instead of
+  // clamping: the measured machine sat at 95 per cent of rated at the nominal
+  // saturation wind and reached 100 per cent only around 13 m/s. A hard clamp
+  // ran 4 to 5 per cent HIGH across 9 to 11 m/s. This smooth minimum, with the
+  // sharpness fitted to that data, brings the mean absolute error over the
+  // whole 3 to 14 m/s band to 1.5 per cent.
+  const x = v / ratedSpeedWindMs;
+  const smooth = x / Math.pow(1 + Math.pow(x, SPEED_KNEE_SHARPNESS), 1 / SPEED_KNEE_SHARPNESS);
+  return Math.max(ratedRpm * smooth, floor);
 }
 
 export function operatingState(windMs, cfg) {

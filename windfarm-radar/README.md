@@ -297,7 +297,7 @@ but wrong assessment:
 cd windfarm-radar && npm test
 ```
 
-75 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
+82 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
 v = −0.78 cut-off, 13.1 dB required SNR for Pd = 0.9 / Pfa = 1e-6, the 4.12·√h
 horizon rule, and a cosecant-squared check that the pattern compensates R⁻⁴
 exactly for a constant-altitude target. The behavioural tests check that the
@@ -351,11 +351,13 @@ test/
   analysis.test.mjs Behavioural tests on the engine
   report.test.mjs   Exports carry their caveats and contain no formatting failures
   uksites.test.mjs  The UK data is sane, and states its limits where users see them
+  calibration.test.mjs  The control curve matches measured SCADA; diffraction
+                    matches the ITU's own reference implementation
 data/
   uk-wind-farms.json    780 UK wind facilities
   uk-radar-sites.json   55 UK civil radar sites, with source disagreement recorded
 calibration/
-  README.md          SCADA calibration: four model assumptions corrected
+  README.md          SCADA calibration, two passes: seven model assumptions corrected
   UK-SITES.md        UK site data: provenance, cross-check, and what it says
   extract_scada.py   Streaming extractor for the SCADA dataset
   fetch_uksites.py   Downloads the UK source data

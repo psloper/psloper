@@ -205,7 +205,7 @@ test('anything marked analysed records what it changed in the model', () => {
 });
 
 test('every reference has a title, a valid status and something it supports', () => {
-  const valid = new Set(['analysed', 'read', 'search-summary', 'recalled', 'blocked']);
+  const valid = new Set(['analysed', 'cross-checked', 'read', 'search-summary', 'recalled', 'blocked']);
   for (const r of REFERENCES) {
     assert.ok(r.id && r.title, `reference missing id or title: ${JSON.stringify(r).slice(0, 80)}`);
     assert.ok(valid.has(r.status), `${r.id}: bad status ${r.status}`);
@@ -216,10 +216,21 @@ test('every reference has a title, a valid status and something it supports', ()
   }
 });
 
-test('anything only recalled or blocked carries a caution or a validation route', () => {
-  for (const r of REFERENCES.filter((x) => x.status === 'recalled' || x.status === 'blocked')) {
+test('anything not read in full carries a caution or a validation route', () => {
+  const unread = ['recalled', 'blocked', 'cross-checked', 'search-summary'];
+  for (const r of REFERENCES.filter((x) => unread.includes(x.status))) {
     assert.ok(r.caution || r.validation,
-      `${r.id} was not retrieved and offers neither a caution nor a validation route`);
+      `${r.id} was not read and offers neither a caution nor a validation route`);
+  }
+});
+
+test('a cross-checked entry names what it was checked against and what that misses', () => {
+  for (const r of REFERENCES.filter((x) => x.status === 'cross-checked')) {
+    assert.ok(r.validation && r.validation.length > 200,
+      `${r.id}: a cross-check must show its working`);
+    assert.ok(r.caution, `${r.id}: a cross-check is not a read, so it must say what it does not cover`);
+    assert.ok(/not retrieved|NOT RETRIEVED|unread|UNREAD/.test(r.caution + r.validation),
+      `${r.id}: must state plainly that the document itself was not retrieved`);
   }
 });
 

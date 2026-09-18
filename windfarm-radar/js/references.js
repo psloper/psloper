@@ -7,6 +7,10 @@
 //
 //   analysed       Data obtained and analysed directly in building this tool.
 //                  Figures derived from it are measurements, not recall.
+//   cross-checked  The document itself was NOT retrieved, but an independent
+//                  implementation of the same thing was, and this tool's code
+//                  was compared against it numerically. Weaker than reading the
+//                  source; far stronger than recall.
 //   read           Retrieved and read in full. Figures may be quoted directly.
 //   search-summary Surfaced through a search, with a summary of its findings.
 //                  Enough to know the work exists and roughly what it reports.
@@ -18,16 +22,23 @@
 //                  environment this tool was built in had no route to it.
 //
 // NOTHING IN THIS REGISTER IS MARKED "read": the environment had no general
-// outbound network access to document repositories. THREE entries are marked
-// "analysed", because those datasets were reachable, were downloaded, and were
-// analysed directly. They are the only places in the tool where a number comes
-// from data rather than from literature or recall:
+// outbound network access to document repositories. FIVE entries are marked
+// "analysed" and ONE "cross-checked". They are the only places in the tool
+// where a number comes from data rather than from literature or recall:
 //
-//   fuhrlander-scada  1.07 million SCADA records. Four model assumptions about
-//                     fleet behaviour were corrected against it.
+//   fuhrlander-scada  1.07 million SCADA records. FIVE model assumptions about
+//                     fleet behaviour were corrected against it, including the
+//                     rotor speed control curve, which was 25 per cent wrong.
+//   open-scada        Kelmarsh power and speed curves, recovered from saved
+//                     notebook outputs on GitHub because Zenodo is blocked.
+//                     Independently confirms the control curve correction.
+//   kelmarsh-static   A real six-turbine layout. Two layout assumptions wrong.
 //   gppd-uk-wind      780 real UK wind farm positions.
 //   uk-radar-sites    55 real UK civil radar positions, from two sources that
 //                     were cross-checked against each other.
+//   itu-p526          The document is still unread, but both formulas taken
+//                     from it now agree with the ITU's own published reference
+//                     implementation to floating-point precision.
 //
 // All three were reachable only because they are mirrored on GitHub, which is
 // the one bulk-data host this environment's network policy permits. Everything
@@ -43,6 +54,7 @@
 
 export const STATUS_LABELS = {
   analysed: 'Data obtained and analysed directly',
+  'cross-checked': 'Not retrieved, but checked against a reference implementation',
   read: 'Read in full',
   'search-summary': 'Search summary only, not read',
   recalled: 'From general knowledge, not retrieved',
@@ -114,6 +126,11 @@ export const REFERENCES = [
       + 'regardless of rotor orientation, and may be considered the primary scatterer. Lobes at 90 and '
       + '270 degrees from the large flat sides of the nacelle. Discussion of material effects and '
       + 'mitigation.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were onlinelibrary.wiley.com and downloads.hindawi.com. Each is refused by this environment\'s network egress policy, which answers 403 to CONNECT. The '
+      + 'open-access aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, '
+      + 'core.ac.uk, europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing '
+      + 'here was read. The summary above is what a search returned about the work, and NO figure '
+      + 'from it is used as a constant in the model.',
   },
   {
     id: 'amt2021',
@@ -140,6 +157,12 @@ export const REFERENCES = [
     supports: ['RCS sensitivity to geometry'],
     reports: 'Numerical simulation of turbine RCS against design parameters, with a focus on rotor '
       + 'blade aerodynamic shape.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were www.mdpi.com. Each is refused by this environment\'s '
+      + 'network egress policy, which answers 403 to CONNECT. The open-access aggregators were tried '
+      + 'as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, europepmc.org, '
+      + 'scholar.archive.org and web.archive.org are blocked too. Nothing here was read. The summary '
+      + 'above is what a search returned about the work, and NO figure from it is used as a constant '
+      + 'in the model.',
   },
 
   // ------------------------------------------------- clutter and mitigation
@@ -155,6 +178,11 @@ export const REFERENCES = [
       + 'indicating the shadow is a three-dimensional wedge of angular extent around 2 degrees or less. '
       + 'Field tests showing loss of aircraft detections where wind farms lie within about 1 NM of the '
       + 'aircraft position.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were its.bldrdoc.gov and www.ntia.gov. Each is refused by this environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
   {
     id: 'wang2013',
@@ -167,6 +195,12 @@ export const REFERENCES = [
     reports: 'That rotor motion is fast enough that conventional clutter filtering does not suppress '
       + 'the blade return, that Doppler shift increases from hub to tip along the blade, and that the '
       + 'resulting spectrum can mask real signals or appear as false ones.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were downloads.hindawi.com. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
   {
     id: 'ella2022',
@@ -179,6 +213,12 @@ export const REFERENCES = [
     reports: 'Mitigations applied in practice: area radar blanking, non-automatic initiation of tracks, '
       + 'in-fill radar, and post-detection processing including range-azimuth gating and the '
       + 'elimination of cells with significant clutter.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were onlinelibrary.wiley.com. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
   {
     id: 'jtech2009',
@@ -190,6 +230,12 @@ export const REFERENCES = [
     supports: ['weather radar preset'],
     reports: 'Observations of turbine clutter in weather radar, including corruption of reflectivity '
       + 'and radial velocity products.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were journals.ametsoc.org. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
   {
     id: 'marine-clutter',
@@ -198,6 +244,12 @@ export const REFERENCES = [
     status: 'search-summary',
     supports: ['marine-x radar preset', 'offshore siting'],
     reports: 'Estimation of offshore turbine clutter as seen by marine radar.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were onlinelibrary.wiley.com, www.mdpi.com and the '
+      + 'aggregators below. Each is refused by this environment\'s network egress policy, which answers '
+      + '403 to CONNECT. The open-access aggregators were tried as well, and api.openalex.org, '
+      + 'api.semanticscholar.org, core.ac.uk, europepmc.org, scholar.archive.org and web.archive.org '
+      + 'are blocked too. Nothing here was read. The summary above is what a search returned about '
+      + 'the work, and NO figure from it is used as a constant in the model.',
   },
 
   // ----------------------------------------------------------- materials
@@ -227,6 +279,12 @@ export const REFERENCES = [
       + 'layers and conductive ground planes in blades that also carry lightning protection. The '
       + 'existence of the family is itself the evidence that the conflict is real rather than '
       + 'incidental.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were patents.google.com. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
   {
     id: 'blade-transparency',
@@ -237,6 +295,39 @@ export const REFERENCES = [
     reports: 'That glass-fibre composite blades can appear largely transparent to radar, with '
       + 'illumination passing through the dielectric shell, and that the load-bearing spar, commonly '
       + 'incorporating carbon fibre, is the primary structure inside it.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were patents.google.com. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
+  },
+
+  {
+    id: 'kelmarsh-static',
+    title: 'Kelmarsh wind farm static data: per-turbine position, hub height and ground level',
+    authors: 'Cubico Sustainable Investments, via charlie9578/CubicoOpenData',
+    type: 'Open dataset, CC BY 4.0, recovered from a notebook cell output',
+    status: 'analysed',
+    supports: ['layout irregularity', 'mixed hub heights', 'uniform-hub-height finding'],
+    reports: 'Six Senvion MM92, 2050 kW, 92 m rotor. Latitude, longitude, ground elevation, hub '
+      + 'height and commercial operations date for each machine.',
+    validation: 'TWO LAYOUT ASSUMPTIONS WERE CORRECTED AGAINST IT. (1) Spacing. Nearest-neighbour '
+      + 'distances run from 2.94 to 4.29 rotor diameters, a max/min ratio of 1.46. The layout '
+      + 'generator was producing 1.10 at its default jitter of 60 m, which is far tidier than the one '
+      + 'real array available. The default is now 210 m, which reproduces 1.46. (2) Hub height. TWO OF '
+      + 'THE SIX MACHINES ARE 10 m LOWER than the other four, at 68.5 m against 78.5 m. The model had '
+      + 'no way to express that at all. Combined with ground levels spanning 21.5 m, the real array '
+      + 'spans 31.5 m in tip height above sea level, against about 8 m from the model. Tip height '
+      + 'above sea level is exactly what decides which machines clear a horizon, so that understated '
+      + 'how mixed the visibility across a real farm is by a factor of about four.',
+    caution: 'ONE FARM, SIX TURBINES. That is thin evidence for a default, and the spacing figure is '
+      + 'fitted to it. The magnitude of the hub-height difference is site specific, so the tool does '
+      + 'NOT invent one: the hub-height spread defaults to zero and the tool raises a finding saying '
+      + 'the assumption is known to be wrong at real sites. The remaining gap in tip-height spread, '
+      + '31.5 m measured against about 17 m modelled with a 10 m hub spread, is synthetic terrain '
+      + 'being too flat at farm scale. Import real terrain rather than tuning that to one farm.',
+    source: 'https://github.com/charlie9578/CubicoOpenData',
   },
 
   // ------------------------------------------------- real UK site positions
@@ -347,6 +438,12 @@ export const REFERENCES = [
       + 'steering deliberately misaligns upstream turbines, with field campaigns using misalignments '
       + 'of around 20 degrees. That simulations driven by SCADA-measured yaw distributions differ from '
       + 'those using ideal yaw settings.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were arxiv.org and core.ac.uk. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
   {
     id: 'availability',
@@ -359,21 +456,43 @@ export const REFERENCES = [
       + 'generating, grid-unavailable, broken down, under maintenance and idle for insufficient wind. '
       + 'Faults concentrated in electrical systems, control systems and sensors, with the longest '
       + 'downtimes in gearbox, electrical, control and yaw systems.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were arxiv.org and core.ac.uk. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
   {
     id: 'open-scada',
     title: 'Open per-turbine SCADA datasets: Penmanshiel, Kelmarsh, La Haute Borne',
     type: 'Open datasets',
-    status: 'search-summary',
-    supports: ['fleet-stopped', 'fleet-spread', 'validating fleet behaviour against real operation'],
+    status: 'analysed',
+    supports: ['rotor speed control curve', 'layout irregularity', 'mixed hub heights',
+      'validating fleet behaviour against real operation'],
     reports: 'Ten-minute SCADA and event data per turbine, with coordinates, rated power, rotor '
       + 'diameter and hub height. Penmanshiel: 14 Senvion MM82 turbines, 2016 to mid-2021. Kelmarsh: '
       + '6 Senvion MM92 turbines, 2016 to end 2024. Both released by Cubico Sustainable Investments '
       + 'under CC-BY-4.0 on Zenodo. La Haute Borne: 4 Senvion MM82 turbines, 2012 to 2018, with wind '
       + 'speed, wind direction, rotor speed and active power per turbine.',
-    caution: 'Not downloaded or analysed. Listed because this is the obvious route to checking the '
-      + 'fleet model against how real machines actually behave: real yaw scatter, real availability, '
-      + 'real wake-driven speed differences, all at ten-minute resolution.',
+    validation: 'ZENODO IS BLOCKED, SO THE DATASETS THEMSELVES WERE NOT DOWNLOADED. What was reachable '
+      + 'is charlie9578/CubicoOpenData on GitHub, a set of notebooks by the person who published the '
+      + 'data, whose SAVED CELL OUTPUTS carry real Kelmarsh data. Three things came out of it. (1) The '
+      + 'static table: six Senvion MM92, 2050 kW, 92 m rotor, latitude, longitude, ground elevation '
+      + 'and hub height per machine. (2) Power against wind speed, binned, per machine, 0 to 6.85 m/s. '
+      + '(3) Power against generator speed, binned, per machine. Composing (2) and (3) gives the '
+      + 'generator speed the machines actually run at by wind speed. THAT COMPOSED CURVE, CROSS-CHECKED '
+      + 'AGAINST THE FUHRLANDER DATASET, OVERTURNED THE CONTROL CURVE IN THIS MODEL: see the '
+      + 'fuhrlander-scada entry. The static table also contradicted two layout assumptions, recorded '
+      + 'under kelmarsh-static.',
+    caution: 'CELL OUTPUTS, NOT THE DATASET. Everything here is what happened to be saved in somebody '
+      + 'else\u2019s notebook, so it is a small and arbitrary slice: six turbines, wind speeds only up '
+      + 'to 6.85 m/s, and generator speed rather than rotor speed. The generator-speed bins start at '
+      + '800 rpm because that is where the notebook\u2019s bin range starts, so anything slower was '
+      + 'discarded before plotting and the measured minimum is censored. No time series, no yaw, no '
+      + 'availability, and nothing at all from Penmanshiel or La Haute Borne. zenodo.org and doi.org '
+      + 'are both refused by this environment.',
+    source: 'https://github.com/charlie9578/CubicoOpenData',
   },
 
   // --------------------------------------------------------- propagation
@@ -382,13 +501,25 @@ export const REFERENCES = [
     title: 'Recommendation ITU-R P.526: Propagation by diffraction',
     org: 'ITU-R',
     type: 'International recommendation',
-    status: 'blocked',
+    status: 'cross-checked',
     supports: ['knife-edge diffraction, terrain and turbine shadowing'],
     reports: 'The single knife-edge approximation and the Fresnel-Kirchhoff parameter.',
-    validation: 'Formula stated in its standard reference form and checked against two values that are '
-      + 'independently known: 6.02 dB at grazing incidence, and exactly 0 dB at the v = -0.78 cut-off, '
-      + 'which is why that cut-off exists. Both are asserted by the test suite.',
-    caution: 'Fetch refused by the network policy. The constants were not read from the document.',
+    validation: 'THE DOCUMENT IS STILL UNREAD, BUT THE CODE NO LONGER RESTS ON RECALL. The same '
+      + 'knife-edge approximation appears as equation (13) of Recommendation ITU-R P.452, and the '
+      + 'ITU-R Study Group 3 reference implementation of P.452 is published as open source at '
+      + 'eeveetza/Py452 on GitHub, which this environment can reach. Both formulas here were compared '
+      + 'against that code directly. The knife-edge loss agrees to 7e-15 dB, which is floating-point '
+      + 'rounding, over the whole range -3 <= v <= 6. The Fresnel-Kirchhoff parameter agrees to 2e-16 '
+      + 'relative across five geometries after unit conversion, ITU writing distances in km and this '
+      + 'tool in metres. Both comparisons reproduce the ITU code line for line in the test suite. Note '
+      + 'that the approximation gives 6.0329 dB at grazing incidence, not the exact 6.02 dB of the '
+      + 'underlying theory; the register previously quoted the exact value for the approximation.',
+    caution: 'P.526 ITSELF WAS NOT RETRIEVED. itu.int. Each is refused by this environment. What was checked '
+      + 'is an ITU-authored implementation of the same equation as it appears in a different '
+      + 'Recommendation. If P.452 and P.526 state the formula differently, this check would not show '
+      + 'it. The Fresnel-Kirchhoff parameter was matched against P.452 equation (20), which is a '
+      + 'Bullington-point form, not against P.526 directly.',
+    source: 'https://github.com/eeveetza/Py452',
   },
   {
     id: 'albersheim1981',
@@ -450,6 +581,12 @@ export const REFERENCES = [
     status: 'search-summary',
     supports: ['mitigation context'],
     reports: 'A government programme on mitigating wind turbine interference with radar.',
+    caution: 'RETRIEVAL WAS ATTEMPTED AND REFUSED. The hosts tried were www.nrel.gov and www.osti.gov. Each is refused by this '
+      + 'environment\'s network egress policy, which answers 403 to CONNECT. The open-access '
+      + 'aggregators were tried as well, and api.openalex.org, api.semanticscholar.org, core.ac.uk, '
+      + 'europepmc.org, scholar.archive.org and web.archive.org are blocked too. Nothing here was '
+      + 'read. The summary above is what a search returned about the work, and NO figure from it is '
+      + 'used as a constant in the model.',
   },
 ];
 

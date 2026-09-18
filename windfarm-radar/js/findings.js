@@ -791,6 +791,38 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
     }
   }
 
+  // Real arrays mix hub heights. If this one does not, say so, because tip
+  // height above sea level is exactly what decides which machines clear a
+  // horizon or a terrain screen and which do not.
+  if (fleet.length > 1) {
+    const hubs = new Set(fleet.map((t) => t.hubHeightM));
+    const tips = fleet.map((t) => t.tipAmslM);
+    const tipRange = Math.max(...tips) - Math.min(...tips);
+    if (hubs.size === 1) {
+      add({
+        id: 'uniform-hub-height',
+        severity: 'info',
+        title: `Every turbine has the same hub height, and tip heights span only ${tipRange.toFixed(0)} m`,
+        detail: 'All '
+          + `${fleet.length} machines are modelled at ${fleet[0].hubHeightM} m hub height, so the only `
+          + 'spread in tip height above sea level comes from the ground under them. The one real layout '
+          + 'this tool has been checked against, six Senvion MM92 at Kelmarsh, carries TWO hub heights '
+          + '10 m apart across six machines, over ground spanning 21.5 m, for a tip-height spread of '
+          + `31.5 m against the ${tipRange.toFixed(0)} m here. Tip height above sea level is what decides `
+          + 'which machines clear a horizon or a terrain screen, so a uniform-height array understates '
+          + 'how mixed the visibility across a real farm is. Set a hub height spread, or import a real '
+          + 'schedule with per-machine heights, before reading anything into a single visibility answer.',
+        basis: 'check',
+        metrics: {
+          'Hub heights in this array': `1 (${fleet[0].hubHeightM} m)`,
+          'Tip height spread': `${tipRange.toFixed(1)} m`,
+          'Measured at Kelmarsh': '2 hub heights, 31.5 m tip spread over 6 machines',
+        },
+        source: 'kelmarsh-static',
+      });
+    }
+  }
+
   const placement = turbineResults.length ? turbineResults[0].turbine.placementInfo : null;
   if (scenario.farm.constrained && points && fleet.length) {
     add({
