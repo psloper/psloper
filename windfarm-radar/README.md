@@ -31,7 +31,44 @@ Or from this directory, `npm start` does the same thing.
 
 ## What it computes
 
-Four effects, each of which is a separate real-world problem:
+### Wind is a first-class variable
+
+Blade Doppler is not a property of a turbine. It is a property of the
+conditions, through two separate mechanisms:
+
+- **Direction drives yaw.** Turbines yaw into the wind, so wind direction sets
+  the angle between the radar line of sight and the rotor axis. Peak blade
+  radial velocity is `v_tip · sin θ` against that angle. A rotor pointed at the
+  radar shows almost no blade Doppler; one edge-on shows all of it. In the
+  default scenario that is the difference between 210 Hz and 1613 Hz.
+- **Speed drives rotor speed.** A variable-speed, pitch-regulated machine holds
+  close to a constant tip-speed ratio below rated, roughly constant rotor speed
+  from rated to cut-out, and idles outside that band. So Doppler rises with
+  wind, plateaus at rated, and collapses above cut-out.
+
+Because a single direction can easily be a benign one, the **wind rose sweep**
+runs all twelve sectors and weights each by how often that direction occurs and
+how much of that time the machine is actually turning. The output is "plots are
+present for 86% of the year", not "plots are present in today's wind", and the
+tool says so when the direction you are assessing is not the worst one.
+
+### Onshore or offshore
+
+Offshore, the sea is both a clutter source and a mirror, and wave height drives
+both in opposite directions:
+
+- **Multipath** is the standard two-ray formulation with the Ament roughness
+  factor. A calm sea is the *harder* case, not the easier one: a smooth surface
+  reflects well, so the direct and reflected rays interfere and low-level
+  coverage breaks into lobes and nulls. At sea state 2 this run swings between
+  −58 dB and +12 dB relative to free space; at sea state 6 the lobing is washed
+  out to a few dB.
+- **Sea clutter** is distributed: sigma-zero times the illuminated cell area,
+  with a wind-driven Doppler spread. It matters most for small, slow targets.
+
+### Four radar effects
+
+Each is a separate real-world problem:
 
 1. **False plots.** A turbine's blades move fast enough (typically 70 to 105 m/s
    at the tip) that their Doppler shift falls outside a conventional
@@ -69,6 +106,88 @@ elevation pattern, and where the aircraft actually flies.
 - **Findings panel.** Ranked issues, each with the numbers behind it and a
   stated basis: `computed` (falls out of the model), `screening` (a threshold you
   or a published guide set), or `check` (something the tool cannot decide).
+
+## Real data in
+
+Nothing is uploaded. Every file is parsed in the page.
+
+| Source | Format | Notes |
+| --- | --- | --- |
+| Turbine schedule | `.xlsx`, `.csv` | Title blocks above the table are skipped. Reads ID, position, ground level, hub height, rotor diameter, tip height, rotor speed, tower dimensions. |
+| Elevation | `.asc` (ESRI ASCII Grid) | What almost every free DEM exports to. The best option. |
+| Elevation | `.kml`, `.kmz` | What Google Earth exports. |
+| Elevation | `.xlsx`, `.csv` | Point elevations as easting/northing/level or lat/lon/level. |
+
+The `.xlsx` reader is built on the browser's own `DecompressionStream` rather
+than a library, because an `.xlsx` is a ZIP of XML and the platform can already
+unzip. That keeps the tool a static, offline, dependency-free drop.
+
+Imported terrain reports the fraction of the modelled area it actually covers,
+and cells with no data are counted as holes rather than filled with invented
+ground.
+
+### Why these free sources, and not Google Earth's API
+
+Google Earth has **no public API** for bulk elevation. The Google Elevation API
+is a different product: it needs a paid key, it needs a network connection, and
+its terms restrict storing what it returns. All three are the opposite of what
+this tool is. Exporting from Google Earth as KML or KMZ and reading it here
+needs none of them.
+
+A caution the tool repeats: KML altitudes are commonly clamped to the ground,
+which writes zero, and where they are not, they come from Google Earth's own
+terrain model, which is not survey grade.
+
+Free bulk sources, all of which export formats this tool reads directly:
+
+| Source | Why |
+| --- | --- |
+| **Copernicus DEM GLO-30** | Global, 30 m, open licence. The default choice for most of the world. |
+| **NASA SRTM 30 m** | Global to 60° latitude, free, long established. |
+| **OpenTopography** | Free portal serving SRTM, Copernicus and ALOS as GeoTIFF or ASCII grid. |
+| **OS Terrain 50** (UK) | Free OS OpenData, 50 m. Adequate for screening in Britain. |
+| **Environment Agency LIDAR** (England) | Free 1 m and 2 m DTM. Survey grade where it exists, and far better than anything global. Use this for UK onshore. |
+| **EU-DEM / Copernicus Land** | Europe, 25 m, free. |
+| **GEBCO** | Free global bathymetry, for the seabed under an offshore array. |
+
+A **keyless online lookup** is also wired in (Open-Elevation, OpenTopoData
+SRTM and EU-DEM, Open-Meteo), off by default. It is **unverified**: it could not
+be exercised, because the environment this tool was built in has no outbound
+network access. A downloaded tile is better anyway, because it is reproducible
+and has a known provenance.
+
+## Parameter sweeps and heat maps
+
+The single-scenario view answers *is this a problem*. A sweep answers *how much
+would have to change*. Vary any two of twenty parameters against each other,
+colour by any of eight metrics, and read the boundary off the map. Tip height
+against distance draws the radio-horizon curve directly. Wind direction against
+wind speed shows the Doppler plateau above rated and the collapse above cut-out.
+
+A 12×12 grid is 144 complete re-analyses and runs in about 400 ms.
+
+Colour follows the metric's job. A signed quantity measured against a threshold,
+such as detection margin, is **diverging** about a neutral midpoint pinned to
+zero. An unsigned magnitude is **sequential**: one hue, monotonic in lightness.
+Never a rainbow.
+
+Exports: heat maps as PNG, standalone SVG (one `<title>` per cell, so values
+survive on hover) and CSV; plus PNG capture of the 3D view, the plan display,
+the vertical section and the wind rose.
+
+## Reference targets
+
+Twenty-five aircraft across four classes: uncrewed (4), general aviation (7),
+commercial (5) and military (9).
+
+**RCS is a class figure, never a platform figure.** It varies by tens of
+decibels with aspect, frequency and polarisation, and real values for specific
+military platforms are controlled information. The library exists to show how
+target size interacts with turbine clutter, not to assert the performance of any
+aircraft. The point it makes is that the same farm can be harmless against a
+widebody and decisive against a light aircraft or a small uncrewed aircraft, and
+a finding states explicitly which smaller classes a given result would not hold
+for.
 
 ## Mitigations
 
@@ -117,9 +236,31 @@ partially filling screen, the narrow-obstacle Fresnel correction, and a
 parametric range-sidelobe skirt. They are listed explicitly in the method panel
 so they can be argued with.
 
-**Not modelled at all:** ground-reflection multipath and lobing, secondary
-surveillance radar, real terrain, communications and navigation aid effects,
-aerodrome obstacle limitation surfaces.
+Wind, sea and atmosphere add: rotor yaw and the control curve (exact geometry
+and a standard control description), a Weibull wind climate, two-ray multipath
+with the Ament roughness factor, distributed sea clutter (parametric, every
+constant an input), fully-developed wave height from the Pierson-Moskowitz form,
+and refraction expressed as the effective earth radius factor.
+
+**Not modelled at all:** secondary surveillance radar, communications and
+navigation aid effects, aerodrome obstacle limitation surfaces, and rain clutter
+beyond a user-supplied attenuation figure.
+
+## Regulatory position
+
+**This tool does not assess conformance with anything, and says so on its own
+face.** Nothing in it has been checked against ICAO, EUROCONTROL or any national
+requirement, and no such document was retrieved or read: the environment it was
+built in had no access to them. A permanent finding states this, lists the
+instruments an assessment of this kind normally engages with, and says plainly
+that the list itself is written from general knowledge rather than read from the
+documents. Confirm the current edition, number and applicability of every one
+before relying on it, and engage the ANSP and the regulator.
+
+The same discipline runs through the rest of the tool. Where a figure could not
+be verified against a primary source, it is an input you supply rather than a
+constant the tool asserts: sigma-zero for sea clutter, atmospheric attenuation,
+turbine RCS, and the wind rose itself.
 
 ## Tests
 
@@ -173,7 +314,16 @@ js/
   displays.js       Plan position indicator and vertical section
   ui.js             Declarative control rail, panel rendering
   report.js         Exports, and the method/limits text that goes with them
+  wind.js           Rotor control curve, Weibull climate, wind roses
+  sea.js            Wave height, sea state, sea clutter, surface multipath
+  importers.js      xlsx, csv, ESRI ASCII grid, KML/KMZ, optional online lookup
+  sweep.js          Two-parameter sweeps over the whole model
+  heatmap.js        Heat map rendering, PNG and SVG export
 test/
   physics.test.mjs  Formula validation against known values
   analysis.test.mjs Behavioural tests on the engine
+  report.test.mjs   Exports carry their caveats and contain no formatting failures
+samples/
+  turbines-example.xlsx / .csv / .kml
+  terrain-example.asc / .csv
 ```
