@@ -636,6 +636,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   display: inline-block; transform: translateY(-1px);
 }
 /* Status is encoded in shape as well as colour: only a solid dot means read. */
+.ev-dot[data-status="analysed"]       { background: var(--ok); }
 .ev-dot[data-status="read"]           { background: var(--ok); }
 .ev-dot[data-status="search-summary"] { background: transparent; border: 1.5px solid var(--warn); }
 .ev-dot[data-status="recalled"]       { background: transparent; border: 1.5px dashed var(--bad); }
@@ -647,6 +648,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   background: var(--surface-2);
   padding: 12px 14px; margin-bottom: 10px; border-radius: 2px;
 }
+.ev-entry[data-status="analysed"]       { border-left-color: var(--ok); }
 .ev-entry[data-status="search-summary"] { border-left-color: var(--warn); }
 .ev-entry[data-status="recalled"]       { border-left-color: var(--bad); }
 .ev-entry[data-status="blocked"]        { border-left-color: var(--ink-mute); }

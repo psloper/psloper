@@ -49,8 +49,16 @@ export function rotorRpm(windMs, cfg) {
   if (v < cutInMs) return idle * clamp(v / Math.max(cutInMs, 0.1), 0, 1);
   if (v >= cutOutMs) return idle;
   if (v >= ratedMs) return ratedRpm;
-  // Constant tip-speed ratio below rated: tip speed tracks wind speed.
-  return ratedRpm * (v / Math.max(ratedMs, 0.1));
+
+  // Below rated the controller tracks tip-speed ratio, BUT NOT DOWN TO ZERO.
+  // A generating machine holds a minimum rotor speed, and measured SCADA shows
+  // it sitting at roughly 60 per cent of rated as soon as it is running: a
+  // 2.5 MW machine rated at 14.6 rpm sat at a median 8.8 rpm in 3 to 4 m/s
+  // wind, where a bare proportional model predicts about 5. Without this floor
+  // the model understates low-wind blade Doppler by something like 40 per cent,
+  // which is exactly the regime where it would otherwise look harmless.
+  const floor = ratedRpm * clamp(cfg.minRunningFraction ?? 0.6, 0, 1);
+  return Math.max(ratedRpm * (v / Math.max(ratedMs, 0.1)), floor);
 }
 
 export function operatingState(windMs, cfg) {
@@ -365,9 +373,33 @@ export function fleetInflow(turbines, cfg) {
  * fleet sits scattered inside it. Modelled as a deterministic spread across the
  * deadband rather than every machine sitting exactly on the wind.
  */
-export function yawOffsetFor(index, seed, deadbandDeg) {
-  if (deadbandDeg <= 0) return 0;
-  return (fleetRandom(index, seed, 17) * 2 - 1) * deadbandDeg;
+export function yawOffsetFor(index, seed, deadbandDeg, systematicSdDeg = 0) {
+  if (deadbandDeg <= 0 && systematicSdDeg <= 0) return 0;
+
+  // Measured SCADA says two things a uniform deadband model gets wrong.
+  //
+  // First, the moment-to-moment spread is PEAKED near zero, not uniform, and
+  // it has a tail: across four well-behaved machines the pairwise difference
+  // had a median of 7.3 degrees but a 99th percentile of 32. So this is drawn
+  // from a normal distribution with an occasional large excursion, rather than
+  // spread flatly across a deadband.
+  //
+  // Second, and more important for radar, machines carry PERSISTENT reference
+  // offsets from each other. In the same data, median nacelle position differed
+  // between machines by up to 35 degrees while all were generating in the same
+  // wind, and one machine sat 61 degrees off the rest. So a fleet does not
+  // share one rotor aspect even in perfectly steady wind.
+  const sd = deadbandDeg > 0 ? deadbandDeg * 0.68 : 0;      // deadband ~ 1.5 sd
+  const u1 = Math.max(fleetRandom(index, seed, 17), 1e-9);
+  const u2 = fleetRandom(index, seed, 23);
+  const gauss = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  const excursion = fleetRandom(index, seed, 29) > 0.9 ? gauss * 2.5 : gauss;
+
+  const systematic = systematicSdDeg > 0
+    ? (fleetRandom(index, seed, 41) * 2 - 1) * systematicSdDeg
+    : 0;
+
+  return clamp(excursion * sd, -60, 60) + systematic;
 }
 
 /**
@@ -378,17 +410,34 @@ export function yawOffsetFor(index, seed, deadbandDeg) {
  * reason is carried through so the findings can say why a machine is stopped.
  */
 export function fleetOperatingState(count, cfg) {
+  // Stoppages are NOT independent between machines. Measured across five
+  // turbines over three years, all five ran 61.3 per cent of the time against
+  // 53.5 per cent if each stopped independently at the same rate, and all five
+  // were stopped together 0.56 per cent of the time against essentially never
+  // under independence. Site-wide causes do that: grid events, storm shutdown,
+  // curtailment regimes, a shared access road closed for works.
+  //
+  // Modelled as a site-wide state that occasionally stops a large part of the
+  // fleet at once, with independent per-machine stoppages on top.
+  const base = clamp(1 - cfg.availability, 0, 1) + clamp(cfg.curtailed, 0, 1);
+  const clustering = clamp(cfg.clustering ?? 0.45, 0, 1);
+  const siteRoll = fleetRandom(0, cfg.seed, 97);
+  const siteWide = siteRoll < base * clustering;
+
   const out = [];
-  const stopped = Math.round(count * (1 - cfg.availability) + count * cfg.curtailed);
-  const ranked = Array.from({ length: count }, (_, i) => ({ i, r: fleetRandom(i, cfg.seed, 31) }))
-    .sort((a, b) => a.r - b.r);
-  const stoppedSet = new Map();
-  for (let k = 0; k < Math.min(stopped, count); k++) {
-    const unavailableCount = Math.round(count * (1 - cfg.availability));
-    stoppedSet.set(ranked[k].i, k < unavailableCount ? 'unavailable' : 'curtailed');
-  }
   for (let i = 0; i < count; i++) {
-    out.push({ running: !stoppedSet.has(i), reason: stoppedSet.get(i) || null });
+    const r = fleetRandom(i, cfg.seed, 31);
+    let running = true;
+    let reason = null;
+    if (siteWide && r < 0.8) {
+      running = false;
+      reason = 'site-wide';
+    } else if (r < base * (1 - clustering)) {
+      running = false;
+      reason = r < clamp(1 - cfg.availability, 0, 1) * (1 - clustering)
+        ? 'unavailable' : 'curtailed';
+    }
+    out.push({ running, reason });
   }
   return out;
 }

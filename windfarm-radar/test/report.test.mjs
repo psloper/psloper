@@ -185,16 +185,27 @@ test('the method text itself names every formula the tool relies on', () => {
 // --------------------------------------------------------- evidence register
 
 test('no reference claims to have been read in full', () => {
-  // The environment this tool was built in had no general network access. If a
-  // future change marks something "read", it must be because someone actually
-  // read it, not because the status looked untidy.
+  // The environment this tool was built in had no general network access to
+  // document repositories. If a future change marks something "read", it must
+  // be because someone actually read it, not because the status looked untidy.
   const read = REFERENCES.filter((r) => r.status === 'read');
   assert.equal(read.length, 0,
     `these claim to be read in full: ${read.map((r) => r.id).join(', ')}`);
 });
 
+test('anything marked analysed records what it changed in the model', () => {
+  // "analysed" is a strong claim: the data was obtained and worked with, and
+  // numbers derived from it are measurements. It has to show its working.
+  const analysed = REFERENCES.filter((r) => r.status === 'analysed');
+  for (const r of analysed) {
+    assert.ok(r.validation && r.validation.length > 200,
+      `${r.id} claims to be analysed but does not say what it established`);
+    assert.ok(r.caution, `${r.id} claims to be analysed but states no limits on that analysis`);
+  }
+});
+
 test('every reference has a title, a valid status and something it supports', () => {
-  const valid = new Set(['read', 'search-summary', 'recalled', 'blocked']);
+  const valid = new Set(['analysed', 'read', 'search-summary', 'recalled', 'blocked']);
   for (const r of REFERENCES) {
     assert.ok(r.id && r.title, `reference missing id or title: ${JSON.stringify(r).slice(0, 80)}`);
     assert.ok(valid.has(r.status), `${r.id}: bad status ${r.status}`);

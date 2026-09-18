@@ -350,8 +350,17 @@ export function defaultScenario() {
         wakeDecay: 0,            // 0 = pick by environment: 0.075 onshore, 0.04 offshore
         thrustCoefficient: 0.8,
         yawDeadbandDeg: 8,
-        availabilityPct: 97,
+        // Persistent per-machine nacelle reference offsets, measured at up to
+        // 35 degrees between well-behaved machines in the same wind.
+        yawSystematicSdDeg: 12,
+        // Measured SCADA: 12.2% of operating-wind time stopped across five
+        // machines over three years, ranging 6.7% to 23.8% between them. The
+        // 2 to 3% often quoted is time-based availability, which is not the
+        // same question.
+        availabilityPct: 88,
         curtailedPct: 0,
+        clustering: 0.45,
+        minRunningFraction: 0.6,
         seed: 1,
       },
       // The site's wind climate, for sweeping every direction rather than one.
@@ -634,6 +643,7 @@ export function finaliseFleet(turbines, scenario) {
   const states = fleetOperatingState(turbines.length, {
     availability: clamp((fleet.availabilityPct ?? 100) / 100, 0, 1),
     curtailed: clamp((fleet.curtailedPct ?? 0) / 100, 0, 1),
+    clustering: fleet.clustering ?? 0.45,
     seed: fleet.seed ?? 1,
   });
 
@@ -648,7 +658,8 @@ export function finaliseFleet(turbines, scenario) {
     t.stoppedReason = states[i].reason;
 
     // Yaw sits scattered inside the control deadband rather than on the wind.
-    t.yawOffsetDeg = yawOffsetFor(i, fleet.seed ?? 1, fleet.yawDeadbandDeg ?? 0);
+    t.yawOffsetDeg = yawOffsetFor(i, fleet.seed ?? 1, fleet.yawDeadbandDeg ?? 0,
+      fleet.yawSystematicSdDeg ?? 0);
     t.yawDeg = ((wind.directionDeg + (wind.yawMisalignDeg ?? 0) + t.yawOffsetDeg) % 360 + 360) % 360;
 
     // Rotor speed follows the inflow this machine actually sees, not the
@@ -657,6 +668,7 @@ export function finaliseFleet(turbines, scenario) {
       ? rotorRpm(t.inflowMs, {
         cutInMs: wind.cutInMs, ratedMs: wind.ratedMs, cutOutMs: wind.cutOutMs,
         ratedRpm: t.ratedRpm, idleFraction: wind.idleFraction,
+        minRunningFraction: fleet.minRunningFraction ?? 0.6,
       })
       : 0;
     t.tipSpeedMs = tipSpeed(t.rotorRadiusM, t.rpm);

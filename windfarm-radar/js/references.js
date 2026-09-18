@@ -5,6 +5,8 @@
 //
 // READ THE STATUS ON EACH ENTRY. It is the most important field here.
 //
+//   analysed       Data obtained and analysed directly in building this tool.
+//                  Figures derived from it are measurements, not recall.
 //   read           Retrieved and read in full. Figures may be quoted directly.
 //   search-summary Surfaced through a search, with a summary of its findings.
 //                  Enough to know the work exists and roughly what it reports.
@@ -15,8 +17,12 @@
 //   blocked        Identified, and retrieval was attempted and refused. The
 //                  environment this tool was built in had no route to it.
 //
-// NOTHING IN THIS REGISTER IS MARKED "read". The environment had no general
-// outbound network access. Formulas taken from standard references were
+// NOTHING IN THIS REGISTER IS MARKED "read": the environment had no general
+// outbound network access to document repositories. ONE entry is marked
+// "analysed", because that dataset was reachable, was downloaded, and was
+// analysed directly, and four of this model's assumptions were corrected as a
+// result. That entry is the only place in the tool where a number comes from
+// measurement rather than from literature or recall. Formulas taken from standard references were
 // validated against values that are independently known instead, which is a
 // different kind of confidence and is recorded per entry under `validation`.
 //
@@ -24,6 +30,7 @@
 // produces, whether it rests on something checked or something assumed.
 
 export const STATUS_LABELS = {
+  analysed: 'Data obtained and analysed directly',
   read: 'Read in full',
   'search-summary': 'Search summary only, not read',
   recalled: 'From general knowledge, not retrieved',
@@ -221,6 +228,37 @@ export const REFERENCES = [
   },
 
   // --------------------------------------------------------- fleet behaviour
+  {
+    id: 'fuhrlander-scada',
+    title: 'Fuhrl\u00e4nder FL2500 2.5 MW wind farm SCADA dataset',
+    authors: 'Blanco-M, A.',
+    type: 'Open dataset, Eclipse Public License v2.0',
+    status: 'analysed',
+    supports: ['fleet-stopped', 'fleet-spread', 'rotor speed floor',
+      'yaw scatter shape and systematic offsets', 'stoppage clustering'],
+    reports: 'Five turbines, 2012 to 2014, five-minute resolution, 78 sensors reported as min, max, '
+      + 'mean and standard deviation. 1.07 million records analysed here, covering nacelle position, '
+      + 'wind direction, wind speed, rotor speed, active power and availability.',
+    validation: 'FOUR MODEL ASSUMPTIONS WERE CORRECTED AGAINST IT. (1) Rotor speed does not fall '
+      + 'proportionally to zero below rated: a running machine holds a floor near 60 per cent of '
+      + 'rated, measured at a median 8.8 rpm against 14.6 rated in 3 to 4 m/s wind, where the previous '
+      + 'proportional model predicted 5.1. The model understated low-wind blade Doppler by about 40 '
+      + 'per cent. (2) Yaw scatter is peaked near zero with a tail, not uniform across a deadband: '
+      + 'pairwise difference between well-behaved machines had a median of 7.3 degrees and a 99th '
+      + 'percentile of 32. (3) Machines carry PERSISTENT nacelle reference offsets from each other, up '
+      + 'to 35 degrees between well-behaved machines generating in the same wind, and 61 degrees '
+      + 'including an anomalous one, so a fleet does not share one rotor aspect even in steady wind. '
+      + '(4) Stoppages cluster rather than occurring independently: all five ran 61.3 per cent of the '
+      + 'time against 53.5 per cent under independence, and all five were stopped together 0.56 per '
+      + 'cent of the time against essentially never under independence.',
+    caution: 'ONE SITE, FIVE TURBINES, ONE MACHINE TYPE, AND NO COORDINATES, so the wake model could '
+      + 'not be tested at all. The measured 12.2 per cent of operating-wind time stopped is far above '
+      + 'the 2 to 3 per cent unavailability often quoted, but those are different questions: this '
+      + 'counts every reason a rotor was still while the wind was usable. One of the five machines was '
+      + 'plainly anomalous in yaw and is reported separately rather than averaged in. Penmanshiel and '
+      + 'Kelmarsh, which have coordinates and would allow the wake model to be tested, are on Zenodo '
+      + 'and could not be reached from this environment.',
+  },
   {
     id: 'jensen-park',
     title: 'The Jensen (Park) wake model',
