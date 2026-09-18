@@ -31,7 +31,7 @@ import {
 
 import {
   buildTurbines, buildTrack, towerDiameterAt, normaliseScenario,
-  BLADE_CONSTRUCTIONS, TOWER_MATERIALS,
+  BLADE_CONSTRUCTIONS, TOWER_MATERIALS, DRIVETRAINS,
 } from './model.js';
 import { seaState, rmsWaveHeight, multipathFactorDb, seaClutterRcsDbsm } from './sea.js';
 import { rotorRpm, roseSummary, sectorForDirection, operatingFractions } from './wind.js';
@@ -186,10 +186,22 @@ export function assessTurbine(turbine, radar, terrain, ae, mit) {
 
   const towerMat = TOWER_MATERIALS[turbine.towerMaterial] || null;
   const towerDeltaDb = towerMat ? towerMat.towerDeltaDb : 0;
-  const towerEffDbsm = turbine.towerRcsDbsm + towerDeltaDb - ramDb + staticRejectionDb;
+
+  // The nacelle and its drivetrain are stationary, so a clutter filter treats
+  // them as it treats the tower. Their specular lobe is broadside to the rotor
+  // axis, which is the same aspect that maximises blade Doppler.
+  const drivetrain = DRIVETRAINS[turbine.drivetrain] || null;
+  const nacelleDeltaDb = drivetrain ? drivetrain.nacelleDeltaDb : 0;
+  const nacelleAspectDbsm = turbine.nacelleRcsHeadOnDbsm
+    + (turbine.nacelleRcsDbsm - turbine.nacelleRcsHeadOnDbsm) * sin2
+    + nacelleDeltaDb;
+
+  const structureDbsm = linToDb(
+    dbToLin(turbine.towerRcsDbsm + towerDeltaDb) + dbToLin(nacelleAspectDbsm));
+  const towerEffDbsm = structureDbsm - ramDb + staticRejectionDb;
   const bladeEffDbsm = bladeAspectDbsm - ramDb + linToDb(Math.max(passFraction, 1e-9)) - dopplerGainDb;
   const effectiveRcsDbsm = linToDb(dbToLin(towerEffDbsm) + dbToLin(bladeEffDbsm));
-  const rawRcsDbsm = linToDb(dbToLin(turbine.towerRcsDbsm + towerDeltaDb) + dbToLin(bladeAspectDbsm)) - ramDb;
+  const rawRcsDbsm = linToDb(dbToLin(structureDbsm) + dbToLin(bladeAspectDbsm)) - ramDb;
 
   // Return strength when the beam is pointed straight at the turbine.
   const gain = twoWayGain(radar, hub.elevationDeg, 0);
@@ -224,6 +236,9 @@ export function assessTurbine(turbine, radar, terrain, ae, mit) {
     bladeAspectDbsm,
     constructionDeltaDb,
     towerDeltaDb,
+    nacelleAspectDbsm,
+    nacelleDeltaDb,
+    structureDbsm,
     rpm,
     vTipMs,
     vRadMaxMs,

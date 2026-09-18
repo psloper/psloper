@@ -194,6 +194,46 @@ export const TOWER_MATERIALS = {
   },
 };
 
+// The nacelle and what is inside it.
+//
+// The nacelle cover is glass-fibre and therefore largely transparent, so the
+// machinery inside is illuminated: the generator, the gearbox where there is
+// one, the main shaft, bearings, converter and sometimes the transformer. All
+// large conductive masses of steel and copper. A direct-drive generator is a
+// notably large-diameter machine, several metres across, sitting right at the
+// front of the nacelle.
+//
+// IMPORTANT LIMIT: no published breakdown separating the generator's own
+// contribution from the rest of the nacelle was found. They are modelled
+// TOGETHER as the drivetrain mass, and the tool does not claim to know how
+// that total divides between components.
+//
+// Aspect matters. Open work reports lobes at 90 and 270 degrees to the rotor
+// axis from the large flat sides of the nacelle. That is the same aspect that
+// maximises blade Doppler, so a rotor presented edge-on to the radar gives both
+// the strongest specular nacelle return and the most blade Doppler at once.
+export const DRIVETRAINS = {
+  geared: {
+    label: 'Geared (gearbox and induction generator)',
+    nacelleDeltaDb: 0,
+    note: 'The long-established arrangement: gearbox, high-speed shaft and a doubly-fed induction '
+      + 'generator. A long nacelle with substantial steel throughout its length. The reference case.',
+  },
+  'direct-drive': {
+    label: 'Direct drive (permanent magnet generator)',
+    nacelleDeltaDb: 2,
+    note: 'No gearbox. The generator is a large-diameter permanent magnet machine at the front of the '
+      + 'nacelle, typically several metres across. A more compact nacelle overall, but with a bigger '
+      + 'single conductive body in it.',
+  },
+  'hybrid-drive': {
+    label: 'Medium-speed hybrid drive',
+    nacelleDeltaDb: 1,
+    note: 'A single-stage or two-stage gearbox with a medium-speed generator, between the two above in '
+      + 'both layout and mass distribution.',
+  },
+};
+
 // Atmospheric refraction conditions, expressed as the effective earth radius
 // factor they correspond to. A masking argument that holds under standard
 // refraction can fail under super-refraction or in a duct, and ducting is
@@ -354,6 +394,11 @@ export function defaultScenario() {
       bladeRcsEdgeOnDbsm: TURBINE_PRESETS['large-4500'].bladeRcsDbsm,
       construction: 'carbon-spar',
       towerMaterial: 'steel',
+      drivetrain: 'geared',
+      // Nacelle and drivetrain, broadside and head-on. Broadside is the large
+      // flat side, which is where the specular lobe is.
+      nacelleRcsDbsm: 30,
+      nacelleRcsHeadOnDbsm: 20,
       layout: 'grid',
       count: 12,
       rows: 3,
@@ -656,6 +701,9 @@ function makeTurbine(index, east, north, f, terrain, wind, override = {}) {
     towerTopDiameterM,
     construction: override.construction ?? f.construction ?? 'carbon-spar',
     towerMaterial: override.towerMaterial ?? f.towerMaterial ?? 'steel',
+    drivetrain: override.drivetrain ?? f.drivetrain ?? 'geared',
+    nacelleRcsDbsm: override.nacelleRcsDbsm ?? f.nacelleRcsDbsm ?? 30,
+    nacelleRcsHeadOnDbsm: override.nacelleRcsHeadOnDbsm ?? f.nacelleRcsHeadOnDbsm ?? 20,
     towerRcsDbsm: override.towerRcsDbsm ?? f.towerRcsDbsm,
     bladeRcsDbsm: override.bladeRcsDbsm ?? f.bladeRcsDbsm,
     bladeRcsEdgeOnDbsm: override.bladeRcsEdgeOnDbsm

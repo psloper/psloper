@@ -13,7 +13,7 @@ import { M_PER_FT, M_PER_NM } from './geo.js';
 import { cylinderRcsDbsm, wavelength } from './rf.js';
 import { operatingState, tipSpeedRatioAtRated, operatingFractions } from './wind.js';
 import {
-  REFRACTION_PRESETS, TARGET_PRESETS, BLADE_CONSTRUCTIONS, TOWER_MATERIALS,
+  REFRACTION_PRESETS, TARGET_PRESETS, BLADE_CONSTRUCTIONS, TOWER_MATERIALS, DRIVETRAINS,
   tipHeightOf, groundClearanceOf,
 } from './model.js';
 
@@ -705,7 +705,8 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
       metrics: {
         'Blade construction': bc ? bc.label : 'custom',
         'Tower': tm ? tm.label : 'custom',
-        'Tower after filtering': `${strongest.towerEffDbsm.toFixed(1)} dBsm`,
+        'Structure (tower + nacelle)': `${strongest.structureDbsm.toFixed(1)} dBsm before filtering`,
+        'Structure after filtering': `${strongest.towerEffDbsm.toFixed(1)} dBsm`,
         'Blades after filtering': `${strongest.bladeEffDbsm.toFixed(1)} dBsm`,
       },
     });
@@ -732,6 +733,106 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
       metrics: {
         'Assumed reduction': mit.ram.enabled ? `${mit.ram.reductionDb} dB` : 'construction delta only',
         'Verified here': 'No',
+      },
+    });
+  }
+
+  // --------------------------------------------------------------- fleet state
+  const fleet = turbineResults.map((t) => t.turbine);
+  const running = fleet.filter((t) => t.running);
+  const stopped = fleet.filter((t) => !t.running);
+  const runningDop = turbineResults.filter((t) => t.turbine.running).map((t) => t.fdMaxHz);
+
+  if (stopped.length) {
+    const byReason = {};
+    for (const t of stopped) byReason[t.stoppedReason] = (byReason[t.stoppedReason] || 0) + 1;
+    add({
+      id: 'fleet-stopped',
+      severity: 'info',
+      title: `${stopped.length} of ${fleet.length} turbines are not turning in this fleet state`,
+      detail: 'A parked rotor produces no blade Doppler, so a clutter filter can cancel it the way it '
+        + 'cancels any fixed structure. It is still a large object and still returns, but it is a '
+        + 'fundamentally different radar target from a turning one. Turbines stop for maintenance, '
+        + 'faults and grid constraints, and are curtailed for noise, shadow flicker, bats and icing, '
+        + 'so a real array is rarely all turning. Vary the fleet seed to see other states, and do not '
+        + 'assume either extreme.',
+      basis: 'computed',
+      metrics: {
+        'Turning': `${running.length} of ${fleet.length}`,
+        ...Object.fromEntries(Object.entries(byReason).map(([k, v]) => [k === 'unavailable' ? 'Unavailable' : 'Curtailed', String(v)])),
+      },
+    });
+  }
+
+  if (runningDop.length > 1) {
+    const lo = Math.min(...runningDop);
+    const hi = Math.max(...runningDop);
+    const waked = fleet.filter((t) => t.waked);
+    if (hi > lo * 1.5 || waked.length) {
+      add({
+        id: 'fleet-spread',
+        severity: 'info',
+        title: `Blade Doppler varies from ${lo.toFixed(0)} to ${hi.toFixed(0)} Hz across the array`,
+        detail: `${waked.length} of ${fleet.length} turbines sit in the wake of another and see slower `
+          + `air, down to ${Math.min(...fleet.map((t) => t.inflowMs)).toFixed(1)} m/s against a free `
+          + `stream of ${scenario.wind.speedMs} m/s, so they turn more slowly. Yaw control works on a `
+          + `deadband of \u00b1${scenario.wind.fleet.yawDeadbandDeg}\u00b0, so the machines sit `
+          + 'scattered around the wind rather than on it. The array therefore presents a spread of '
+          + 'signatures rather than one, which is worth remembering before treating any single number '
+          + 'as the answer.',
+        basis: 'computed',
+        metrics: {
+          'Turbines in wake': `${waked.length} of ${fleet.length}`,
+          'Inflow range': `${Math.min(...fleet.map((t) => t.inflowMs)).toFixed(1)} to `
+            + `${Math.max(...fleet.map((t) => t.inflowMs)).toFixed(1)} m/s`,
+          'Doppler range': `${lo.toFixed(0)} to ${hi.toFixed(0)} Hz`,
+        },
+      });
+    }
+  }
+
+  const placement = turbineResults.length ? turbineResults[0].turbine.placementInfo : null;
+  if (scenario.farm.constrained && points && fleet.length) {
+    add({
+      id: 'placement',
+      severity: 'info',
+      title: 'Layout is following the buildable ground rather than a grid',
+      detail: 'Where a turbine can stand depends on what is under it: bearing capacity, peat depth, '
+        + 'slope, watercourses, access track routing and setbacks. Positions failing the slope or '
+        + 'ground-level test have been moved to the nearest buildable spot or dropped, which is why '
+        + 'the layout is irregular. This models the geometry of that constraint, not the consenting, '
+        + 'and it cannot know a real site\u2019s real constraints. For those, import the schedule.',
+      basis: 'screening',
+      metrics: {
+        'Turbines placed': `${fleet.length} of ${Math.round(scenario.farm.count)} requested`,
+        'Maximum buildable slope': `${scenario.farm.maxSlopeDeg}\u00b0`,
+        'Minimum spacing': `${scenario.farm.minSpacingM} m`,
+      },
+    });
+  }
+
+  // ------------------------------------------------- nacelle specular lobe
+  const broadside = turbineResults.filter((t) => t.aspectDeg > 60 && t.visibility !== 'masked');
+  if (broadside.length && !mit.curtail.enabled) {
+    const w = broadside.sort((a, b) => b.nacelleAspectDbsm - a.nacelleAspectDbsm)[0];
+    const dt = DRIVETRAINS[scenario.farm.drivetrain];
+    add({
+      id: 'nacelle-lobe',
+      severity: 'minor',
+      title: 'The nacelle specular lobe and peak blade Doppler occur at the same aspect',
+      detail: 'The nacelle cover is glass-fibre and largely transparent, so the generator, gearbox and '
+        + 'shafts inside it are illuminated, and its specular lobe is broadside to the rotor axis. That '
+        + 'is the same aspect at which the rotor plane is edge-on and blade Doppler is greatest. So a '
+        + 'wind direction that puts the rotor edge-on to the radar gives both the strongest fixed '
+        + 'return and the most moving return at once. They do not trade off against each other.'
+        + ' No published split between the generator and the rest of the nacelle was found, so this '
+        + 'model treats them together as drivetrain mass.',
+      basis: 'computed',
+      metrics: {
+        'Drivetrain': dt ? dt.label : 'custom',
+        'Worst aspect': `${w.aspectDeg.toFixed(0)}\u00b0 off face-on (${w.turbine.id})`,
+        'Nacelle there': `${w.nacelleAspectDbsm.toFixed(1)} dBsm`,
+        'Head-on would be': `${scenario.farm.nacelleRcsHeadOnDbsm} dBsm`,
       },
     });
   }

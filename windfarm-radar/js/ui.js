@@ -7,7 +7,7 @@
 import {
   RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS, REFRACTION_PRESETS,
   TARGET_GROUPS, tipHeightOf, groundClearanceOf, setTipHeight,
-  BLADE_CONSTRUCTIONS, TOWER_MATERIALS,
+  BLADE_CONSTRUCTIONS, TOWER_MATERIALS, DRIVETRAINS,
 } from './model.js';
 import { WIND_ROSE_PRESETS, operatingState as windState } from './wind.js';
 import { cylinderRcsDbsm } from './rf.js';
@@ -111,6 +111,8 @@ export const TABS = {
       { type: 'note', id: 'construction-note' },
       { type: 'select', path: 'farm.towerMaterial', label: 'Tower', options: opts(TOWER_MATERIALS) },
       { type: 'note', id: 'tower-material-note' },
+      { type: 'select', path: 'farm.drivetrain', label: 'Drivetrain', options: opts(DRIVETRAINS) },
+      { type: 'note', id: 'drivetrain-note' },
       { type: 'hint', text: 'A glass-fibre blade shell is largely transparent at microwave '
         + 'frequencies: the radar sees through it. What returns the signal is the conductive structure '
         + 'inside, mainly the carbon spar caps and the lightning protection system. The tower is '
@@ -123,6 +125,9 @@ export const TABS = {
       { type: 'range', path: 'farm.bladeRcsDbsm', label: 'Blades, rotor face-on', min: -5, max: 50, step: 1, fmt: (v) => `${v} dBsm` },
       { type: 'range', path: 'farm.bladeRcsEdgeOnDbsm', label: 'Blades, rotor edge-on', min: -5, max: 50, step: 1, fmt: (v) => `${v} dBsm` },
       { type: 'note', id: 'rcs-ceiling-note' },
+      { type: 'range', path: 'farm.nacelleRcsDbsm', label: 'Nacelle, broadside', min: 0, max: 50, step: 1, fmt: (v) => `${v} dBsm` },
+      { type: 'range', path: 'farm.nacelleRcsHeadOnDbsm', label: 'Nacelle, head-on', min: -5, max: 45, step: 1, fmt: (v) => `${v} dBsm` },
+      { type: 'note', id: 'nacelle-note' },
       { type: 'hint', text: 'CAP 764 states that no standard RCS can be identified for wind turbines, because too '
         + 'many factors affect it. These defaults sit inside the 20 to 45 dBsm range reported in the open '
         + 'literature and exist only so the tool starts somewhere. Replace them with figures for your machine '
@@ -140,6 +145,15 @@ export const TABS = {
       { type: 'range', path: 'farm.spacingM', label: 'Along-row spacing', min: 200, max: 3000, step: 25, fmt: (v) => `${v} m` },
       { type: 'range', path: 'farm.rowSpacingM', label: 'Row spacing', min: 200, max: 3000, step: 25, fmt: (v) => `${v} m` },
       { type: 'range', path: 'farm.arrayBearingDeg', label: 'Array orientation', min: 0, max: 179, step: 1, fmt: (v) => `${v}°` },
+      { type: 'check', path: 'farm.constrained', label: 'Let the ground decide the layout',
+        note: 'Real layouts are irregular because siting depends on what is under the tower: '
+          + 'bearing capacity, peat depth, slope, watercourses, access tracks and setbacks. '
+          + 'Positions failing the slope or ground-level test are moved to the nearest buildable '
+          + 'spot, or dropped.' },
+      { type: 'range', path: 'farm.maxSlopeDeg', label: 'Maximum buildable slope', min: 3, max: 30, step: 1, fmt: (v) => `${v}°` },
+      { type: 'range', path: 'farm.minSpacingM', label: 'Minimum spacing', min: 100, max: 1200, step: 25, fmt: (v) => `${v} m` },
+      { type: 'range', path: 'farm.minGroundLevelM', label: 'Minimum ground level', min: 0, max: 400, step: 5, fmt: (v) => `${v} m AMSL` },
+      { type: 'note', id: 'placement-note' },
     ] },
     { group: 'Siting', fields: [
       { type: 'range', path: 'farm.centreRangeM', label: 'Distance from radar', min: 500, max: 60000, step: 250,
@@ -286,6 +300,7 @@ export const TABS = {
       { type: 'range', path: 'wind.speedMs', label: 'Wind speed', min: 0, max: 32, step: 0.5, fmt: (v) => `${v} m/s` },
       { type: 'note', id: 'wind-state-note' },
       { type: 'range', path: 'wind.yawMisalignDeg', label: 'Yaw misalignment', min: -30, max: 30, step: 1, fmt: (v) => `${v}\u00b0` },
+      { type: 'note', id: 'fleet-note' },
       { type: 'hint', text: 'Turbines yaw to face into the wind, so direction sets the angle between the '
         + 'radar line of sight and the rotor axis, and peak blade Doppler goes as the sine of that angle. '
         + 'A rotor pointed at the radar shows almost no blade Doppler; one edge-on shows all of it.' },
@@ -296,6 +311,19 @@ export const TABS = {
       { type: 'range', path: 'wind.cutOutMs', label: 'Cut-out wind speed', min: 15, max: 35, step: 1, fmt: (v) => `${v} m/s` },
       { type: 'range', path: 'wind.idleFraction', label: 'Idle speed when not generating', min: 0, max: 0.4, step: 0.02, fmt: (v) => `${(v * 100).toFixed(0)}% of rated` },
       { type: 'note', id: 'tsr-note' },
+    ] },
+    { group: 'Fleet state', fields: [
+      { type: 'check', path: 'wind.fleet.wakes', label: 'Model wakes across the array',
+        note: 'A turbine downstream of another sees slower air, so it turns slower and produces less '
+          + 'blade Doppler. The array presents a spread, not one signature.' },
+      { type: 'range', path: 'wind.fleet.yawDeadbandDeg', label: 'Yaw deadband', min: 0, max: 25, step: 1, fmt: (v) => `\u00b1${v}\u00b0` },
+      { type: 'range', path: 'wind.fleet.availabilityPct', label: 'Availability', min: 70, max: 100, step: 1, fmt: (v) => `${v}%` },
+      { type: 'range', path: 'wind.fleet.curtailedPct', label: 'Curtailed', min: 0, max: 50, step: 1, fmt: (v) => `${v}%` },
+      { type: 'number', path: 'wind.fleet.seed', label: 'Fleet state seed', step: 1 },
+      { type: 'hint', text: 'Turbines are stopped for maintenance, faults, grid constraints, and '
+        + 'curtailment for noise, shadow flicker, bats or icing. A parked rotor produces no blade '
+        + 'Doppler at all, which makes it a different radar target from a turning one, though it is '
+        + 'still a large structure. The seed selects which machines are stopped, reproducibly.' },
     ] },
     { group: 'Wind climate', fields: [
       { type: 'select', path: 'wind.rosePreset', label: 'Wind rose', options: opts(WIND_ROSE_PRESETS), preset: 'rose' },
@@ -646,12 +674,43 @@ export function updateNotes(noteEls, result, extra = {}) {
     + `${(r.freqHz / 1e9).toFixed(2)} GHz: ${cylinderRcsDbsm(sc.farm.towerBaseDiameterM / 2, sc.farm.hubHeightM, r.lambdaM).toFixed(0)} dBsm. `
     + 'Assumed values well below that are expected; above it is not physical.');
 
+  const pl = result.turbines.placement;
+  set('placement-note', !sc.farm.constrained
+    ? 'Off: turbines sit on the nominal layout regardless of the ground under them.'
+    : pl
+      ? `${result.turbines.length} placed, ${pl.moved.length} moved to buildable ground`
+        + `${pl.moved.length ? ` (mean ${(pl.moved.reduce((a, m) => a + m.distanceM, 0) / pl.moved.length).toFixed(0)} m)` : ''}`
+        + `, ${pl.rejected.length} dropped as unbuildable.`
+      : '');
+
+  const runningCount = result.turbines.filter((t) => t.running).length;
+  const dops = result.turbineResults.filter((t) => t.turbine.running).map((t) => t.fdMaxHz);
+  set('fleet-note', result.turbines.length
+    ? `${runningCount} of ${result.turbines.length} turning. Inflow `
+      + `${Math.min(...result.turbines.map((t) => t.inflowMs)).toFixed(1)} to `
+      + `${Math.max(...result.turbines.map((t) => t.inflowMs)).toFixed(1)} m/s across the array`
+      + (dops.length ? `, blade Doppler ${Math.min(...dops).toFixed(0)} to ${Math.max(...dops).toFixed(0)} Hz.` : '.')
+    : '');
+
   const bc = BLADE_CONSTRUCTIONS[sc.farm.construction];
   set('construction-note', bc
     ? `${bc.note} Applies ${bc.bladeDeltaDb >= 0 ? '+' : ''}${bc.bladeDeltaDb} dB to blade RCS.` : '');
   const tm = TOWER_MATERIALS[sc.farm.towerMaterial];
   set('tower-material-note', tm
     ? `${tm.note} Applies ${tm.towerDeltaDb >= 0 ? '+' : ''}${tm.towerDeltaDb} dB to tower RCS.` : '');
+
+  const dt = DRIVETRAINS[sc.farm.drivetrain];
+  set('drivetrain-note', dt
+    ? `${dt.note} Applies ${dt.nacelleDeltaDb >= 0 ? '+' : ''}${dt.nacelleDeltaDb} dB to the nacelle.` : '');
+  const t1 = result.turbineResults[0];
+  set('nacelle-note', t1
+    ? `The nacelle cover is transparent, so the generator, gearbox and shafts inside it are `
+      + `illuminated. Its specular lobe is broadside, which is the same aspect that maximises blade `
+      + `Doppler. At the current aspect of ${t1.aspectDeg.toFixed(0)}\u00b0 the nacelle contributes `
+      + `${t1.nacelleAspectDbsm.toFixed(1)} dBsm, against ${sc.farm.towerRcsDbsm} dBsm of tower. No `
+      + 'published split between the generator and the rest of the nacelle was found, so they are '
+      + 'modelled together.'
+    : '');
 
   const refr = REFRACTION_PRESETS[sc.weather.refractionPreset];
   set('refraction-note', refr

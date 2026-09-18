@@ -220,6 +220,60 @@ export const REFERENCES = [
       + 'incorporating carbon fibre, is the primary structure inside it.',
   },
 
+  // --------------------------------------------------------- fleet behaviour
+  {
+    id: 'jensen-park',
+    title: 'The Jensen (Park) wake model',
+    type: 'Engineering model, widely reproduced',
+    status: 'search-summary',
+    supports: ['fleet-spread', 'wake deficits across the array'],
+    reports: 'Wake velocity deficit taken as uniform across a wake expanding linearly downstream at a '
+      + 'decay rate k, with the deficit falling as the wake widens and the speed recovering '
+      + 'asymptotically to free stream. Wake expansion rate conventionally 0.075 onshore and 0.04 '
+      + 'offshore.',
+    caution: 'A deliberately simple engineering model. It assumes a top-hat deficit profile and does '
+      + 'not represent wake meandering, added turbulence or blockage.',
+  },
+  {
+    id: 'yaw-deadband',
+    title: 'Yaw control deadbands and wake steering in operating wind farms',
+    type: 'Literature summary',
+    status: 'search-summary',
+    supports: ['fleet-spread', 'yaw scatter across the array'],
+    reports: 'That yaw control uses a deadband, with a manoeuvre triggered only once the yaw error '
+      + 'exceeds a threshold, so machines sit scattered around the wind rather than on it. That wake '
+      + 'steering deliberately misaligns upstream turbines, with field campaigns using misalignments '
+      + 'of around 20 degrees. That simulations driven by SCADA-measured yaw distributions differ from '
+      + 'those using ideal yaw settings.',
+  },
+  {
+    id: 'availability',
+    title: 'Onshore wind turbine availability and downtime causes',
+    type: 'Literature summary',
+    status: 'search-summary',
+    supports: ['fleet-stopped'],
+    reports: 'Availability of many turbines in use today around 98 per cent, with roughly seven days '
+      + 'of annual downtime for a well-maintained onshore machine. Available time decomposed into '
+      + 'generating, grid-unavailable, broken down, under maintenance and idle for insufficient wind. '
+      + 'Faults concentrated in electrical systems, control systems and sensors, with the longest '
+      + 'downtimes in gearbox, electrical, control and yaw systems.',
+  },
+  {
+    id: 'open-scada',
+    title: 'Open per-turbine SCADA datasets: Penmanshiel, Kelmarsh, La Haute Borne',
+    type: 'Open datasets',
+    status: 'search-summary',
+    supports: ['fleet-stopped', 'fleet-spread', 'validating fleet behaviour against real operation'],
+    reports: 'Ten-minute SCADA and event data per turbine, with coordinates, rated power, rotor '
+      + 'diameter and hub height. Penmanshiel: 14 Senvion MM82 turbines, 2016 to mid-2021. Kelmarsh: '
+      + '6 Senvion MM92 turbines, 2016 to end 2024. Both released by Cubico Sustainable Investments '
+      + 'under CC-BY-4.0 on Zenodo. La Haute Borne: 4 Senvion MM82 turbines, 2012 to 2018, with wind '
+      + 'speed, wind direction, rotor speed and active power per turbine.',
+    caution: 'Not downloaded or analysed. Listed because this is the obvious route to checking the '
+      + 'fleet model against how real machines actually behave: real yaw scatter, real availability, '
+      + 'real wake-driven speed differences, all at ten-minute resolution.',
+  },
+
   // --------------------------------------------------------- propagation
   {
     id: 'itu-p526',
