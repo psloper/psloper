@@ -672,10 +672,16 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
     const mil = document.createElement('p');
     mil.className = 'hint';
     mil.style.marginTop = '8px';
-    mil.textContent = 'Military air defence radar is absent from both sources and from this tool. '
-      + UK_MILITARY_RADAR_NOTE.caution
-      + ' Sites named in search results, unverified: '
-      + UK_MILITARY_RADAR_NOTE.sites.map((x) => x.name).join(', ') + '.';
+    mil.innerHTML = '<strong>Military radar is not in this list, and MOD safeguarding is what most '
+      + 'often decides a real UK application.</strong> Neither aviation source carries it: one marks '
+      + 'the section &quot;Mil Radars TBA&quot;. Sites named in search summaries, unverified and with '
+      + 'no coordinates asserted: '
+      + UK_MILITARY_RADAR_NOTE.sites.map((x) => `${x.name} (${x.radar})`).join('; ')
+      + '. YOU CAN STILL MODEL ONE: the radar under assessment is always at the origin, so choose the '
+      + '\u201cAir defence surveillance (L-band, 3D)\u201d preset on the Radar tab and set the farm\u2019s '
+      + 'distance and bearing by hand. What is missing is the positions, not the ability to model them. '
+      + 'For a real assessment the consultee is the Defence Infrastructure Organisation safeguarding '
+      + 'team, which issues site-specific plans on request.';
     wrap.append(mil);
 
     return wrap;

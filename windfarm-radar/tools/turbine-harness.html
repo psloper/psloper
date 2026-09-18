@@ -1,0 +1,31 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>turbine</title>
+<script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
+<style>html,body{margin:0;height:100%;background:#0d1216}canvas{display:block}</style></head><body>
+<script type="module">
+import * as THREE from 'three';
+import { bladeGeometry, nacelleGeometry, spinnerGeometry } from '../js/scene.js';
+const sc = new THREE.Scene(); sc.background = new THREE.Color(0x0d1216);
+const cam = new THREE.PerspectiveCamera(35, 1400/900, 1, 4000);
+cam.position.set(170, 130, 235); cam.lookAt(0, 96, 0);
+const rend = new THREE.WebGLRenderer({ antialias: true }); rend.setSize(1400, 900);
+document.body.append(rend.domElement);
+sc.add(new THREE.HemisphereLight(0xdfe9f2, 0x2a3138, 1.1));
+const d = new THREE.DirectionalLight(0xffffff, 1.5); d.position.set(220, 300, 180); sc.add(d);
+const d2 = new THREE.DirectionalLight(0x8fb6d8, 0.5); d2.position.set(-200, 80, -160); sc.add(d2);
+
+const hub = 110, R = 75, chord = 4.2, baseR = 2.75, topR = 1.6;
+const white = new THREE.MeshStandardMaterial({ color: 0xeef2f5, roughness: 0.42, metalness: 0.08 });
+const tower = new THREE.Mesh(new THREE.CylinderGeometry(topR, baseR, hub, 24), white);
+tower.position.y = hub/2; sc.add(tower);
+const rotor = new THREE.Group(); rotor.position.y = hub; rotor.rotation.y = -0.45; sc.add(rotor);
+const nacL = R*0.20, nacW = topR*2.2;
+const nac = new THREE.Mesh(nacelleGeometry(nacL, nacW, nacW*0.92), white); rotor.add(nac);
+const sp = new THREE.Group(); sp.position.z = nacL*0.52; rotor.add(sp);
+sp.add(new THREE.Mesh(spinnerGeometry(topR*1.15, topR*2.1), white));
+const bg = bladeGeometry(R, chord);
+for (let b=0;b<3;b++){ const m=new THREE.Mesh(bg, white); m.position.y = topR*0.5;
+  const arm=new THREE.Group(); arm.rotation.z=(b/3)*Math.PI*2 + 0.35; arm.add(m); sp.add(arm); }
+const grid = new THREE.GridHelper(600, 20, 0x2a3138, 0x1b2228); sc.add(grid);
+rend.render(sc, cam);
+window.__ready = true;
+</script></body></html>

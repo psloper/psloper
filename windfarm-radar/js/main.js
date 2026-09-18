@@ -109,7 +109,9 @@ function run(skipCoverage) {
   el.profileBearing.textContent = `${profile.activeBearing.toFixed(0).padStart(3, '0')}°`;
   el.ppiNote.textContent = `${result.radar.rpm} rpm · ${(result.radar.rangeResolutionM).toFixed(0)} m cells`;
   el.scalebar.textContent = `rings ${(view.ringStepM / 1000).toFixed(0)} km`
-    + (view.vExag !== 1 ? ` · vertical ×${view.vExag} (heights exaggerated, geometry preserved)` : ' · true scale');
+    + (view.vExag !== 1 ? ` · vertical ×${view.vExag} (heights exaggerated, geometry preserved)` : ' · true scale')
+    + (view.girthExag > 1.5 ? ` · structures ×${view.girthExag.toFixed(0)} thicker than life`
+      + (view.chordExag > 1.5 ? `, blade chord ×${view.chordExag.toFixed(0)}` : '') : '');
 
   if (!skipCoverage && ms > 400) {
     console.info(`Full assessment took ${ms.toFixed(0)} ms.`);
@@ -352,7 +354,9 @@ function buildToggles() {
     if (result) {
       view.build(result);
       el.scalebar.textContent = `rings ${(view.ringStepM / 1000).toFixed(0)} km`
-        + (view.vExag !== 1 ? ` · vertical ×${view.vExag} (heights exaggerated, geometry preserved)` : ' · true scale');
+        + (view.vExag !== 1 ? ` · vertical ×${view.vExag} (heights exaggerated, geometry preserved)` : ' · true scale')
+    + (view.girthExag > 1.5 ? ` · structures ×${view.girthExag.toFixed(0)} thicker than life`
+      + (view.chordExag > 1.5 ? `, blade chord ×${view.chordExag.toFixed(0)}` : '') : '');
     }
   });
   vx.append(document.createTextNode('Vertical'), slider, out);

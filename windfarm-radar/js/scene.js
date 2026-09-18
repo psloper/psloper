@@ -166,6 +166,153 @@ class Orbit {
 
 // ------------------------------------------------------------------- viewer
 
+// --------------------------------------------------------- turbine geometry
+//
+// The turbines are drawn from the dimensions the model actually carries: tower
+// base and top diameter, blade length, blade chord, blade count. Earlier these
+// were a cylinder, a box and three flat slabs sized from the scene extent, so
+// changing a tower diameter or a blade chord did nothing to the picture even
+// though both feed the shadow and clutter maths.
+//
+// TWO EXAGGERATIONS ARE IN FORCE AND THEY ARE DIFFERENT. Heights go through
+// the vertical multiplier, as everything in this scene does. Structural GIRTH
+// goes through a separate multiplier, because a 5.5 m tower across a 40 km
+// scene is a quarter of a pixel. Girth exaggeration is uniform across every
+// structure, so relative proportions are true: a fatter tower really is drawn
+// fatter. Lengths along the blade span are NOT exaggerated in girth, so the
+// rotor covers the ground area it really covers.
+
+// Loft a closed surface through a series of rings. Every ring must have the
+// same number of points. Returns an indexed BufferGeometry with vertex normals.
+export function loftRings(rings, { capStart = true, capEnd = true } = {}) {
+  const ringCount = rings.length;
+  const n = rings[0].length;
+  const verts = [];
+  for (const ring of rings) for (const p of ring) verts.push(p.x, p.y, p.z);
+
+  const idx = [];
+  for (let s = 0; s < ringCount - 1; s += 1) {
+    const a = s * n;
+    const b = (s + 1) * n;
+    for (let i = 0; i < n; i += 1) {
+      const j = (i + 1) % n;
+      idx.push(a + i, b + i, b + j);
+      idx.push(a + i, b + j, a + j);
+    }
+  }
+
+  // Caps are triangle fans about the ring centroid.
+  const cap = (ring, base, flip) => {
+    let cx = 0, cy = 0, cz = 0;
+    for (const p of ring) { cx += p.x; cy += p.y; cz += p.z; }
+    const c = verts.length / 3;
+    verts.push(cx / n, cy / n, cz / n);
+    for (let i = 0; i < n; i += 1) {
+      const j = (i + 1) % n;
+      if (flip) idx.push(c, base + j, base + i);
+      else idx.push(c, base + i, base + j);
+    }
+  };
+  if (capStart) cap(rings[0], 0, true);
+  if (capEnd) cap(rings[ringCount - 1], (ringCount - 1) * n, false);
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// NACA four-digit thickness distribution. xc is the chordwise fraction.
+function naca(xc, tc) {
+  return 5 * tc * (0.2969 * Math.sqrt(xc) - 0.1260 * xc - 0.3516 * xc * xc
+    + 0.2843 * xc * xc * xc - 0.1015 * xc * xc * xc * xc);
+}
+
+// One aerofoil section, in blade-local axes: x chordwise, y spanwise, z thick.
+// Twist is about the span axis, taken at the quarter-chord pitch axis.
+export function aerofoilRing(spanY, chord, tc, twistRad, halfPoints = 14) {
+  const ring = [];
+  const pitchAxis = 0.3;
+  const add = (xc, zc) => {
+    const x = (xc - pitchAxis) * chord;
+    const z = zc * chord;
+    const c = Math.cos(twistRad), s = Math.sin(twistRad);
+    ring.push(new THREE.Vector3(x * c - z * s, spanY, x * s + z * c));
+  };
+  // Cosine spacing clusters points at the leading and trailing edges, which is
+  // where the curvature is.
+  for (let i = 0; i <= halfPoints; i += 1) {
+    const xc = 0.5 - 0.5 * Math.cos((i / halfPoints) * Math.PI);
+    add(xc, naca(xc, tc));
+  }
+  for (let i = halfPoints - 1; i >= 1; i -= 1) {
+    const xc = 0.5 - 0.5 * Math.cos((i / halfPoints) * Math.PI);
+    add(xc, -naca(xc, tc));
+  }
+  return ring;
+}
+
+// A blade: circular at the root, widest at about an eighth of span, tapering
+// and untwisting to a thin tip. Span runs along +y from the hub.
+const BLADE_STATIONS = [0.00, 0.04, 0.10, 0.18, 0.30, 0.45, 0.62, 0.78, 0.90, 0.97, 1.00];
+const BLADE_CHORD_F  = [0.42, 0.60, 0.96, 1.00, 0.84, 0.66, 0.50, 0.36, 0.25, 0.13, 0.04];
+const BLADE_TWIST_D  = [16.0, 15.2, 13.0, 10.0, 6.2, 3.4, 1.8, 0.8, 0.3, 0.05, 0.0];
+const BLADE_TC       = [1.00, 0.86, 0.50, 0.36, 0.27, 0.22, 0.19, 0.17, 0.155, 0.15, 0.15];
+
+export function bladeGeometry(spanM, maxChordM) {
+  const rings = BLADE_STATIONS.map((st, i) => aerofoilRing(
+    st * spanM,
+    Math.max(maxChordM * BLADE_CHORD_F[i], maxChordM * 0.03),
+    BLADE_TC[i],
+    BLADE_TWIST_D[i] * DEG,
+  ));
+  return loftRings(rings);
+}
+
+// The nacelle: a rounded box that tapers towards the rear, lofted along +z,
+// which is the direction the rotor faces.
+function roundedRectRing(z, halfW, halfH, radius, perQuadrant = 5) {
+  const ring = [];
+  const r = Math.min(radius, halfW * 0.9, halfH * 0.9);
+  const corners = [[halfW - r, halfH - r], [-(halfW - r), halfH - r],
+    [-(halfW - r), -(halfH - r)], [halfW - r, -(halfH - r)]];
+  for (let c = 0; c < 4; c += 1) {
+    const a0 = c * Math.PI / 2;
+    for (let i = 0; i <= perQuadrant; i += 1) {
+      const a = a0 + (i / perQuadrant) * Math.PI / 2;
+      ring.push(new THREE.Vector3(corners[c][0] + r * Math.cos(a),
+        corners[c][1] + r * Math.sin(a), z));
+    }
+  }
+  return ring;
+}
+
+export function nacelleGeometry(lengthM, widthM, heightM) {
+  const hw = widthM / 2, hh = heightM / 2;
+  const prof = [
+    [-0.50, 0.62, 0.55], [-0.42, 0.86, 0.82], [-0.10, 1.00, 1.00],
+    [0.30, 1.00, 1.00], [0.44, 0.92, 0.94], [0.50, 0.72, 0.78],
+  ];
+  return loftRings(prof.map(([zf, wf, hf]) => roundedRectRing(
+    zf * lengthM, hw * wf, hh * hf, Math.min(hw, hh) * 0.45,
+  )));
+}
+
+// The spinner, a nose cone over the hub, lofted along +z.
+export function spinnerGeometry(radiusM, lengthM, sides = 14) {
+  const prof = [[0.0, 0.55], [0.25, 0.92], [0.55, 1.00], [0.80, 0.80], [0.96, 0.45], [1.0, 0.06]];
+  return loftRings(prof.map(([zf, rf]) => {
+    const ring = [];
+    for (let i = 0; i < sides; i += 1) {
+      const a = (i / sides) * Math.PI * 2;
+      ring.push(new THREE.Vector3(radiusM * rf * Math.cos(a),
+        radiusM * rf * Math.sin(a), zf * lengthM));
+    }
+    return ring;
+  }));
+}
+
 export class SceneView {
   constructor(canvas) {
     this.canvas = canvas;
@@ -602,6 +749,33 @@ export class SceneView {
     // 40 km scene; HEIGHTS are true (times the vertical multiplier).
     const shaftR = Math.max(this.extent * 0.0016, 3.0);
 
+    // Structures are drawn thicker than life so they survive a 40 km scene.
+    // ONE multiplier for every structural girth, derived from the first
+    // machine, so relative proportions stay true: a fatter tower is drawn
+    // fatter. Spans along the blade are NOT widened, so the rotor covers the
+    // ground it really covers.
+    const firstT = r.turbineResults[0]?.turbine;
+    const trueR = firstT ? (firstT.towerBaseDiameterM ?? 5) / 2 : 2.5;
+    // A tower has to be a couple of pixels wide to exist on screen, and no
+    // wider. The old value here was tuned for a hexagonal box and drew towers
+    // as barrels next to a true-span rotor, which is why they looked wrong.
+    const towerTargetR = Math.max(this.extent * 0.00055, 2.0);
+    const girth = clamp(towerTargetR / Math.max(trueR, 0.5), 1, 24);
+    // The nacelle is long rather than fat, so it needs less widening than the
+    // tower or it swallows the hub.
+    const girthLong = Math.max(1, Math.sqrt(girth));
+    this.girthExag = girth;
+    this.chordExag = null; // set per machine below; the badge reports the first
+
+    // Geometry is shared between machines of the same specification. The cache
+    // is local to this build: clearGroup disposes what it finds, so a cache
+    // that outlived a rebuild would hand out disposed buffers.
+    const cache = new Map();
+    const geoCache = (key, make) => {
+      if (!cache.has(key)) cache.set(key, make());
+      return cache.get(key);
+    };
+
     for (const tr of r.turbineResults) {
       const t = tr.turbine;
       const g = new THREE.Group();
@@ -617,7 +791,15 @@ export class SceneView {
         color: COLORS.tower, roughness: 0.55, metalness: 0.15,
         emissive: colour, emissiveIntensity: 0.22,
       });
-      const tower = new THREE.Mesh(new THREE.CylinderGeometry(shaftR * 0.65, shaftR, hubY, 8), towerMat);
+      // TRUE tower taper, from the model's own base and top diameters, widened
+      // by the girth multiplier so it is visible across the scene.
+      const baseR = (t.towerBaseDiameterM ?? 5) / 2 * girth;
+      const topR = (t.towerTopDiameterM ?? 3) / 2 * girth;
+      const tower = new THREE.Mesh(
+        geoCache(`tw:${baseR.toFixed(1)}:${topR.toFixed(1)}:${hubY.toFixed(0)}`,
+          () => new THREE.CylinderGeometry(topR, baseR, hubY, 20, 1)),
+        towerMat,
+      );
       tower.position.y = hubY / 2;
       g.add(tower);
 
@@ -628,27 +810,49 @@ export class SceneView {
       rotor.rotation.y = (180 - t.yawDeg) * DEG;
       g.add(rotor);
 
+      const nacL = Math.max(t.rotorRadiusM * 0.20, topR * 3) * girthLong;
+      const nacW = topR * 2.2;
       const nacelle = new THREE.Mesh(
-        new THREE.BoxGeometry(shaftR * 1.5, shaftR * 1.5, shaftR * 4.5),
+        geoCache(`nc:${nacL.toFixed(1)}:${nacW.toFixed(1)}`,
+          () => nacelleGeometry(nacL, nacW, nacW * 0.92)),
         new THREE.MeshStandardMaterial({ color: 0xe6ebee, roughness: 0.5, metalness: 0.2 }),
       );
       rotor.add(nacelle);
 
       const spinner = new THREE.Group();
-      spinner.position.z = shaftR * 2.6;
+      spinner.position.z = nacL * 0.52;
       rotor.add(spinner);
+      // Blade span is exaggerated VERTICALLY only, by scaling the rotor disc,
+      // so the rotor covers the ground width it really covers. Scaling y after
+      // a rotation about y is safe: the two commute.
+      spinner.scale.y = this.vExag;
 
-      const bladeLen = t.rotorRadiusM * this.vExag;
+      const spinR = topR * 1.15;
+      const nose = new THREE.Mesh(
+        geoCache(`sp:${spinR.toFixed(1)}`, () => spinnerGeometry(spinR, spinR * 2.1)),
+        new THREE.MeshStandardMaterial({ color: 0xeef2f5, roughness: 0.45, metalness: 0.1 }),
+      );
+      spinner.add(nose);
+
+      const bladeLen = t.rotorRadiusM;
       const bladeMat = new THREE.MeshStandardMaterial({
         color: 0xf2f5f7, roughness: 0.4, metalness: 0.05,
-        emissive: colour, emissiveIntensity: 0.3, side: THREE.DoubleSide,
+        emissive: colour, emissiveIntensity: 0.3,
       });
+      // Chord gets its OWN, smaller multiplier. A blade is a slender thing: at
+      // the tower's girth factor a 3 m chord on a 75 m blade would be drawn 70 m
+      // wide, which is not a blade. So chord is widened only as far as keeps the
+      // planform recognisable, and a change to blade chord in the model still
+      // moves the picture because the cap scales with span.
+      const trueChord = t.bladeChordM ?? 3;
+      const chordExag = clamp(Math.min(girth, t.rotorRadiusM * 0.13 / Math.max(trueChord, 0.5)), 1, girth);
+      const chord = trueChord * chordExag;
+      if (this.chordExag == null) this.chordExag = chordExag;
+      const bladeGeo = geoCache(`bl:${bladeLen.toFixed(0)}:${chord.toFixed(1)}`,
+        () => bladeGeometry(bladeLen, chord));
       for (let b = 0; b < t.bladeCount; b++) {
-        const blade = new THREE.Mesh(
-          new THREE.BoxGeometry(shaftR * 1.1, bladeLen, shaftR * 0.3),
-          bladeMat,
-        );
-        blade.position.y = bladeLen / 2;
+        const blade = new THREE.Mesh(bladeGeo, bladeMat);
+        blade.position.y = spinR * 0.5;
         const arm = new THREE.Group();
         arm.rotation.z = (b / t.bladeCount) * Math.PI * 2;
         arm.add(blade);
@@ -659,11 +863,14 @@ export class SceneView {
       g.userData.spinner = spinner;
 
       // Invisible pick proxy, sized generously so hovering is not fiddly.
+      const proxyR = Math.max(bladeLen * 0.55, shaftR * 3);
+      const proxyH = hubY + bladeLen * this.vExag;
       const proxy = new THREE.Mesh(
-        new THREE.CylinderGeometry(Math.max(bladeLen * 0.5, shaftR * 3), Math.max(bladeLen * 0.5, shaftR * 3), hubY + bladeLen, 6),
+        geoCache(`px:${proxyR.toFixed(0)}:${proxyH.toFixed(0)}`,
+          () => new THREE.CylinderGeometry(proxyR, proxyR, proxyH, 6)),
         new THREE.MeshBasicMaterial({ visible: false }),
       );
-      proxy.position.y = (hubY + bladeLen) / 2;
+      proxy.position.y = proxyH / 2;
       proxy.userData.turbine = tr;
       g.add(proxy);
       this._pickables.push(proxy);

@@ -316,6 +316,33 @@ engine responds the way the physics says it must: masking a farm cannot increase
 false plots, clutter cannot improve a detection margin, stopping the rotors
 removes the blade Doppler, and wind direction changes the answer.
 
+## How the turbines are drawn
+
+The machines are built from the dimensions the model already carries: tower base
+and top diameter, blade length, blade chord, blade count. Blades are lofted
+aerofoil sections with a circular root, a shoulder at about a fifth of span and a
+twist that washes out to zero at the tip, so changing a blade chord or a tower
+diameter changes the picture as well as the maths. Earlier these were a cylinder,
+a box and three flat slabs sized from the scene extent, and the real dimensions
+did nothing.
+
+Two exaggerations are in force and they are different, both reported in the
+badge over the viewport:
+
+- **Heights** go through the vertical multiplier, as everything in the scene does.
+- **Structural girth** goes through its own, smaller multiplier, because a 5.5 m
+  tower across a 40 km scene is a fraction of a pixel. It is uniform across every
+  structure, so relative proportions stay true. Blade chord gets a further cap:
+  at the tower's factor a 3 m chord on a 75 m blade would be drawn 70 m wide,
+  which is not a blade.
+
+**Blade span is never exaggerated horizontally.** The rotor covers the ground
+area it really covers. The previous version scaled blade length by the vertical
+multiplier, which at the default drew every rotor four times too wide.
+
+`tools/turbine-harness.html` renders one machine on its own for checking the
+geometry; serve the repository and open it.
+
 ## Vertical exaggeration
 
 Heights can be multiplied for legibility, because a 185 m turbine inside a 40 km
