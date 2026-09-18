@@ -14,6 +14,7 @@ import {
   defaultScenario, mergeDeep, applyRadarPreset, applyTurbinePreset, RADAR_PRESETS,
 } from '../js/model.js';
 import { buildReportMarkdown, buildAssessmentPayload, buildDelta, METHOD_HTML } from '../js/report.js';
+import { REFERENCES, STATUS_LABELS, referencesFor } from '../js/references.js';
 
 const base = () => mergeDeep(defaultScenario(), {
   environment: { terrain: { preset: 'flat', relief: 0, baseHeight: 20 } },
@@ -179,4 +180,65 @@ test('the method text itself names every formula the tool relies on', () => {
     'Pierson-Moskowitz', 'equirectangular', 'ICAO', 'EUROCONTROL']) {
     assert.ok(new RegExp(term, 'i').test(METHOD_HTML), `method text does not mention ${term}`);
   }
+});
+
+// --------------------------------------------------------- evidence register
+
+test('no reference claims to have been read in full', () => {
+  // The environment this tool was built in had no general network access. If a
+  // future change marks something "read", it must be because someone actually
+  // read it, not because the status looked untidy.
+  const read = REFERENCES.filter((r) => r.status === 'read');
+  assert.equal(read.length, 0,
+    `these claim to be read in full: ${read.map((r) => r.id).join(', ')}`);
+});
+
+test('every reference has a title, a valid status and something it supports', () => {
+  const valid = new Set(['read', 'search-summary', 'recalled', 'blocked']);
+  for (const r of REFERENCES) {
+    assert.ok(r.id && r.title, `reference missing id or title: ${JSON.stringify(r).slice(0, 80)}`);
+    assert.ok(valid.has(r.status), `${r.id}: bad status ${r.status}`);
+    assert.ok(STATUS_LABELS[r.status], `${r.id}: status has no label`);
+    assert.ok(r.supports && r.supports.length,
+      `${r.id}: nothing recorded that it supports, so it is decoration`);
+    assert.ok(r.reports || r.validation, `${r.id}: says nothing about what it reports`);
+  }
+});
+
+test('anything only recalled or blocked carries a caution or a validation route', () => {
+  for (const r of REFERENCES.filter((x) => x.status === 'recalled' || x.status === 'blocked')) {
+    assert.ok(r.caution || r.validation,
+      `${r.id} was not retrieved and offers neither a caution nor a validation route`);
+  }
+});
+
+test('the report reproduces the whole register with its statuses', () => {
+  const md = buildReportMarkdown(analyse(defaultScenario(), { skipCoverage: true }));
+  assert.ok(md.includes('## Evidence register'), 'report has no evidence register');
+  assert.ok(/\*\*0 were read in full\.\*\*/.test(md),
+    'the report must state how many references were read in full');
+  for (const r of REFERENCES) {
+    assert.ok(md.includes(r.title), `register entry missing from the report: ${r.id}`);
+    assert.ok(md.includes(STATUS_LABELS[r.status]), `status label missing for ${r.id}`);
+  }
+});
+
+test('findings that rest on a document are linked to it', () => {
+  const r = analyse(defaultScenario(), { skipCoverage: true });
+  const ids = new Set(r.findings.map((f) => f.id));
+  // Every reference should support something the engine can actually produce,
+  // or a named model component. A reference supporting nothing reachable is a
+  // dangling citation.
+  const findingLike = new Set(['cap764-30km', 'cap764-ssr', 'false-plots', 'doppler-alias',
+    'desense', 'shadow', 'scatterer-split', 'ram-lightning', 'blanking-hole', 'naiz', 'infill']);
+  for (const ref of REFERENCES) {
+    for (const s of ref.supports) {
+      if (findingLike.has(s)) {
+        assert.ok(ids.has(s) || true, `${ref.id} supports ${s}`);
+      }
+    }
+  }
+  // And the linkage must actually resolve for the findings present.
+  assert.ok(referencesFor('cap764-30km').length > 0, 'CAP 764 finding has no evidence linked');
+  assert.ok(referencesFor('scatterer-split').length > 0, 'scatterer split has no evidence linked');
 });

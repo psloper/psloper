@@ -12,6 +12,7 @@ import {
 import { WIND_ROSE_PRESETS, operatingState as windState } from './wind.js';
 import { cylinderRcsDbsm } from './rf.js';
 import { SEVERITY_LABELS } from './findings.js';
+import { referencesFor, STATUS_LABELS } from './references.js';
 import { M_PER_FT } from './geo.js';
 
 export function getPath(obj, path) {
@@ -741,6 +742,13 @@ export function renderFindings(el, findings) {
           .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`
       : '';
     const source = f.source ? `<p class="finding-source">${esc(f.source)}</p>` : '';
+    const refs = referencesFor(f.id);
+    const evidence = refs.length
+      ? `<div class="finding-evidence"><span class="ev-label">Evidence</span>${refs.map((r) => `
+          <span class="ev-item" title="${esc(STATUS_LABELS[r.status])}">
+            <span class="ev-dot" data-status="${r.status}"></span>${esc(r.title.length > 64 ? `${r.title.slice(0, 61)}...` : r.title)}
+          </span>`).join('')}</div>`
+      : '';
     return `
       <details class="finding" data-sev="${f.severity}"${i < 2 ? ' open' : ''}>
         <summary>
@@ -750,6 +758,7 @@ export function renderFindings(el, findings) {
         <div class="finding-body">
           <p>${esc(f.detail)}</p>
           ${metrics}
+          ${evidence}
           ${source}
           <span class="basis-tag">basis: ${esc(f.basis)}</span>
         </div>

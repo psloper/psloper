@@ -6,6 +6,7 @@
 
 import { M_PER_FT } from './geo.js';
 import { SEVERITY_LABELS } from './findings.js';
+import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
 
 export const METHOD_HTML = `
 <div class="warn-box">
@@ -497,6 +498,34 @@ export function buildReportMarkdown(result, delta) {
       + `${t.snrEffDb.toFixed(1)} | ${t.falsePlot ? 'YES' : 'no'} |`);
   }
   P('');
+
+  P('## Evidence register');
+  P('');
+  P('Every model component and screening threshold in this tool traces to something. This is what,');
+  P('and how well. **Read the status column.**');
+  P('');
+  const counts = statusCounts();
+  P(`Of ${REFERENCES.length} entries: `
+    + Object.entries(counts).map(([k, v]) => `${v} ${STATUS_LABELS[k].toLowerCase()}`).join(', ')
+    + `. **${counts.read || 0} were read in full.**`);
+  P('');
+  P('The environment this tool was built in had no general outbound network access. Formulas taken');
+  P('from standard references were validated against independently known values instead, which is a');
+  P('different kind of confidence and is recorded per entry below.');
+  P('');
+  for (const r of REFERENCES) {
+    const who = [r.authors, r.org].filter(Boolean).join(', ');
+    P(`### ${r.title}`);
+    P('');
+    P(`*${[who, r.venue, r.year, r.type].filter(Boolean).join(' · ')}*`);
+    P('');
+    P(`**Status: ${STATUS_LABELS[r.status]}**`);
+    P('');
+    if (r.reports) { P(`What it reports: ${r.reports}`); P(''); }
+    if (r.validation) { P(`How this tool checked it: ${r.validation}`); P(''); }
+    if (r.caution) { P(`Caution: ${r.caution}`); P(''); }
+    if (r.supports && r.supports.length) { P(`Supports: ${r.supports.join('; ')}`); P(''); }
+  }
 
   P('## Method and limits');
   P('');

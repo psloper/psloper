@@ -9,6 +9,7 @@ import {
 import { SceneView } from './scene.js';
 import { PpiDisplay, ProfileDisplay, WindRoseDisplay } from './displays.js';
 import { deriveWindRoseFindings } from './findings.js';
+import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
 import { WIND_ROSE_PRESETS } from './wind.js';
 import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
 import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
@@ -380,6 +381,32 @@ if (!canDownload) {
   document.querySelectorAll('[data-mode="download"]').forEach((b) => b.remove());
   document.querySelectorAll('[data-mode="view"]').forEach((b) => b.classList.remove('ghost'));
 }
+
+$('#btn-evidence').addEventListener('click', () => {
+  const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const counts = statusCounts();
+  const summary = Object.entries(counts)
+    .map(([k, v]) => `${v} ${STATUS_LABELS[k].toLowerCase()}`).join(', ');
+  $('#evidence-body').innerHTML = `
+    <div class="warn-box">
+      <strong>${counts.read || 0} of ${REFERENCES.length} entries were read in full.</strong>
+      Of the rest: ${esc(summary)}. The environment this tool was built in had no general outbound
+      network access. Where a formula came from a standard reference, it was validated against values
+      that are independently known instead, which is a different kind of confidence and is recorded on
+      each entry. Read the status before relying on anything here.
+    </div>
+    ${REFERENCES.map((r) => `
+      <article class="ev-entry" data-status="${r.status}">
+        <h4>${esc(r.title)}</h4>
+        <p class="ev-meta">${esc([r.authors, r.org, r.venue, r.year, r.type].filter(Boolean).join(' \u00b7 '))}</p>
+        <p class="ev-status"><span class="ev-dot" data-status="${r.status}"></span>${esc(STATUS_LABELS[r.status])}</p>
+        ${r.reports ? `<p><strong>What it reports.</strong> ${esc(r.reports)}</p>` : ''}
+        ${r.validation ? `<p><strong>How this tool checked it.</strong> ${esc(r.validation)}</p>` : ''}
+        ${r.caution ? `<p class="ev-caution"><strong>Caution.</strong> ${esc(r.caution)}</p>` : ''}
+        ${r.supports?.length ? `<p class="ev-supports">Supports: ${esc(r.supports.join('; '))}</p>` : ''}
+      </article>`).join('')}`;
+  $('#dlg-evidence').showModal();
+});
 
 $('#btn-export').addEventListener('click', () => $('#dlg-export').showModal());
 
