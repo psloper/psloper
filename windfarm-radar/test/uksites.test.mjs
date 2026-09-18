@@ -6,14 +6,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE,
+  UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, LIVE_STATUSES,
   greatCircleM, initialBearingDeg, nearestRadar, pairingGeometry, farmRecord, radarRecord,
+  liveFarmIndices,
 } from '../js/uksites.js';
 
 test('every record sits inside the UK and Ireland bounding box', () => {
+  // The box runs to 3 degrees east because the Norfolk and East Anglia
+  // offshore zones genuinely sit out there.
   for (const [name, lat, lon] of UK_WIND_FARMS) {
     assert.ok(lat > 49 && lat < 61.5, `${name} latitude ${lat}`);
-    assert.ok(lon > -11 && lon < 2.5, `${name} longitude ${lon}`);
+    assert.ok(lon > -11 && lon < 3.0, `${name} longitude ${lon}`);
   }
   for (const [name, , lat, lon] of UK_RADAR_SITES) {
     assert.ok(lat > 49 && lat < 61.5, `${name} latitude ${lat}`);
@@ -22,8 +25,9 @@ test('every record sits inside the UK and Ireland bounding box', () => {
 });
 
 test('capacities and roles are plausible', () => {
+  // Berwick Bank alone is consented at 4,100 MW, so the ceiling is not 2 GW.
   for (const [name, , , mw] of UK_WIND_FARMS) {
-    assert.ok(mw > 0 && mw <= 2000, `${name} capacity ${mw} MW`);
+    assert.ok(mw > 0 && mw <= 5000, `${name} capacity ${mw} MW`);
   }
   const roles = new Set(UK_RADAR_SITES.map((r) => r[1]));
   assert.deepEqual([...roles].sort(), ['aerodrome', 'en-route', 'unclassified']);
@@ -106,8 +110,44 @@ test('no military radar position is asserted anywhere in the data', () => {
 test('the module states its limits at the top of the file, not only in the docs', () => {
   const src = readFileSync(new URL('../js/uksites.js', import.meta.url), 'utf8');
   const head = src.slice(0, src.indexOf('export const UK_WIND_FARMS'));
-  for (const phrase of ['centroid', 'not turbine positions', 'disagree', 'No military radar']) {
+  for (const phrase of ['PLANNING RECORDS', 'PRECISION, NOT ACCURACY', 'STATUS MATTERS',
+    'disagree', 'No military radar']) {
     assert.ok(head.toLowerCase().includes(phrase.toLowerCase()),
       `the header must say "${phrase}"`);
   }
+});
+
+test('every record carries a development status, and most are not operating plant', () => {
+  const seen = new Set();
+  for (const [name, , , , status, offshore] of UK_WIND_FARMS) {
+    assert.ok(typeof status === 'string' && status.length, `${name} has no status`);
+    assert.ok(offshore === 0 || offshore === 1, `${name} has a bad offshore flag`);
+    seen.add(status);
+  }
+  for (const s of LIVE_STATUSES) assert.ok(seen.has(s), `no record has status ${s}`);
+  // The headline reason the filter exists: two thirds of the table will not be
+  // built as recorded. If that stops being true the warnings need rewriting.
+  const live = liveFarmIndices();
+  assert.ok(live.length < UK_WIND_FARMS.length * 0.6,
+    `${live.length} of ${UK_WIND_FARMS.length} are live; the "most are not plant" warning is stale`);
+  assert.ok(live.length > 500, 'the live pipeline should not be nearly empty');
+});
+
+test('farmRecord reports status truthfully and liveFarmIndices agrees with it', () => {
+  const live = new Set(liveFarmIndices());
+  for (let i = 0; i < UK_WIND_FARMS.length; i += 1) {
+    const r = farmRecord(i);
+    assert.equal(r.live, live.has(i), `${r.name}: live flag disagrees with the index list`);
+    assert.equal(r.live, LIVE_STATUSES.includes(r.status), `${r.name}: live flag disagrees with status`);
+  }
+});
+
+test('offshore records really are offshore, and vice versa', () => {
+  // Not a coastline test, which this tool has no data for. A weaker but honest
+  // one: the offshore set must be dominated by large projects, and the biggest
+  // records in the table must be flagged offshore.
+  const offshore = UK_WIND_FARMS.filter((r) => r[5] === 1);
+  assert.ok(offshore.length > 50 && offshore.length < 200, `${offshore.length} offshore records`);
+  const biggest = [...UK_WIND_FARMS].sort((a, b) => b[3] - a[3]).slice(0, 20);
+  assert.ok(biggest.every((r) => r[5] === 1), 'the twenty largest projects should all be offshore');
 });

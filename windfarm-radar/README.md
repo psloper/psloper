@@ -120,28 +120,34 @@ Nothing is uploaded. Every file is parsed in the page.
 
 ### Real UK sites, built in
 
-The Site tab has a **Real UK sites** picker holding 780 real UK wind farms and
-55 real UK civil radar sites. Choose a farm, choose a radar or take the nearest
-automatically, and the tool places the farm at its true bearing and range.
+The Site tab has a **Real UK sites** picker holding the whole UK wind pipeline
+and 55 real UK civil radar sites. Choose a scope, choose a project, choose a
+radar or take the nearest automatically, and the tool places it at its true
+bearing and range and sets land or sea from the record.
 
 | What | Count | Source | Licence |
 | --- | --- | --- | --- |
-| UK wind farms | 780 (23.2 GW) | WRI Global Power Plant Database v1.3.0, from the UK Renewable Energy Planning Database | CC BY 4.0 |
+| UK wind records | 2,489 | UK Renewable Energy Planning Database, via a GitHub snapshot | OGL v3 (Crown copyright) |
+| of which current or planned | 1,275 (89.2 GW) | 832 operational, 44 under construction, 220 consented, 179 submitted | |
 | UK civil radar sites | 55 (17 en-route, 32 aerodrome) | `VATSIM-UK/UK-Sector-File` and `open-air-data/atc-radar`, merged on position | derived set is ODbL |
 
 Four things you must know before using it:
 
-- Wind farm positions are **facility centroids, not turbine positions**, and the
-  REPD's own grid references can be about a kilometre out.
-- The wind farm snapshot is from **early 2022** and is not current.
+- **Two thirds of the wind records will not be built as recorded.** They are
+  refused, withdrawn, abandoned, expired or superseded. The picker filters on
+  status by default; opening it up is a deliberate act.
+- **The positions are planning records, not surveyed turbine positions.** At the
+  one site where this tool has ground truth, Kelmarsh, the recorded point is
+  **1,141 m** from the true centre of the array, which is 2.4 times the radius of
+  the array itself. Coordinates are written to five decimal places. That is
+  precision, not accuracy.
 - The two radar sources **disagree with each other** by a median of 1.4 km and by
   up to 5.9 km. Neither is official.
 - **No military radar is included.** MOD safeguarding of air defence radar is what
   most often decides a real UK application, and this tool carries none of it.
 
-The full provenance, the source-versus-source cross-check, and what the real
-geometry says about all 780 farms is in
-[`calibration/UK-SITES.md`](calibration/UK-SITES.md).
+The full provenance, the accuracy test and the source-versus-source cross-check
+are in [`calibration/UK-SITES.md`](calibration/UK-SITES.md).
 
 The `.xlsx` reader is built on the browser's own `DecompressionStream` rather
 than a library, because an `.xlsx` is a ZIP of XML and the platform can already
@@ -297,7 +303,7 @@ but wrong assessment:
 cd windfarm-radar && npm test
 ```
 
-82 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
+85 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
 v = −0.78 cut-off, 13.1 dB required SNR for Pd = 0.9 / Pfa = 1e-6, the 4.12·√h
 horizon rule, and a cosecant-squared check that the pattern compensates R⁻⁴
 exactly for a constant-altitude target. The behavioural tests check that the
@@ -354,7 +360,7 @@ test/
   calibration.test.mjs  The control curve matches measured SCADA; diffraction
                     matches the ITU's own reference implementation
 data/
-  uk-wind-farms.json    780 UK wind facilities
+  uk-wind-farms.json    2,489 UK wind records, current and planned, with status
   uk-radar-sites.json   55 UK civil radar sites, with source disagreement recorded
 calibration/
   README.md          SCADA calibration, two passes: seven model assumptions corrected

@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
 """Rebuild data/uk-wind-farms.json and data/uk-radar-sites.json from source.
 
-Both inputs are mirrored on GitHub, which is the only bulk-data host this
-session's network policy allows. Everything else tried (Overpass, OpenStreetMap,
-data.gov.uk, ArcGIS, nats.aero, caa.co.uk, Zenodo, Copernicus) is refused at the
-egress proxy with a 403 on CONNECT.
+Every authoritative host is refused by this environment's network policy with a
+403 on CONNECT, including data.gov.uk, nats.aero, caa.co.uk, Overpass,
+OpenStreetMap, ArcGIS, Zenodo and Copernicus. GitHub is the only bulk-data host
+that answers, so everything below is reached through a GitHub mirror rather than
+its publisher. That is a real limitation on how much weight any of it carries.
 
 Sources
 -------
-A. Wind farms
-   wri/global-power-plant-database, output_database/global_power_plant_database.csv
-   WRI Global Power Plant Database v1.3.0, CC BY 4.0. Unmaintained since early
-   2022. 771 of the 780 UK wind rows carry geolocation_source = "UK Renewable
-   Energy Planning Database", so this is REPD data at one remove.
+A. Wind farms: the UK Renewable Energy Planning Database (REPD)
+   Ventusltd/globalgrid2050, testcode/<snapshot>/atlas/data/repd-identities/*.json
+
+   The REPD is the UK government's record of every renewable project from
+   inception through planning, construction, operation and decommissioning. It
+   is Crown copyright, published under the Open Government Licence v3, which
+   permits reuse with attribution. The repository mirroring it declares no
+   licence of its own; what is used here are the OGL-licensed facts, and both
+   the REPD and the mirror are attributed.
+
+   Each record carries a development status. THAT IS THE POINT: most rows are
+   not operating plant. Of 2,489 wind records, 832 are operational and 838 were
+   refused, withdrawn, abandoned or expired. Treating the table as a list of
+   wind farms overstates the fleet roughly threefold.
+
+   The snapshot is a derived rendering, not the official download, so its
+   currency depends on when whoever made it last refreshed it. Check the
+   snapshot directory name, which is a timestamp, before relying on it.
 
 B. Radar sites, source A
    VATSIM-UK/UK-Sector-File, "Misc Other/Radar Sites.txt"
@@ -28,15 +42,19 @@ C. Radar sites, source B
 The derived radar list is a database derived from an ODbL source, so it is
 offered under ODbL. Attribution to both projects is required.
 """
-import csv, io, json, math, re, sys, urllib.request
+import glob, json, math, os, re, shutil, subprocess, sys, tempfile, urllib.request
 
 RAW = "https://raw.githubusercontent.com"
-GPPD = f"{RAW}/wri/global-power-plant-database/master/output_database/global_power_plant_database.csv"
 SECTOR = f"{RAW}/VATSIM-UK/UK-Sector-File/main/Misc%20Other/Radar%20Sites.txt"
 ATC = f"{RAW}/open-air-data/atc-radar/master/data/radars.geojson"
+REPD_REPO = "https://github.com/Ventusltd/globalgrid2050.git"
 
-UK_BOX = (-11.0, 2.2, 49.0, 61.0)  # lon_min, lon_max, lat_min, lat_max
-MERGE_RADIUS_M = 6000  # sources name the same site differently, so match on position
+UK_BOX = (-11.0, 3.0, 49.0, 61.5)  # lon_min, lon_max, lat_min, lat_max
+MERGE_RADIUS_M = 6000  # the two radar sources name the same site differently
+
+# REPD development statuses that mean the project exists or is expected to.
+LIVE_STATUSES = ("Operational", "Under Construction", "Awaiting Construction",
+                 "Application Submitted")
 
 
 def get(url: str) -> bytes:
@@ -63,19 +81,44 @@ def great_circle_m(a_lat, a_lon, b_lat, b_lon):
 
 
 def wind_farms():
-    rows = csv.DictReader(io.StringIO(get(GPPD).decode("utf-8")))
+    """Clone the REPD mirror, take its newest snapshot, keep the wind rows."""
+    tmp = tempfile.mkdtemp(prefix="repd-")
+    try:
+        subprocess.run(["git", "clone", "--depth", "1", "-q", "--filter=blob:limit=6m",
+                        REPD_REPO, tmp], check=True)
+        snaps = sorted(glob.glob(os.path.join(tmp, "testcode/*/atlas/data/repd-identities")))
+        if not snaps:
+            raise SystemExit("no REPD snapshot found in the mirror; its layout has changed")
+        print(f"REPD snapshot: {snaps[-1].split('testcode/')[1].split('/')[0]}", file=sys.stderr)
+        rec = {}
+        for f in glob.glob(os.path.join(snaps[-1], "*.json")):
+            rec.update(json.load(open(f)))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
     out = []
-    for x in rows:
-        if x["country"] != "GBR" or x["primary_fuel"] != "Wind" or not x["latitude"]:
+    for ref, v in rec.items():
+        tech = v.get("technology") or ""
+        if not tech.startswith("wind"):
             continue
+        # "approximate_lease_area_centre" and "missing" are the mirror's own
+        # admission that it does not know where the project is. Drop them.
+        if v.get("geometry_status") != "valid":
+            continue
+        if v.get("latitude") is None or v.get("longitude") is None:
+            continue
+        name = (v.get("name") or "").strip()
+        if not name:
+            name = f"REPD {ref} (no name recorded), {v.get('planning_authority') or 'unknown authority'}"
         out.append({
-            "name": x["name"],
-            "lat": round(float(x["latitude"]), 5),
-            "lon": round(float(x["longitude"]), 5),
-            "mw": round(float(x["capacity_mw"]), 1),
-            "year": int(float(x["commissioning_year"])) if x["commissioning_year"] else None,
-            "geo": x["geolocation_source"],
+            "ref": ref, "name": name,
+            "lat": round(float(v["latitude"]), 5), "lon": round(float(v["longitude"]), 5),
+            "mw": round(float(v.get("capacity_mw") or 0), 1),
+            "status": v["status"],
+            "offshore": tech == "wind_offshore",
+            "authority": v.get("planning_authority") or "",
         })
+    out.sort(key=lambda x: x["name"])
     return out
 
 
@@ -132,7 +175,10 @@ def main():
     farms, radars = wind_farms(), radar_sites()
     json.dump(farms, open("data/uk-wind-farms.json", "w"), indent=0)
     json.dump(radars, open("data/uk-radar-sites.json", "w"), indent=0)
-    print(f"wind farms: {len(farms)} ({sum(f['mw'] for f in farms):.0f} MW)", file=sys.stderr)
+    live = [f for f in farms if f["status"] in LIVE_STATUSES]
+    print(f"wind records: {len(farms)}", file=sys.stderr)
+    print(f"  built or in the pipeline: {len(live)} ({sum(f['mw'] for f in live):,.0f} MW)", file=sys.stderr)
+    print(f"  will not be built as recorded: {len(farms) - len(live)}", file=sys.stderr)
     print(f"radar sites: {len(radars)} "
           f"({sum(1 for r in radars if len(r['sources']) == 2)} in both sources)", file=sys.stderr)
     print("now regenerate js/uksites.js with calibration/build_uksites.py", file=sys.stderr)

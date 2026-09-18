@@ -16,7 +16,27 @@ import { RADAR_PRESETS } from '../js/model.js';
 const here = dirname(fileURLToPath(import.meta.url));
 const load = (f) => JSON.parse(readFileSync(join(here, '..', 'data', f), 'utf8'));
 const radars = load('uk-radar-sites.json');
-const farms = load('uk-wind-farms.json');
+const allFarms = load('uk-wind-farms.json');
+
+// Most rows in the planning database are projects that will not be built as
+// recorded. Counting those as wind farms overstates the fleet threefold, so
+// everything below runs on the live pipeline only. Pass --all to include the
+// rest, which is useful for seeing how much refused capacity sat near a radar.
+const LIVE = ['Operational', 'Under Construction', 'Awaiting Construction', 'Application Submitted'];
+const includeAll = process.argv.includes('--all');
+const farms = includeAll ? allFarms : allFarms.filter((f) => LIVE.includes(f.status));
+console.log(`records: ${allFarms.length} total, ${farms.length} in scope`
+  + `${includeAll ? ' (all statuses)' : ' (built or in the pipeline)'}`);
+{
+  const by = {};
+  for (const f of allFarms) by[f.status] = (by[f.status] || 0) + 1;
+  const rows = Object.entries(by).sort((a, b) => b[1] - a[1]);
+  console.log('  by status: ' + rows.map(([k, v]) => `${k} ${v}`).join(', '));
+  const off = farms.filter((f) => f.offshore);
+  console.log(`  offshore in scope: ${off.length} sites, `
+    + `${off.reduce((s, f) => s + f.mw, 0).toFixed(0)} MW of `
+    + `${farms.reduce((s, f) => s + f.mw, 0).toFixed(0)} MW`);
+}
 
 // Great-circle distance. The tool's own scene maths is local-tangent-plane, so
 // this is the one piece the tool does not already own.

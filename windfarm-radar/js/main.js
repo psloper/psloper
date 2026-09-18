@@ -133,6 +133,10 @@ function rebuildRail() {
   });
 }
 
+// A control that writes several scenario fields at once asks for the rail to be
+// rebuilt, so the other controls stop showing stale values.
+el.rail.addEventListener('rail-rebuild', () => rebuildRail());
+
 // ------------------------------------------------------------ file imports
 
 function pickFile(accept) {

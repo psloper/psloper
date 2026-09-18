@@ -14,7 +14,8 @@ import { cylinderRcsDbsm } from './rf.js';
 import { SEVERITY_LABELS } from './findings.js';
 import { referencesFor, STATUS_LABELS } from './references.js';
 import { M_PER_FT } from './geo.js';
-import { UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, pairingGeometry } from './uksites.js';
+import { UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, LIVE_STATUSES,
+  pairingGeometry, farmRecord as ukFarm } from './uksites.js';
 
 export function getPath(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
@@ -266,12 +267,15 @@ export const TABS = {
     ] },
     { group: 'Real UK sites', fields: [
       { type: 'uk-picker', id: 'uk-picker' },
-      { type: 'hint', text: 'Wind farm positions are facility centroids from the UK Renewable Energy '
-        + 'Planning Database, by way of WRI\u2019s Global Power Plant Database v1.3.0 (CC BY 4.0, last '
-        + 'released early 2022). They are NOT turbine positions, and the REPD\u2019s own grid references '
-        + 'can be a kilometre out. Radar positions come from two community aviation sources that disagree '
-        + 'with each other by a median of 1.4 km. NO military radar is included. Use this to set up a '
-        + 'realistic geometry quickly, not to assess a real application.' },
+      { type: 'hint', text: 'Wind farm records come from the UK Renewable Energy Planning Database, '
+        + 'Crown copyright under the Open Government Licence, reached through a third-party snapshot '
+        + 'because data.gov.uk is not available from here. Each row is one PLANNING RECORD with one '
+        + 'point: not a turbine position, and measured 1,141 m out at the one site where this tool has '
+        + 'real coordinates. Two thirds of the records are projects that were refused, withdrawn or '
+        + 'abandoned, which is why the status filter defaults to the live pipeline. Radar positions come '
+        + 'from two community aviation sources that disagree with each other by a median of 1.4 km. NO '
+        + 'military radar is included. Use this to set up a realistic geometry quickly, not to assess a '
+        + 'real application.' },
     ] },
     { group: 'Import real data', fields: [
       { type: 'action', id: 'import-turbines', label: 'Turbine schedule', button: 'Choose .xlsx or .csv',
@@ -447,6 +451,12 @@ export function buildRail(container, tab, scenario, onChange, onPreset) {
   return noteEls;
 }
 
+// The picker writes several scenario fields at once (range, bearing, origin,
+// and the land/sea surface), so the rail has to be rebuilt or those controls
+// show stale values. A rebuild destroys the picker, so it remembers what was
+// selected and puts it back.
+const ukPickerState = { scope: 'live', farm: '', radar: '' };
+
 function makeField(f, scenario, onChange, onPreset, noteEls) {
   if (f.type === 'hint') {
     const p = document.createElement('p');
@@ -505,14 +515,44 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
       + `<span class="field-value">${UK_WIND_FARMS.length} farms, ${UK_RADAR_SITES.length} radar sites</span>`;
     wrap.append(head);
 
+    // Most rows in the planning database are NOT wind farms: they are projects
+    // that were refused, withdrawn or abandoned. Default to the ones that exist
+    // or are expected to, and make including the rest a deliberate act.
+    const scopeSel = document.createElement('select');
+    scopeSel.style.width = '100%';
+    scopeSel.innerHTML = [
+      ['live', 'Built or in the pipeline'],
+      ['Operational', 'Operational only'],
+      ['Under Construction', 'Under construction only'],
+      ['Awaiting Construction', 'Consented, awaiting construction'],
+      ['Application Submitted', 'Application submitted'],
+      ['all', 'Every record, including refused and abandoned'],
+    ].map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+    wrap.append(scopeSel);
+
     const farmSel = document.createElement('select');
     farmSel.style.width = '100%';
-    farmSel.innerHTML = '<option value="">Choose a wind farm\u2026</option>'
-      + UK_WIND_FARMS
-        .map((r, i) => [i, r[0], r[3]])
-        .sort((a, b) => a[1].localeCompare(b[1]))
-        .map(([i, name, mw]) => `<option value="${i}">${name} \u2014 ${mw} MW</option>`)
-        .join('');
+    farmSel.style.marginTop = '6px';
+    const fillFarms = () => {
+      const scope = scopeSel.value;
+      const keep = (r) => (scope === 'all' ? true
+        : scope === 'live' ? LIVE_STATUSES.includes(r[4])
+          : r[4] === scope);
+      const rows = UK_WIND_FARMS
+        .map((r, i) => ({ i, name: r[0], mw: r[3], status: r[4], off: r[5] === 1, keep: keep(r) }))
+        .filter((r) => r.keep)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      farmSel.innerHTML = `<option value="">Choose one of ${rows.length} \u2026</option>`
+        + rows.map((r) => `<option value="${r.i}">${r.name} \u2014 ${r.mw} MW`
+          + `${r.off ? ', offshore' : ''}${scope === 'live' || scope === 'all' ? ` [${r.status}]` : ''}`
+          + '</option>').join('');
+    };
+    scopeSel.value = ukPickerState.scope;
+    fillFarms();
+    scopeSel.addEventListener('change', () => {
+      ukPickerState.scope = scopeSel.value; ukPickerState.farm = '';
+      fillFarms(); recompute();
+    });
     wrap.append(farmSel);
 
     const radarSel = document.createElement('select');
@@ -550,10 +590,17 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
         return;
       }
       const km = (geom.rangeM / 1000).toFixed(1);
+      const f = geom.farm;
       const parts = [
-        `${geom.farm.name} to ${geom.radar.name} (${geom.radar.role}): `
-        + `${km} km on a bearing of ${geom.bearingDeg.toFixed(0)}\u00b0 from the radar.`,
+        `${f.name} \u2014 ${f.mw} MW, ${f.offshore ? 'offshore' : 'onshore'}, `
+        + `status ${f.status.toLowerCase()}, REPD reference ${f.repdRef}.`,
+        `${km} km from ${geom.radar.name} (${geom.radar.role}) on a bearing of `
+        + `${geom.bearingDeg.toFixed(0)}\u00b0 from the radar.`,
       ];
+      if (!f.live) {
+        parts.push('THIS PROJECT IS NOT BEING BUILT as recorded: the planning database has it as '
+          + `${f.status.toLowerCase()}. It is here because you asked to see every record.`);
+      }
       if (geom.rangeM > MAX_RANGE_M) {
         parts.push(`The distance control stops at ${MAX_RANGE_M / 1000} km, so this will be placed at `
           + `${MAX_RANGE_M / 1000} km, not ${km} km. The bearing is real; the range is not.`);
@@ -569,7 +616,10 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
         parts.push('Over 100 km the flat-plane geometry this tool draws in is no longer a fair picture '
           + 'of the real surface.');
       }
-      parts.push('Land or sea is NOT set from this data: choose the surface yourself above.');
+      parts.push('The recorded point is the PLANNING POSITION for the whole project, not a surveyed '
+        + 'turbine position. Tested against the one array where this tool has real coordinates, '
+        + 'Kelmarsh, the recorded point is 1,141 m from the true centre, which is more than twice '
+        + 'the radius of the array itself.');
       note.textContent = parts.join(' ');
       btn.disabled = false;
     };
@@ -581,8 +631,14 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
       geom = pairingGeometry(fi, ri);
       describe();
     };
-    farmSel.addEventListener('change', recompute);
-    radarSel.addEventListener('change', recompute);
+    farmSel.addEventListener('change', () => { ukPickerState.farm = farmSel.value; recompute(); });
+    radarSel.addEventListener('change', () => { ukPickerState.radar = radarSel.value; recompute(); });
+    // Put back whatever was selected before the last rebuild.
+    if (ukPickerState.farm && farmSel.querySelector(`option[value="${ukPickerState.farm}"]`)) {
+      farmSel.value = ukPickerState.farm;
+    }
+    radarSel.value = ukPickerState.radar;
+    recompute();
 
     btn.addEventListener('click', () => {
       if (!geom) return;
@@ -590,11 +646,16 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
       scenario.site.originLon = Number(geom.farm.lon.toFixed(4));
       scenario.farm.centreBearingDeg = Math.round(geom.bearingDeg);
       scenario.farm.centreRangeM = Math.round(Math.min(geom.rangeM, MAX_RANGE_M) / 250) * 250;
+      // Land or sea now comes from the data rather than being left to the user.
+      scenario.site.environment = geom.farm.offshore ? 'offshore' : 'onshore';
       scenario.farm.ukPairing = {
         farm: geom.farm.name, radar: geom.radar.name, role: geom.radar.role,
+        status: geom.farm.status, offshore: geom.farm.offshore, repdRef: geom.farm.repdRef,
         trueRangeM: Math.round(geom.rangeM), clamped: geom.rangeM > MAX_RANGE_M,
       };
       onChange();
+      // Deferred so this handler finishes before its own element is replaced.
+      setTimeout(() => wrap.dispatchEvent(new CustomEvent('rail-rebuild', { bubbles: true })), 0);
     });
 
     const mil = document.createElement('p');

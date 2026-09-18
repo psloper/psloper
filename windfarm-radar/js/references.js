@@ -33,7 +33,9 @@
 //                     notebook outputs on GitHub because Zenodo is blocked.
 //                     Independently confirms the control curve correction.
 //   kelmarsh-static   A real six-turbine layout. Two layout assumptions wrong.
-//   gppd-uk-wind      780 real UK wind farm positions.
+//   repd-pipeline     2,489 UK wind records, current and planned, with status.
+//                     Positional accuracy MEASURED against ground truth: the
+//                     one testable record is 1,141 m out.
 //   uk-radar-sites    55 real UK civil radar positions, from two sources that
 //                     were cross-checked against each other.
 //   itu-p526          The document is still unread, but both formulas taken
@@ -332,24 +334,39 @@ export const REFERENCES = [
 
   // ------------------------------------------------- real UK site positions
   {
-    id: 'gppd-uk-wind',
-    title: 'Global Power Plant Database v1.3.0, United Kingdom wind rows',
-    authors: 'World Resources Institute',
-    type: 'Open dataset, CC BY 4.0',
+    id: 'repd-pipeline',
+    title: 'UK Renewable Energy Planning Database, wind records',
+    authors: 'Department for Energy Security and Net Zero (Crown copyright)',
+    type: 'Open Government Licence v3, reached through a third-party snapshot',
     status: 'analysed',
-    supports: ['real UK wind farm positions', 'the UK site picker'],
-    reports: '780 UK wind facilities totalling 23,203 MW, each with latitude, longitude, capacity and '
-      + 'in most cases a commissioning year. 771 of the 780 carry geolocation_source = "UK Renewable '
-      + 'Energy Planning Database", so these are REPD positions at one remove.',
-    validation: 'Downloaded and parsed directly. Every row falls inside the UK bounding box and every '
-      + 'capacity is between 0 and 2,000 MW, both asserted by the test suite. Distances from each farm '
-      + 'to the nearest civil radar site were computed with this tool\u2019s own geometry: median 37 km, '
-      + 'p10 17 km, p90 83 km, and 278 farms (35.6 per cent, 5,449 MW) within 30 km of one.',
-    caution: 'FACILITY CENTROIDS, NOT TURBINE POSITIONS, so no layout can be taken from this. WRI '
-      + 'stopped maintaining the database in early 2022, so the snapshot is stale: 23.2 GW against a '
-      + 'UK fleet materially larger today. The REPD\u2019s own grid references are documented as being '
-      + 'up to about a kilometre out, because many are recorded before a layout is fixed. The source '
-      + 'was reached through its GitHub mirror because data.gov.uk is blocked from this environment.',
+    supports: ['real UK wind farm positions', 'current and planned projects', 'the UK site picker'],
+    reports: '2,489 wind records with valid geometry, each with latitude, longitude, capacity, '
+      + 'planning authority, offshore or onshore, and a DEVELOPMENT STATUS. 832 operational '
+      + '(31,519 MW), 44 under construction (13,883 MW), 220 awaiting construction (38,017 MW) and '
+      + '179 with an application submitted (28,900 MW), for 1,275 current or planned projects '
+      + 'totalling 89,199 MW. 85 of those are offshore. The snapshot contains Hornsea 3 and 4, '
+      + 'Dogger Bank A to D, Berwick Bank, Morgan and Mona, so it is current rather than historical.',
+    validation: 'THE POSITIONAL ACCURACY WAS MEASURED, NOT ASSUMED. There is one UK site where this '
+      + 'tool has ground truth: Kelmarsh, whose six turbine positions were recovered from the Zenodo '
+      + 'static table. The true array centroid is 52.401461, -0.943105 and the array extends 483 m '
+      + 'from it. The REPD record puts the project at 52.40280, -0.95980, which is 1,141 m away, or '
+      + '2.4 TIMES THE RADIUS OF THE WHOLE ARRAY. The WRI Global Power Plant Database, which this '
+      + 'dataset replaced, gives the same position to within a metre, because both derive from the '
+      + 'REPD: agreement between two sources is NOT accuracy when they share an ancestor. 686 sites '
+      + 'were matched by name between the two renderings and the median positional disagreement is '
+      + '3 m, which measures common ancestry rather than correctness.',
+    caution: 'ONE GROUND-TRUTH MEASUREMENT IS NOT AN ERROR DISTRIBUTION. The 1,141 m figure is a '
+      + 'single measured case, consistent with the roughly 1 km the REPD is generally described as '
+      + 'carrying, and is quoted as such rather than as a bound. Coordinates are written to five '
+      + 'decimal places, which is PRECISION AND NOT ACCURACY. Each row is one planning record with '
+      + 'one point, so NO LAYOUT can be taken from it, and 88 of the records carry planning-process '
+      + 'wording in their names: resubmission, revised application, extension, repowering. TWO '
+      + 'THIRDS OF THE TABLE WILL NOT BE BUILT AS RECORDED, so any total that does not filter on '
+      + 'status overstates the fleet roughly threefold. data.gov.uk is refused by this environment, '
+      + 'so the official download was not used; the snapshot is a third-party rendering whose '
+      + 'currency depends on when its author last refreshed it, and the mirroring repository '
+      + 'declares no licence of its own.',
+    source: 'https://github.com/Ventusltd/globalgrid2050',
   },
   {
     id: 'uk-radar-sites',

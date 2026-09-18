@@ -3,12 +3,20 @@
 The question this answers: **do we have physical data for the locations of UK
 wind farms and radar, and what type of radar are they?**
 
-Short answer. Wind farm positions: yes, 780 of them, from the UK government's
-own planning database at one remove, and they are now in the tool. Civil radar
-positions: yes, 55 sites, but only from community sources, and the two
-independent ones disagree with each other by a median of 1.4 km. Radar **types**:
-partly, and not reliably. Military air defence radar: **no**, and that is the
-one that most often decides a real UK wind farm application.
+**Wind farm positions: yes, and the accuracy is measurable rather than assumed.**
+2,489 records covering the whole UK planning pipeline, current and planned, each
+with a development status. At the one site where this tool has ground truth the
+recorded point is **1,141 m** from the true centre of the array, which is 2.4
+times the radius of the array itself. Coordinates are written to five decimal
+places; that is precision, not accuracy.
+
+**Civil radar positions: yes, 55 sites, but only from community sources**, and
+the two independent ones disagree with each other by a median of 1.4 km.
+
+**Radar types: partly, and not reliably.**
+
+**Military air defence radar: no**, and that is the one that most often decides
+a real UK wind farm application.
 
 Everything below was produced by `calibration/fetch_uksites.py` (download),
 `calibration/build_uksites.py` (generate `js/uksites.js`) and
@@ -37,25 +45,78 @@ dataset below exists in the tool because somebody mirrored it on GitHub, not
 because the authoritative source was reachable. That is a real constraint on
 how much weight any of it can carry.
 
-## Source A: wind farm positions
+## Source A: wind farms, and whether the positions are accurate
 
-`wri/global-power-plant-database`, `output_database/global_power_plant_database.csv`.
-WRI Global Power Plant Database v1.3.0, **CC BY 4.0**.
+`Ventusltd/globalgrid2050`, `testcode/<snapshot>/atlas/data/repd-identities/*.json`.
+A snapshot of the **UK Renewable Energy Planning Database**, Crown copyright
+under the **Open Government Licence v3**, which permits reuse with attribution.
+The mirroring repository declares no licence of its own; what is used here are
+the OGL-licensed facts, and both the REPD and the mirror are attributed.
 
-- 780 UK wind facilities, 23,203 MW total, all geolocated.
-- **771 of the 780** carry `geolocation_source = "UK Renewable Energy Planning
-  Database"`. This is REPD data, laundered through WRI.
+**2,489 wind records with valid geometry**, each carrying a development status.
 
-Three limits, all of which matter:
+### Status, which is most of the answer
 
-1. **These are facility centroids, not turbine positions.** One point per wind
-   farm. No layout can be taken from this, which is a real loss given how much
-   of this tool is about where individual machines sit.
-2. **The snapshot is stale.** WRI stopped maintaining the database in early
-   2022. 23.2 GW is well short of the UK fleet today.
-3. **The REPD's own grid references can be about a kilometre out**, because many
-   are recorded early in the planning process before the layout is decided.
-   That is documented by users of the REPD, not a guess.
+| Status | Sites | Capacity |
+| --- | --- | --- |
+| Operational | 832 | 31,519 MW |
+| Under Construction | 44 | 13,883 MW |
+| Awaiting Construction | 220 | 38,017 MW |
+| Application Submitted | 179 | 28,900 MW |
+| **Current or planned** | **1,275** | **89,199 MW** |
+| Application Refused | 370 | 9,366 MW |
+| Application Withdrawn | 268 | 7,328 MW |
+| Revised (superseded) | 225 | 5,378 MW |
+| Appeal Refused | 200 | 4,233 MW |
+| Abandoned, expired, appeal withdrawn, decommissioned | 150 | 3,140 MW |
+
+**Two thirds of the table is not a wind farm.** Treating every row as one
+overstates the fleet roughly threefold. The tool filters on status by default
+and makes including the rest a deliberate act.
+
+85 of the 1,275 live records are offshore, carrying 54,003 MW of the 89,199 MW.
+The snapshot is current enough to contain Hornsea 3 and 4, Dogger Bank A to D,
+Berwick Bank, Morgan and Mona.
+
+### The accuracy test
+
+Precision and accuracy are not the same thing and the difference here is large.
+The coordinates are written to five decimal places, about a metre. That is
+**precision**. Accuracy is what happens when you check them against something
+you know.
+
+There is exactly one UK site where this tool has ground truth: **Kelmarsh**,
+whose six turbine positions came out of the Zenodo static table recovered from
+a notebook on GitHub. The true centroid of the array is 52.401461, −0.943105,
+and the array extends 483 m from it.
+
+| Source | Recorded position | Error against the true centroid |
+| --- | --- | --- |
+| REPD snapshot | 52.40280, −0.95980 | **1,141 m** |
+| WRI Global Power Plant Database | 52.4028, −0.9598 | **1,142 m** |
+
+**The recorded point is 2.4 times the whole array radius away from the array.**
+Both sources give the same wrong answer to within a metre, because both derive
+from the REPD. Agreement between sources is not accuracy when they share an
+ancestor, and that is the single most important caveat on this page.
+
+Why it is wrong is visible in the record's own name: *"Kelmarsh Wind Farm
+(Resubmission)"*. It is a planning application, and the coordinate is the grid
+reference on the application, recorded before the layout was fixed. **88 of the
+records carry planning-process wording in their names** — resubmission, revised
+application, extension, repowering, phase.
+
+So: **n = 1**. One measurement is not an error distribution. It is consistent
+with the ±1 km the REPD is generally described as carrying, it is the only
+direct test available here, and it is quoted as a single measured case rather
+than as a bound.
+
+### What this means in practice
+
+At 30 km from a radar, a 1.1 km position error moves the range by under 4 per
+cent and the bearing by about 2 degrees, which changes little. At 2 km from a
+radar it is more than half the range. **The closer the pairing, the less the
+position can be trusted, which is exactly backwards from what you want.**
 
 ## Sources B and C: civil radar positions
 
@@ -180,84 +241,94 @@ Infrastructure Organisation is the source.
 
 ## What the real geometry actually says
 
-Run `node calibration/uk_sites.mjs`. Output as of this commit:
+Run `node calibration/uk_sites.mjs`. It runs on the live pipeline only; pass
+`--all` to include refused and abandoned projects. Output as of this commit:
 
 ```
+records: 2489 total, 1275 in scope (built or in the pipeline)
+  offshore in scope: 85 sites, 54003 MW of 89199 MW
+
 === UK wind farms vs nearest civil radar site ===
-farms: 780   radar sites: 55
-nearest-radar distance: min 1.1 km, p10 17, median 37, p90 83, max 142 km
-  within 10 km: 19 farms (2.4%), 255 MW
-  within 15 NM (SSR): 241 farms (30.9%), 4217 MW
-  within 30 km (MOD technical site): 278 farms (35.6%), 5449 MW
+farms: 1275   radar sites: 55
+nearest-radar distance: min 0.9 km, p10 17, median 38, p90 86, max 250 km
+  within 10 km: 37 farms (2.9%), 1604 MW
+  within 15 NM (SSR): 411 farms (32.2%), 11965 MW
+  within 30 km (MOD technical site): 472 farms (37.0%), 14669 MW
 
 === smooth-earth line of sight to a 150 m tip (k = 4/3, NO terrain) ===
-radio horizon: en-route antenna 20 m -> 18.4 km, terminal 12 m -> 14.3 km, 150 m tip -> 50.5 km
-farms inside nearest-radar line of sight: 647 of 780 (82.9%)
-  capacity inside: 18699 MW of 23203 MW
+farms inside nearest-radar line of sight: 1040 of 1275 (81.6%)
+  capacity inside: 51658 MW of 89199 MW
 
 === single-turbine clutter-to-noise at the real range (40 dBsm, main beam) ===
-clutter-to-noise across 647 in-sight farms: min 41 dB, median 56 dB, max 111 dB
-  above 60 dB (well past any MTI rejection the presets model): 240 (37.1%)
+clutter-to-noise across 1040 in-sight farms: min 41 dB, median 57 dB, max 127 dB
+  above 60 dB (well past any MTI rejection the presets model): 403 (38.8%)
 ```
 
 Read that carefully, because two of those numbers are easy to misuse.
 
-**82.9 per cent in line of sight is an upper bound, not a finding.** It is
+**81.6 per cent in line of sight is an upper bound, not a finding.** It is
 smooth-earth geometry with no terrain at all, so nothing is ever shielded by a
-hill. The real figure is lower, and by how much depends entirely on terrain
-this environment could not fetch: the free DEM sources the tool can import
-(Copernicus, SRTM) are all behind blocked hosts. The number is worth having
-precisely because it is an upper bound: it says no more than 83 per cent of UK
-wind capacity can possibly be visible to the nearest civil radar, and the
-remaining 17 per cent is already beyond the horizon before terrain is
-considered.
+hill. The real figure is lower, and by how much depends entirely on terrain this
+environment could not fetch: the free DEM sources the tool can import are all
+behind blocked hosts. The number is worth having precisely because it is an
+upper bound.
 
 **The clutter-to-noise figures are single-turbine, main-beam, 40 dBsm.** They
-assume the radar is looking straight at the machine with full antenna gain. A
-real farm is off-boresight most of the time and the elevation pattern matters.
-The number says how much signal is there to be rejected, not how much gets
-through: that is what the rest of the tool computes.
+assume the radar is looking straight at the machine with full antenna gain. The
+number says how much signal is there to be rejected, not how much gets through:
+that is what the rest of the tool computes.
 
 The three thresholds (10 km, 15 NM, 30 km) are **bins, not rules**. They appear
-in UK safeguarding practice as described in retrievable summaries. The
-documents that would define them were blocked. They are used here only to sort
-distances into groups.
+in UK safeguarding practice as described in retrievable summaries. The documents
+that would define them were blocked.
 
 ## Worst pairings the data produces
 
-| Wind farm | Nearest radar | Range | Single-turbine C/N |
-| --- | --- | --- | --- |
-| East Midlands Airport | East Midlands | 1.1 km | 111 dB |
-| Greenhill Croft | Allanshill | 5.8 km | 95 dB |
-| Arnish Moor | Sandwick | 6.0 km | 94 dB |
-| Rosehill Wind Turbines | Kincardine | 6.4 km | 93 dB |
-| Mains of Hatton | Allanshill | 6.6 km | 92 dB |
-| Point Wind / Beinn Ghrideag | Sandwick | 7.2 km | 91 dB |
-| House O'Hill | Allanshill | 7.7 km | 90 dB |
-| European Offshore Wind Deployment Centre | Perwinnes Hill | 8.1 km | 89 dB |
-| Little Byth | Allanshill | 8.4 km | 88 dB |
-| Denzell Downs | Newquay | 4.3 km | 88 dB |
+| Wind farm | Status | Nearest radar | Range | Single-turbine C/N |
+| --- | --- | --- | --- | --- |
+| Rivox, 208 MW | **Application Submitted** | Lowther Hill (en-route) | 0.9 km | 127 dB |
+| Stornoway (second resubmission), 196 MW | **Awaiting Construction** | Sandwick (en-route) | 1.8 km | 115 dB |
+| East Midlands Airport, 1 MW | Operational | East Midlands (aerodrome) | 1.1 km | 111 dB |
+| Greenhill Croft | Operational | Allanshill (en-route) | 5.8 km | 95 dB |
+| Arnish Moor | Operational | Sandwick (en-route) | 6.0 km | 94 dB |
+| Rosehill | Operational | Kincardine (en-route) | 6.4 km | 93 dB |
+| Mains of Hatton | Operational | Allanshill (en-route) | 6.6 km | 92 dB |
+| Beinn Thulabaigh | Operational | Sandwick (en-route) | 7.2 km | 91 dB |
+| Point Wind / Beinn Ghrideag | Operational | Sandwick (en-route) | 7.2 km | 91 dB |
+| House O'Hill | Operational | Allanshill (en-route) | 7.7 km | 90 dB |
 
-Every one of these is a **candidate to look at**, not a problem found. Several
-of them exist and operate today, which is itself the point: a large clutter
-return at short range is normal and is dealt with by the radar's processing
-and by mitigation. The tool exists to work out what is left after that.
+Every one of these is a **candidate to look at**, not a problem found. Several of
+them operate today, which is the point: a large clutter return at short range is
+normal and is dealt with by the radar's processing and by mitigation. The tool
+exists to work out what is left after that.
+
+The top two only appear because the dataset now carries the planning pipeline.
+Both are live cases rather than history, and both sit inside a kilometre or two
+of a NATS en-route radar, which is where the position error matters most and can
+be trusted least.
 
 ## Using it
 
-The tool's Site tab now has a **Real UK sites** group. Pick a wind farm, pick a
-radar (or take the nearest automatically), and press **Place this pairing**. It
-sets the site origin to the farm's real position and places the farm at its
-true bearing and range from that radar.
+The tool's Site tab has a **Real UK sites** group. Choose a scope, choose a wind
+farm, choose a radar or take the nearest automatically, and press **Place this
+pairing**. It sets the site origin to the farm's recorded position and places
+the farm at its true bearing and range from that radar.
 
-Two behaviours to know about:
+The scope selector defaults to **built or in the pipeline**, and can be narrowed
+to operational only, under construction, consented, or applications submitted,
+or opened to every record including the refused and abandoned. Picking a record
+that will not be built says so in capitals.
 
-- The distance control stops at 60 km. A pairing further out than that is
-  **clamped**, the bearing stays real and the range does not, and the note says
-  so. The report records the true range alongside the clamped one.
-- **Land or sea is not set from this data.** Nothing in the source distinguishes
-  an offshore farm from an onshore one reliably, so the surface stays whatever
-  you chose.
+Three behaviours to know about:
+
+- **Land or sea is now set from the data.** The record carries whether the
+  project is offshore, and placing a pairing sets the surface accordingly. That
+  was a gap in the previous version.
+- The distance control stops at 60 km. A pairing further out is **clamped**, the
+  bearing stays real and the range does not, and the note says so. The report
+  records the true range alongside the clamped one.
+- The note names the **REPD reference** for the record, so a real assessment can
+  start from the actual planning file rather than from this tool.
 
 ## Reproducing
 
@@ -265,12 +336,16 @@ Two behaviours to know about:
 python3 calibration/fetch_uksites.py   # writes data/uk-*.json
 python3 calibration/build_uksites.py   # writes js/uksites.js
 node calibration/uk_sites.mjs          # the correlation above
-node --test test/*.test.mjs            # 75 assertions, 9 of them on this data
+node calibration/uk_sites.mjs --all    # including refused and abandoned
+node --test test/*.test.mjs            # 85 assertions, 12 of them on this data
 ```
 
 ## Attribution
 
-- Wind farm positions: WRI Global Power Plant Database v1.3.0, CC BY 4.0,
-  derived from the UK Renewable Energy Planning Database.
-- Radar positions: `open-air-data/atc-radar` (ODbL) and `VATSIM-UK/UK-Sector-File`.
-  The derived radar database is offered under ODbL.
+- Wind farm records: the UK Renewable Energy Planning Database, Crown copyright,
+  Open Government Licence v3, reached through the `Ventusltd/globalgrid2050`
+  snapshot because data.gov.uk is not reachable from this environment.
+- Kelmarsh ground truth: Cubico Sustainable Investments, CC BY 4.0, via
+  `charlie9578/CubicoOpenData`.
+- Radar positions: `open-air-data/atc-radar` (ODbL) and
+  `VATSIM-UK/UK-Sector-File`. The derived radar database is offered under ODbL.
