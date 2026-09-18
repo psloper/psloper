@@ -18,13 +18,25 @@
 //                  environment this tool was built in had no route to it.
 //
 // NOTHING IN THIS REGISTER IS MARKED "read": the environment had no general
-// outbound network access to document repositories. ONE entry is marked
-// "analysed", because that dataset was reachable, was downloaded, and was
-// analysed directly, and four of this model's assumptions were corrected as a
-// result. That entry is the only place in the tool where a number comes from
-// measurement rather than from literature or recall. Formulas taken from standard references were
-// validated against values that are independently known instead, which is a
-// different kind of confidence and is recorded per entry under `validation`.
+// outbound network access to document repositories. THREE entries are marked
+// "analysed", because those datasets were reachable, were downloaded, and were
+// analysed directly. They are the only places in the tool where a number comes
+// from data rather than from literature or recall:
+//
+//   fuhrlander-scada  1.07 million SCADA records. Four model assumptions about
+//                     fleet behaviour were corrected against it.
+//   gppd-uk-wind      780 real UK wind farm positions.
+//   uk-radar-sites    55 real UK civil radar positions, from two sources that
+//                     were cross-checked against each other.
+//
+// All three were reachable only because they are mirrored on GitHub, which is
+// the one bulk-data host this environment's network policy permits. Everything
+// else attempted was refused: ITU, the CAA, NATS, Zenodo, Copernicus,
+// data.gov.uk, OpenStreetMap and Overpass all return 403 on CONNECT.
+//
+// Formulas taken from standard references were validated against values that
+// are independently known instead, which is a different kind of confidence and
+// is recorded per entry under `validation`.
 //
 // This register exists so that a reader can tell, for any number the tool
 // produces, whether it rests on something checked or something assumed.
@@ -225,6 +237,58 @@ export const REFERENCES = [
     reports: 'That glass-fibre composite blades can appear largely transparent to radar, with '
       + 'illumination passing through the dielectric shell, and that the load-bearing spar, commonly '
       + 'incorporating carbon fibre, is the primary structure inside it.',
+  },
+
+  // ------------------------------------------------- real UK site positions
+  {
+    id: 'gppd-uk-wind',
+    title: 'Global Power Plant Database v1.3.0, United Kingdom wind rows',
+    authors: 'World Resources Institute',
+    type: 'Open dataset, CC BY 4.0',
+    status: 'analysed',
+    supports: ['real UK wind farm positions', 'the UK site picker'],
+    reports: '780 UK wind facilities totalling 23,203 MW, each with latitude, longitude, capacity and '
+      + 'in most cases a commissioning year. 771 of the 780 carry geolocation_source = "UK Renewable '
+      + 'Energy Planning Database", so these are REPD positions at one remove.',
+    validation: 'Downloaded and parsed directly. Every row falls inside the UK bounding box and every '
+      + 'capacity is between 0 and 2,000 MW, both asserted by the test suite. Distances from each farm '
+      + 'to the nearest civil radar site were computed with this tool\u2019s own geometry: median 37 km, '
+      + 'p10 17 km, p90 83 km, and 278 farms (35.6 per cent, 5,449 MW) within 30 km of one.',
+    caution: 'FACILITY CENTROIDS, NOT TURBINE POSITIONS, so no layout can be taken from this. WRI '
+      + 'stopped maintaining the database in early 2022, so the snapshot is stale: 23.2 GW against a '
+      + 'UK fleet materially larger today. The REPD\u2019s own grid references are documented as being '
+      + 'up to about a kilometre out, because many are recorded before a layout is fixed. The source '
+      + 'was reached through its GitHub mirror because data.gov.uk is blocked from this environment.',
+  },
+  {
+    id: 'uk-radar-sites',
+    title: 'UK civil radar site positions, merged from two community aviation data sets',
+    authors: 'VATSIM-UK/UK-Sector-File; open-air-data/atc-radar',
+    type: 'Community data sets. The second is ODbL; the first declares no licence.',
+    status: 'analysed',
+    supports: ['real UK radar positions', 'the UK site picker'],
+    reports: '17 NATS En Route surveillance sites and 32 aerodrome sites from the sector file, and 23 '
+      + 'features inside the UK and Ireland box from the ODbL set. Merged on position rather than name, '
+      + 'because the two sets name the same sites differently: Sandwick and Stornoway are the same '
+      + 'installation 10 m apart, and Allanshill is also spelled Alanshill. 55 distinct sites result, '
+      + '17 of them carried by both sources.',
+    validation: 'THE TWO SOURCES WERE CROSS-CHECKED AGAINST EACH OTHER, which is the only independent '
+      + 'check available here. Of the 17 sites both carry, the median positional disagreement is 1,416 '
+      + 'm and the maximum 5,891 m (Tiree). Claxby agrees to 3 m and Great Dun Fell to 173 m; Cromer, '
+      + 'Burrington, St Annes and Clee Hill all disagree by more than 2.6 km. Re-running the screening '
+      + 'with every dual-sourced site moved to its alternative position changes the count of farms '
+      + 'within 30 km from 278 to 280, and the count in smooth-earth line of sight from 647 to 646. So '
+      + 'the disagreement barely moves an aggregate and matters a great deal to an individual close '
+      + 'pairing.',
+    caution: 'NEITHER SOURCE IS OFFICIAL. Both are maintained by hobbyist communities, one for flight '
+      + 'simulation. The sector file also carries numeric columns that look like site elevation, and '
+      + 'those were NOT used: Great Dun Fell is given as 1,428 ft where the summit it stands on is '
+      + 'about 2,780 ft, so the column means something other than what it appears to. Only the '
+      + 'coordinates are used. NO MILITARY RADAR IS IN EITHER SOURCE: the sector file marks that '
+      + 'section with the literal line ";Mil Radars TBA". MOD safeguarding of air defence radar is what '
+      + 'most often decides a real UK wind farm application, and this tool carries none of it. '
+      + 'nats.aero and caa.co.uk are both blocked from this environment, so no official list was '
+      + 'obtainable.',
   },
 
   // --------------------------------------------------------- fleet behaviour

@@ -1,0 +1,6242 @@
+[
+{
+"name": "A'Chruach",
+"lat": 56.1528,
+"lon": -5.3102,
+"mw": 42.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "ANP Newport Wind Turbine",
+"lat": 51.5559,
+"lon": -2.9738,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Achairn",
+"lat": 58.4385,
+"lon": -3.2015,
+"mw": 6.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Achany",
+"lat": 58.0019,
+"lon": -4.5,
+"mw": 38.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Achlachan Wind Farm",
+"lat": 58.4489,
+"lon": -3.4546,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Advanced Manufacturing Research Centre",
+"lat": 53.3876,
+"lon": -1.3779,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Afton Wind Farm",
+"lat": 55.3116,
+"lon": -4.1743,
+"mw": 50.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Aikengall",
+"lat": 55.9172,
+"lon": -2.4901,
+"mw": 48.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Aikengall II  Wester Dod Community Wind Farm",
+"lat": 55.9172,
+"lon": -2.4901,
+"mw": 60.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Airfield Farm (Podington) (Resubmission)",
+"lat": 52.2363,
+"lon": -0.6089,
+"mw": 8.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Airies Farm",
+"lat": 54.8021,
+"lon": -4.6577,
+"mw": 35.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Allt Dearg Wind Farmers LLP",
+"lat": 55.9334,
+"lon": -5.4774,
+"mw": 10.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Alltwalis",
+"lat": 51.8555,
+"lon": -4.3053,
+"mw": 23.0,
+"year": null,
+"geo": "CARMA"
+},
+{
+"name": "Altahullion",
+"lat": 54.9702,
+"lon": -6.9996,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Altahullion Extension",
+"lat": 54.9626,
+"lon": -7.0341,
+"mw": 11.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Altamuskin",
+"lat": 54.5222,
+"lon": -7.0946,
+"mw": 7.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Altamuskin Extension",
+"lat": 54.5128,
+"lon": -7.1113,
+"mw": 7.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Altaveedan Wind Farm",
+"lat": 55.0847,
+"lon": -6.2578,
+"mw": 17.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Alveston Wind Park",
+"lat": 51.5723,
+"lon": -2.4999,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "An Suidhe",
+"lat": 56.2187,
+"lon": -5.2194,
+"mw": 19.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Andershaw",
+"lat": 55.5093,
+"lon": -3.8463,
+"mw": 36.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ardoch and Over Enoch Wind Farm (Ardoch)",
+"lat": 55.72,
+"lon": -4.2537,
+"mw": 7.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ardoch and Over Enoch Wind Farm (Over Enoch)",
+"lat": 55.7102,
+"lon": -4.2521,
+"mw": 4.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ardrossan",
+"lat": 55.6439,
+"lon": -4.8061,
+"mw": 24.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ardrossan Extension",
+"lat": 55.6439,
+"lon": -4.8061,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Arecleoch",
+"lat": 55.0688,
+"lon": -4.7971,
+"mw": 120.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ark Hill",
+"lat": 56.5709,
+"lon": -3.0481,
+"mw": 6.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Armistead Wind Farm",
+"lat": 54.276,
+"lon": -2.6388,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Arnish Moor",
+"lat": 58.1766,
+"lon": -6.4383,
+"mw": 3.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Artfield Fell",
+"lat": 54.9704,
+"lon": -4.7746,
+"mw": 19.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Assel Valley",
+"lat": 55.2265,
+"lon": -4.7787,
+"mw": 27.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Auchadaduie Wind Farm",
+"lat": 55.5447,
+"lon": -5.6602,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Auchinderran Wind Farm",
+"lat": 57.5814,
+"lon": -2.6468,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Auchrobert Wind Farm",
+"lat": 55.624,
+"lon": -3.9842,
+"mw": 36.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Avonmouth Port",
+"lat": 51.5166,
+"lon": -2.7027,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Avonmouth Port - extension",
+"lat": 51.5029,
+"lon": -2.6988,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Avonmouth Port II",
+"lat": 51.5383,
+"lon": -2.6739,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Avonmouth Wind Power",
+"lat": 51.5115,
+"lon": -2.6735,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "BROWNIELEYS - 3 WIND TURBINES",
+"lat": 56.8399,
+"lon": -2.3791,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bad a Cheo Wind Farm",
+"lat": 58.4205,
+"lon": -3.4292,
+"mw": 26.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bagmoor",
+"lat": 53.6277,
+"lon": -0.6672,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Baillie",
+"lat": 58.5679,
+"lon": -3.677,
+"mw": 52.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ballymena",
+"lat": 54.8795,
+"lon": -6.2332,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Balmurrie Fell Wind Farm",
+"lat": 54.8725,
+"lon": -4.5165,
+"mw": 9.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bambers",
+"lat": 53.3213,
+"lon": 0.2384,
+"mw": 4.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bambers Farm",
+"lat": 53.3213,
+"lon": 0.2384,
+"mw": 9.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bankend Rig",
+"lat": 55.5783,
+"lon": -4.1342,
+"mw": 14.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Barlockhart Moor",
+"lat": 54.8657,
+"lon": -4.7879,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Barmoor",
+"lat": 55.6373,
+"lon": -2.0251,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Barns of Ayre Wind Turbines (2)",
+"lat": 58.9217,
+"lon": -2.7156,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Barrow",
+"lat": 53.9915,
+"lon": -3.2983,
+"mw": 90.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Batsworthy Cross",
+"lat": 50.9717,
+"lon": -3.6891,
+"mw": 18.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bears Down",
+"lat": 50.4703,
+"lon": -4.9556,
+"mw": 9.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beatrice",
+"lat": 58.0882,
+"lon": -2.9502,
+"mw": 588.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beatrice Demonstrator",
+"lat": 58.2528,
+"lon": -2.8884,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beck Burn (resubmission)",
+"lat": 55.0107,
+"lon": -3.0263,
+"mw": 31.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beckton Sewage Treatment Works",
+"lat": 51.5256,
+"lon": 0.0799,
+"mw": 2.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beinn Ghlas",
+"lat": 56.3823,
+"lon": -5.2977,
+"mw": 8.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beinn Tharsuinn",
+"lat": 57.7882,
+"lon": -4.2482,
+"mw": 29.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beinn Tharsuinn Windfarm Project",
+"lat": 57.8053,
+"lon": -4.329,
+"mw": 29.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beinn an Tuirc 1",
+"lat": 55.5732,
+"lon": -5.5874,
+"mw": 29.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beinn an Tuirc 2",
+"lat": 55.5732,
+"lon": -5.5874,
+"mw": 43.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beinneun",
+"lat": 57.0956,
+"lon": -4.9655,
+"mw": 85.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Beinneun Windfarm Extension",
+"lat": 57.0956,
+"lon": -4.9655,
+"mw": 23.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ben Aketil",
+"lat": 57.4298,
+"lon": -6.4583,
+"mw": 27.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ben Aketil Extension",
+"lat": 57.4298,
+"lon": -6.4583,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bendealt Wind Farm  Highland",
+"lat": 57.7055,
+"lon": -4.4267,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Berry Burn",
+"lat": 57.4466,
+"lon": -3.4754,
+"mw": 66.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bessy Bell 1",
+"lat": 54.704,
+"lon": -7.4405,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bessy Bell 2",
+"lat": 54.705,
+"lon": -7.4265,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Betty Hill",
+"lat": 58.5356,
+"lon": -4.1947,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bewick Drift",
+"lat": 55.2152,
+"lon": -1.5572,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bhlaraidh (previously Balmacaan)",
+"lat": 57.2191,
+"lon": -4.5819,
+"mw": 110.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bicker Fen",
+"lat": 52.9379,
+"lon": -0.2178,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bilbster",
+"lat": 58.4488,
+"lon": -3.2498,
+"mw": 3.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bin Mountain Wind Farm",
+"lat": 54.6414,
+"lon": -7.6054,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bishopthorpe",
+"lat": 53.5099,
+"lon": -0.0007,
+"mw": 16.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Black Hill",
+"lat": 55.7992,
+"lon": -2.4322,
+"mw": 28.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Black Law",
+"lat": 55.7622,
+"lon": -3.7626,
+"mw": 124.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Black Law 2",
+"lat": 55.7622,
+"lon": -3.7626,
+"mw": 55.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Black Law Extension - 1b",
+"lat": 55.7622,
+"lon": -3.7626,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blackcraig",
+"lat": 55.1199,
+"lon": -4.0321,
+"mw": 53.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blackstone Edge",
+"lat": 53.5433,
+"lon": -1.7062,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blaen Bowi Wind Farm",
+"lat": 51.9971,
+"lon": -4.4413,
+"mw": 3.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blaengwen (Re-Submission)",
+"lat": 51.9778,
+"lon": -4.238,
+"mw": 23.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blantyre Muir Wind Farm extension",
+"lat": 55.7416,
+"lon": -4.09,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bloodhills - repowering",
+"lat": 52.707,
+"lon": 1.6644,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blue Gates Farm",
+"lat": 51.8631,
+"lon": 1.0042,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blyth Harbour Wind Farm (re-power)",
+"lat": 55.1205,
+"lon": -1.4906,
+"mw": 3.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blyth Offshore\u00a0Wind Test Site",
+"lat": 55.167,
+"lon": -1.3644,
+"mw": 41.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Blyth T2",
+"lat": 55.1254,
+"lon": -1.4952,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Boardinghouse Wind Farm",
+"lat": 52.5351,
+"lon": 0.0606,
+"mw": 10.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Boddington Reservoir",
+"lat": 52.1742,
+"lon": -1.2793,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bodtegir",
+"lat": 53.0175,
+"lon": -3.4988,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bogenlea Farm",
+"lat": 57.5663,
+"lon": -2.2999,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bonerbo Wind Turbines (resubmission)",
+"lat": 56.2594,
+"lon": -2.7467,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Boulfruich",
+"lat": 58.2999,
+"lon": -3.4434,
+"mw": 13.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Boundary Lane",
+"lat": 54.8478,
+"lon": -1.9282,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bowbeat (Emly Bank)",
+"lat": 55.7117,
+"lon": -3.1336,
+"mw": 15.6,
+"year": null,
+"geo": "WRI"
+},
+{
+"name": "Bowbeat (Roughside)",
+"lat": 55.7117,
+"lon": -3.1336,
+"mw": 15.6,
+"year": null,
+"geo": "WRI"
+},
+{
+"name": "Boyndie",
+"lat": 57.6607,
+"lon": -2.6518,
+"mw": 16.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Boyndie Airfield",
+"lat": 57.6653,
+"lon": -2.639,
+"mw": 16.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Brackagh Quarry",
+"lat": 54.8112,
+"lon": -6.7082,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bradwell",
+"lat": 51.7098,
+"lon": 0.821,
+"mw": 20.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Braes of Doune Wind Farm",
+"lat": 56.2698,
+"lon": -4.0589,
+"mw": 72.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Braich Ddu",
+"lat": 52.5951,
+"lon": -3.9576,
+"mw": 3.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Brechfa Forest West",
+"lat": 51.9606,
+"lon": -4.1234,
+"mw": 57.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Brenig Wind Farm (Resubmission)",
+"lat": 53.109,
+"lon": -3.5031,
+"mw": 37.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Brockaghboy Wind Farm",
+"lat": 54.9806,
+"lon": -6.765,
+"mw": 37.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Brockaghboy Wind Farm - extension",
+"lat": 54.8991,
+"lon": -6.8692,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Brockholes Wind Cluster",
+"lat": 55.8666,
+"lon": -2.2879,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Broomhill",
+"lat": 54.7502,
+"lon": -1.7607,
+"mw": 8.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Brotherton (formerly Paul Matthew Hill wind turbines)",
+"lat": 56.8147,
+"lon": -2.3718,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bryn Du",
+"lat": 52.4147,
+"lon": -3.707,
+"mw": 16.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bryn Titli",
+"lat": 52.3672,
+"lon": -3.5656,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Bu Farm",
+"lat": 59.0973,
+"lon": -2.6601,
+"mw": 2.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burbo Bank",
+"lat": 53.4882,
+"lon": -3.1849,
+"mw": 90.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burbo Bank Extension (Burbo Bank 2)",
+"lat": 53.48,
+"lon": -3.27,
+"mw": 258.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burgar Hill",
+"lat": 59.1176,
+"lon": -3.1492,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burgar Hill (land Near)  Evie",
+"lat": 59.1176,
+"lon": -3.1492,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burn of Whilk",
+"lat": 58.3568,
+"lon": -3.2039,
+"mw": 22.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burnfoot Hill",
+"lat": 56.2091,
+"lon": -3.7728,
+"mw": 30.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burnfoot Hill Extension",
+"lat": 56.2154,
+"lon": -3.7689,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burnhead Moss",
+"lat": 55.9121,
+"lon": -3.7748,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burnthouse Farm",
+"lat": 52.5373,
+"lon": -0.0337,
+"mw": 6.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burradale Hill",
+"lat": 60.1648,
+"lon": -1.2361,
+"mw": 3.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burton Pidsea (Wadworth Hill) Wind Farm",
+"lat": 53.7492,
+"lon": -0.1135,
+"mw": 10.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burton Wold Wind Farm - Northern Extension (resubmission)",
+"lat": 52.3616,
+"lon": -0.6518,
+"mw": 14.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burton Wold Wind Farm South",
+"lat": 52.3536,
+"lon": -0.6565,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Burton Wold Windfarm",
+"lat": 52.3608,
+"lon": -0.6431,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Butterwick Moor Circuit 1",
+"lat": 54.6652,
+"lon": -1.375,
+"mw": 10.2,
+"year": null,
+"geo": "WRI"
+},
+{
+"name": "Butterwick Moor Circuit 2",
+"lat": 54.6652,
+"lon": -1.375,
+"mw": 10.2,
+"year": null,
+"geo": "WRI"
+},
+{
+"name": "Cairnborrow - resubmission",
+"lat": 57.4639,
+"lon": -2.8992,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cairnmore Farm",
+"lat": 57.3153,
+"lon": -2.8137,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Calder Water Community Wind Farm",
+"lat": 55.6374,
+"lon": -4.2119,
+"mw": 28.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Callagheen",
+"lat": 54.4178,
+"lon": -8.093,
+"mw": 16.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Calliachar",
+"lat": 56.6277,
+"lon": -3.8761,
+"mw": 32.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Camster",
+"lat": 58.4087,
+"lon": -3.2715,
+"mw": 50.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carcant Wind Farm",
+"lat": 55.7648,
+"lon": -3.0176,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carland Cross RP",
+"lat": 50.3509,
+"lon": -5.0306,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carn Hill",
+"lat": 54.7313,
+"lon": -5.9118,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carn Vean",
+"lat": 50.1799,
+"lon": -5.1875,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carno",
+"lat": 52.5494,
+"lon": -3.6082,
+"mw": 33.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carno 'A' Wind Farm",
+"lat": 52.5423,
+"lon": -3.5792,
+"mw": 16.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carno 'A'and 'B' Wind Farm  (Extension)",
+"lat": 52.5423,
+"lon": -3.5792,
+"mw": 15.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carraig Gheal",
+"lat": 56.339,
+"lon": -5.2945,
+"mw": 46.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carscreugh Renewable Energy Park",
+"lat": 54.8591,
+"lon": -4.728,
+"mw": 15.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Carsington",
+"lat": 53.0845,
+"lon": -1.6336,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Castle Pill - Repowering",
+"lat": 51.72,
+"lon": -5.0128,
+"mw": 3.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Castle of Auchry Farm",
+"lat": 57.2828,
+"lon": -2.4477,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Castlecraig",
+"lat": 54.6309,
+"lon": -7.5872,
+"mw": 25.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cathkin Braes",
+"lat": 55.7971,
+"lon": -4.2153,
+"mw": 3.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Caton Moor Windfarm Repowering",
+"lat": 54.0698,
+"lon": -2.654,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Causeymire",
+"lat": 58.4435,
+"lon": -3.0854,
+"mw": 48.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cefn Croes",
+"lat": 52.405,
+"lon": -3.7507,
+"mw": 59.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Celcon Blocks Ltd",
+"lat": 53.677,
+"lon": -1.0841,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cemmaes",
+"lat": 52.6579,
+"lon": -3.6721,
+"mw": 15.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cemmaes 'C' Wind Farm",
+"lat": 52.6399,
+"lon": -3.6743,
+"mw": 15.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Chelker Reservoir",
+"lat": 53.9624,
+"lon": -1.9142,
+"mw": 1.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Chelker Reservoir (Retention of Turbines)",
+"lat": 53.9624,
+"lon": -1.9142,
+"mw": 1.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Chelveston Renewable Energy Park Wind Farm (Bedford)",
+"lat": 52.3076,
+"lon": -0.5373,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Chelveston Renewable Energy Park Wind Farm (East Northamptonshire)",
+"lat": 52.3012,
+"lon": -0.5366,
+"mw": 12.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Chiplow",
+"lat": 52.8569,
+"lon": 0.6908,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Church Hill",
+"lat": 54.654,
+"lon": -7.7128,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Clachan Flats",
+"lat": 56.2881,
+"lon": -4.9429,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Clashindarroch",
+"lat": 57.3665,
+"lon": -2.8661,
+"mw": 36.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Clentrie Wind Farm (Gevens)",
+"lat": 56.1177,
+"lon": -3.2526,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Clochnahill Wind Farm",
+"lat": 56.9335,
+"lon": -2.2906,
+"mw": 5.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Clondermot Turbines",
+"lat": 54.9679,
+"lon": -7.3129,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cloonty Wind Farm",
+"lat": 55.1185,
+"lon": -6.3958,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Clyde Wind Farm",
+"lat": 55.4416,
+"lon": -3.5427,
+"mw": 350.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Clyde Wind Farm Extension (Clyde 2)",
+"lat": 55.5041,
+"lon": -3.5479,
+"mw": 172.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cnoc Donn Arnicle",
+"lat": 55.58,
+"lon": -5.5681,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Coal Clough RP",
+"lat": 53.7497,
+"lon": -2.15,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Coal Clough Wind Farm",
+"lat": 53.7497,
+"lon": -2.15,
+"mw": 9.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Coire Na Cloiche Wind Farm",
+"lat": 57.7696,
+"lon": -4.3732,
+"mw": 29.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cold Northcott",
+"lat": 50.6455,
+"lon": -4.5467,
+"mw": 6.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Coldham",
+"lat": 52.603,
+"lon": 0.1149,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Coldham",
+"lat": 52.5972,
+"lon": 0.0951,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Common Barn Wind Farm",
+"lat": 52.2773,
+"lon": -0.2877,
+"mw": 6.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Connaught Road",
+"lat": 54.7661,
+"lon": -6.3071,
+"mw": 1.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Corby Knowe",
+"lat": 54.7902,
+"lon": -6.1778,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Corkey",
+"lat": 55.0436,
+"lon": -6.2873,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Corkey Wind Farm Extension (Resubmission)",
+"lat": 55.0445,
+"lon": -6.2797,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Corriegarth",
+"lat": 57.1901,
+"lon": -4.3596,
+"mw": 69.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Corriemoillie",
+"lat": 57.6687,
+"lon": -4.773,
+"mw": 47.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cotton Farm",
+"lat": 52.2615,
+"lon": -0.1952,
+"mw": 16.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cour Wind Farm",
+"lat": 55.6807,
+"lon": -5.4849,
+"mw": 20.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Courtstone Wind Turbine",
+"lat": 57.392,
+"lon": -2.261,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Craig Wind Farm",
+"lat": 55.1641,
+"lon": -3.069,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Craig Wind Farm (Extension)",
+"lat": 54.8685,
+"lon": -5.0871,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Craigannet Farm Wind Turbine",
+"lat": 56.0455,
+"lon": -4.0685,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Craigengelt",
+"lat": 56.0543,
+"lon": -4.0497,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cregganconroe",
+"lat": 54.6226,
+"lon": -6.9791,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crighshane",
+"lat": 54.6399,
+"lon": -7.7526,
+"mw": 28.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crimp",
+"lat": 50.9119,
+"lon": -4.4881,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crockagarran",
+"lat": 54.5502,
+"lon": -7.0168,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crockagarron Ext",
+"lat": 54.5516,
+"lon": -7.009,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crockandun",
+"lat": 54.7395,
+"lon": -6.7719,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crockbaravally Wind Farm",
+"lat": 54.553,
+"lon": -7.0477,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crockbrack",
+"lat": 54.6145,
+"lon": -6.9552,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crockdun",
+"lat": 54.5689,
+"lon": -7.0494,
+"mw": 12.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Croda Chemicals Europe",
+"lat": 53.6823,
+"lon": -1.0072,
+"mw": 3.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crook Hill (Revised Application - Calderdale MBC) 1 of 2",
+"lat": 53.6681,
+"lon": -2.1117,
+"mw": 13.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crook Hill (Revised Application - Rochdale MBC) 2 of 2",
+"lat": 53.6705,
+"lon": -2.1148,
+"mw": 23.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crossness Sewage Works Turbine",
+"lat": 51.5022,
+"lon": 0.1421,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Cruach Mhor",
+"lat": 56.039,
+"lon": -5.1559,
+"mw": 29.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crystal Rig",
+"lat": 55.883,
+"lon": -2.5075,
+"mw": 63.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crystal Rig 2",
+"lat": 55.8995,
+"lon": -2.5293,
+"mw": 138.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crystal Rig 3",
+"lat": 55.9264,
+"lon": -2.5345,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Crystal Rig Extension II",
+"lat": 55.9129,
+"lon": -2.5455,
+"mw": 20.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Curraghamulkin (Dooish Wind Farm)",
+"lat": 54.5778,
+"lon": -7.5141,
+"mw": 30.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Curryfree Wind Farm",
+"lat": 54.9293,
+"lon": -7.3167,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dagenham",
+"lat": 51.5187,
+"lon": 0.1508,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dalby",
+"lat": 52.8065,
+"lon": -1.0343,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dalswinton",
+"lat": 55.1841,
+"lon": -3.6506,
+"mw": 30.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Damhead Farm",
+"lat": 55.8539,
+"lon": -3.9335,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Darracott Moor",
+"lat": 50.9299,
+"lon": -4.513,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Deeping",
+"lat": 52.7326,
+"lon": -0.2257,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Delabole (Repowering)",
+"lat": 50.6378,
+"lon": -4.7053,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Den Brook",
+"lat": 50.7801,
+"lon": -3.8666,
+"mw": 18.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Denhill",
+"lat": 57.4112,
+"lon": -2.341,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Denzell Downs Windfarm",
+"lat": 50.4659,
+"lon": -4.9615,
+"mw": 10.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Derby Sewage Treatment Works",
+"lat": 52.9081,
+"lon": -1.4131,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dersalloch",
+"lat": 55.3043,
+"lon": -4.4882,
+"mw": 69.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Deucheran Hill",
+"lat": 55.6293,
+"lon": -5.544,
+"mw": 15.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Deuchries",
+"lat": 57.5907,
+"lon": -2.6157,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dewlay Cheese",
+"lat": 53.8883,
+"lon": -2.786,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dorenell Wind Farm (Previously Site A and B Scaut Hill)",
+"lat": 57.3509,
+"lon": -3.1317,
+"mw": 177.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Double Arches Quarry Wind Turbine",
+"lat": 51.9519,
+"lon": -0.6343,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Drone Hill",
+"lat": 55.8979,
+"lon": -2.2619,
+"mw": 28.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Droop Hill Wind Farm x",
+"lat": 56.9229,
+"lon": -2.4007,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Drumderg",
+"lat": 56.6222,
+"lon": -3.232,
+"mw": 36.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Drumduff",
+"lat": 55.9043,
+"lon": -3.779,
+"mw": 8.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dudgeon East",
+"lat": 53.1175,
+"lon": 0.6135,
+"mw": 402.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dummuie",
+"lat": 57.4511,
+"lon": -2.6915,
+"mw": 12.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dun Law 1",
+"lat": 55.8065,
+"lon": -2.846,
+"mw": 17.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dun Law 2",
+"lat": 55.7868,
+"lon": -2.8423,
+"mw": 29.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dundee",
+"lat": 56.4836,
+"lon": -2.8938,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dungavel",
+"lat": 55.6086,
+"lon": -4.0977,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dunmaglass",
+"lat": 57.2515,
+"lon": -4.2558,
+"mw": 94.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dunmore",
+"lat": 55.0687,
+"lon": -6.889,
+"mw": 21.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dunsland Cross Wind Farm",
+"lat": 50.8079,
+"lon": -4.2597,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Dyffryn Brodyn",
+"lat": 51.9112,
+"lon": -4.5907,
+"mw": 5.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Earls Hall Farm",
+"lat": 51.8092,
+"lon": 1.1109,
+"mw": 10.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Earlsburn",
+"lat": 56.0708,
+"lon": -4.0955,
+"mw": 37.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Earlseat",
+"lat": 56.1737,
+"lon": -3.0813,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "East Midlands Airport",
+"lat": 52.8262,
+"lon": -1.3427,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "East Youlstone",
+"lat": 50.9173,
+"lon": -4.4465,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Easter Melrose Wind Energy Project",
+"lat": 57.6606,
+"lon": -2.4175,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Easter Tolmauds",
+"lat": 57.157,
+"lon": -2.6219,
+"mw": 1.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Easter Tulloch Wind Farm (Tullo Extension)",
+"lat": 56.8364,
+"lon": -2.3957,
+"mw": 25.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ecotech",
+"lat": 52.6567,
+"lon": 0.6833,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Edinbane",
+"lat": 57.4691,
+"lon": -6.4322,
+"mw": 41.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Edintore Wind Farm",
+"lat": 57.5057,
+"lon": -2.9625,
+"mw": 18.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Eglish Mountain",
+"lat": 54.8838,
+"lon": -7.2136,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Elginny Hill Resubmission",
+"lat": 54.9326,
+"lon": -6.1929,
+"mw": 22.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Elliot's Hill",
+"lat": 54.7389,
+"lon": -6.119,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Energy Works Hull - Wind Turbine",
+"lat": 53.7585,
+"lon": -0.3304,
+"mw": 3.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Eshmore",
+"lat": 54.5506,
+"lon": -6.943,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "European Offshore Wind Deployment Centre (EOWDC) (Aberdeen Bay - Demonstration site)",
+"lat": 57.1462,
+"lon": -2.0728,
+"mw": 93.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ewe Hill I",
+"lat": 55.1071,
+"lon": -3.3339,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ewe Hill II",
+"lat": 55.1071,
+"lon": -3.3339,
+"mw": 20.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "F M C Land  Pitreavie Business Park",
+"lat": 56.054,
+"lon": -3.4443,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "FMC Technologies",
+"lat": 56.0564,
+"lon": -3.4466,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fairburn",
+"lat": 57.5329,
+"lon": -4.6315,
+"mw": 40.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fairfield",
+"lat": 54.5788,
+"lon": -3.5204,
+"mw": 6.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fallago Rig",
+"lat": 55.8313,
+"lon": -2.688,
+"mw": 144.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fanny House Farm/Heysham Moss",
+"lat": 54.0379,
+"lon": -2.8719,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Far Marsh Farm (Resubmission)",
+"lat": 53.6775,
+"lon": -0.1141,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Far Old Park Farm Wind Farm",
+"lat": 54.1839,
+"lon": -3.1814,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Farr",
+"lat": 57.3339,
+"lon": -4.103,
+"mw": 92.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fen Farm",
+"lat": 53.4233,
+"lon": 0.069,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ferneylea Farm",
+"lat": 55.9148,
+"lon": -2.4178,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fforch Nest Wind Farm pt1",
+"lat": 51.611,
+"lon": -3.4947,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fforch Nest Wind Farm pt2",
+"lat": 51.6065,
+"lon": -3.496,
+"mw": 17.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ffynnon Oer",
+"lat": 51.683,
+"lon": -3.6287,
+"mw": 32.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Flimby",
+"lat": 54.6871,
+"lon": -3.514,
+"mw": 6.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Flotta",
+"lat": 58.8412,
+"lon": -3.0973,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ford Motor Company Ltd (Extension)",
+"lat": 51.5287,
+"lon": 0.1504,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Forss",
+"lat": 58.5927,
+"lon": -3.5259,
+"mw": 2.0,
+"year": null,
+"geo": "CARMA"
+},
+{
+"name": "Forss Extension",
+"lat": 58.5927,
+"lon": -3.5259,
+"mw": 5.2,
+"year": null,
+"geo": "CARMA"
+},
+{
+"name": "Four Burrows",
+"lat": 50.3039,
+"lon": -5.1414,
+"mw": 4.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Four Burrows Wind Farm",
+"lat": 50.2889,
+"lon": -5.1374,
+"mw": 4.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fraisthorpe Wind Farm",
+"lat": 54.0479,
+"lon": -0.2307,
+"mw": 29.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Freasdail Wind Farm",
+"lat": 55.777,
+"lon": -5.4706,
+"mw": 22.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "French Farm",
+"lat": 52.6635,
+"lon": -0.1043,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Frodsham Wind Farm Ltd",
+"lat": 53.3006,
+"lon": -2.7689,
+"mw": 50.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Fullabrook Down Wind Farm",
+"lat": 51.1569,
+"lon": -4.1027,
+"mw": 66.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Furness Wind Farm/High Winds (Harlock Repowering)",
+"lat": 54.2091,
+"lon": -3.1476,
+"mw": 11.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "G24 Innovations Turbine",
+"lat": 51.5067,
+"lon": -3.1042,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gairnieston Farm",
+"lat": 57.5936,
+"lon": -2.424,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Galawhistle",
+"lat": 55.5396,
+"lon": -3.9754,
+"mw": 66.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Galloper Wind Farm",
+"lat": 51.88,
+"lon": 2.04,
+"mw": 353.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gallowhill",
+"lat": 59.2766,
+"lon": -2.9822,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Galsworthy",
+"lat": 50.9187,
+"lon": -4.2715,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Garlenick",
+"lat": 50.3069,
+"lon": -4.8851,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Garreg Lwyd",
+"lat": 52.4131,
+"lon": -3.2841,
+"mw": 34.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Garves Mountain Farm",
+"lat": 55.0018,
+"lon": -6.5649,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gawnsmoss Cluster",
+"lat": 57.6223,
+"lon": -2.613,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gayton Le Marsh Wind Farm",
+"lat": 53.3626,
+"lon": 0.166,
+"mw": 16.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gedney Marsh",
+"lat": 52.8362,
+"lon": 0.1068,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glass Moor",
+"lat": 52.5186,
+"lon": -0.1088,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glass Moor 2",
+"lat": 52.5186,
+"lon": -0.1088,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "GlaxoSmithKline Wind Project",
+"lat": 55.5979,
+"lon": -4.6339,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "GlaxoSmithKline Wind Project (Turbine 4)",
+"lat": 55.5929,
+"lon": -4.6182,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glen App",
+"lat": 55.0007,
+"lon": -4.9897,
+"mw": 22.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glenbuck",
+"lat": 55.0101,
+"lon": -6.4124,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glenbuck II",
+"lat": 55.0101,
+"lon": -6.4124,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glenchamber",
+"lat": 54.9634,
+"lon": -4.7543,
+"mw": 27.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glenconway",
+"lat": 54.976,
+"lon": -7.0296,
+"mw": 18.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glenconway 2 (formerly Altahullion Phase III)",
+"lat": 54.9705,
+"lon": -7.0348,
+"mw": 27.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glenkerie",
+"lat": 55.5385,
+"lon": -3.4205,
+"mw": 22.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glens of Foudland",
+"lat": 57.4253,
+"lon": -2.6361,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Glenurquhart and Strathglass Wind Farm project",
+"lat": 57.2791,
+"lon": -4.7511,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Goathill Quarry Turbine",
+"lat": 56.0864,
+"lon": -3.3203,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Goole Fields",
+"lat": 53.6659,
+"lon": -0.8893,
+"mw": 33.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Goole Fields 2",
+"lat": 53.6768,
+"lon": -0.8868,
+"mw": 34.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Goonabarn Farm Wind Turbines",
+"lat": 50.3497,
+"lon": -4.9606,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Goonhilly Downs Wind Farm",
+"lat": 50.0504,
+"lon": -5.2002,
+"mw": 12.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gordonbush",
+"lat": 58.0595,
+"lon": -3.9591,
+"mw": 70.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gordonstown",
+"lat": 57.4619,
+"lon": -2.4828,
+"mw": 12.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gortfinbar",
+"lat": 54.544,
+"lon": -7.0197,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Grange",
+"lat": 52.7506,
+"lon": 0.1662,
+"mw": 14.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Grange Resubmission",
+"lat": 53.6379,
+"lon": -0.7001,
+"mw": 12.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Great Eppleton (ex NFFO)",
+"lat": 54.8273,
+"lon": -1.4272,
+"mw": 4.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Great Eppleton RO",
+"lat": 54.8273,
+"lon": -1.4272,
+"mw": 4.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Great Orton",
+"lat": 54.8706,
+"lon": -3.072,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Great Orton",
+"lat": 54.8715,
+"lon": -3.0767,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Greater Gabbard",
+"lat": 51.9176,
+"lon": 1.9284,
+"mw": 504.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Green Knowes",
+"lat": 56.2492,
+"lon": -3.6663,
+"mw": 27.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Green Rigg",
+"lat": 55.1323,
+"lon": -2.127,
+"mw": 36.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "GreenPark",
+"lat": 51.419,
+"lon": -0.9855,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Greencroft Estate Turbines",
+"lat": 54.8497,
+"lon": -1.7487,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Greendykeside",
+"lat": 55.912,
+"lon": -3.9032,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Greenhill Croft",
+"lat": 57.5946,
+"lon": -2.2011,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Greenvale AP Wind Turbine - resubmission",
+"lat": 52.5207,
+"lon": -0.0046,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gremista Wind Farm",
+"lat": 60.1924,
+"lon": -1.1671,
+"mw": 3.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Griffin",
+"lat": 56.5812,
+"lon": -3.7338,
+"mw": 188.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gruig",
+"lat": 55.0188,
+"lon": -6.2857,
+"mw": 25.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gunfleet Sands 1",
+"lat": 51.7308,
+"lon": 1.218,
+"mw": 108.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gunfleet Sands 2",
+"lat": 51.7272,
+"lon": 1.2459,
+"mw": 65.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gunfleet Sands 3",
+"lat": 51.703,
+"lon": 1.1919,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Gwynt y Mor",
+"lat": 53.454,
+"lon": -3.6266,
+"mw": 576.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Haddo",
+"lat": 57.4287,
+"lon": -2.3076,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hadyard Hill",
+"lat": 55.2568,
+"lon": -4.7319,
+"mw": 119.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hafoty Ucha '2' and '3' Wind Turbine",
+"lat": 52.9962,
+"lon": -3.5883,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hagshaw Hill (S15) Wind Farm  Lanarkshire",
+"lat": 55.5554,
+"lon": -3.9203,
+"mw": 7.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hagshaw Hill 1",
+"lat": 55.5553,
+"lon": -3.9201,
+"mw": 15.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hagshaw Hill 2",
+"lat": 55.5666,
+"lon": -3.9203,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Halifax Farm",
+"lat": 52.6398,
+"lon": -1.3252,
+"mw": 1.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hall Farm Routh",
+"lat": 53.8737,
+"lon": -0.3609,
+"mw": 24.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hallburn Farm (resubmission)",
+"lat": 55.0096,
+"lon": -2.9153,
+"mw": 13.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Halsary Wind Farm",
+"lat": 58.4309,
+"lon": -3.4444,
+"mw": 34.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hameldon Hill Extension",
+"lat": 53.771,
+"lon": -2.3062,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hammar's Hill",
+"lat": 59.0957,
+"lon": -3.0727,
+"mw": 4.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hampole Wind Farm",
+"lat": 53.5766,
+"lon": -1.255,
+"mw": 8.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Harburnhead Wind Farm",
+"lat": 55.8087,
+"lon": -3.5322,
+"mw": 51.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hare Hill",
+"lat": 55.3628,
+"lon": -4.1263,
+"mw": 13.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hare Hill (B)",
+"lat": 54.7616,
+"lon": -1.4151,
+"mw": 2.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hare Hill 2",
+"lat": 55.3628,
+"lon": -4.1263,
+"mw": 16.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hare Hill RO",
+"lat": 54.7616,
+"lon": -1.4151,
+"mw": 2.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Harestanes",
+"lat": 55.239,
+"lon": -3.5742,
+"mw": 136.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Harlock Hill Wind Farm",
+"lat": 54.2049,
+"lon": -3.1467,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Haverigg 3",
+"lat": 54.204,
+"lon": -3.3245,
+"mw": 3.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Haverigg Repowering (Haverigg II)",
+"lat": 54.204,
+"lon": -3.3245,
+"mw": 1.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hawton Wind Farm",
+"lat": 53.0482,
+"lon": -0.8142,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hazlehead",
+"lat": 53.5316,
+"lon": -1.7312,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hellrigg",
+"lat": 54.8533,
+"lon": -3.3475,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Heysham South Wind Farm",
+"lat": 54.0342,
+"lon": -2.865,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "High Haswell Wind Farm",
+"lat": 54.7875,
+"lon": -1.4312,
+"mw": 4.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "High Hedley I",
+"lat": 54.7637,
+"lon": -1.7575,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "High Hedley II",
+"lat": 54.7637,
+"lon": -1.7575,
+"mw": 5.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "High Pow",
+"lat": 54.7895,
+"lon": -3.1912,
+"mw": 3.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "High Sharpley",
+"lat": 54.8403,
+"lon": -1.3375,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "High Volts RO",
+"lat": 54.6936,
+"lon": -1.3003,
+"mw": 5.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Auquhirie",
+"lat": 56.9552,
+"lon": -3.1772,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Balquhindachy extension",
+"lat": 57.4724,
+"lon": -2.241,
+"mw": 1.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Easterton",
+"lat": 57.3761,
+"lon": -2.3933,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Easterton Extension",
+"lat": 57.3761,
+"lon": -2.3933,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Fiddes",
+"lat": 57.3109,
+"lon": -2.1096,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Glaschyle Wind Farm",
+"lat": 57.5105,
+"lon": -3.6156,
+"mw": 27.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Lybster",
+"lat": 58.6024,
+"lon": -3.6881,
+"mw": 4.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Lybster (Extension)",
+"lat": 58.6024,
+"lon": -3.6881,
+"mw": 5.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Skilmafilly Cloffrickford (Denmore) Wind Farm",
+"lat": 57.4535,
+"lon": -2.1647,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Stroupster Windfarm",
+"lat": 58.5793,
+"lon": -3.1324,
+"mw": 29.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Tillymorgan (Kirkton Farm) Wind turbines (resubmission)",
+"lat": 57.3441,
+"lon": -2.6104,
+"mw": 9.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hill of Towie",
+"lat": 57.6228,
+"lon": -3.341,
+"mw": 48.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hollies",
+"lat": 53.143,
+"lon": 0.2411,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Holmside",
+"lat": 54.8471,
+"lon": -1.6776,
+"mw": 2.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hook Moor",
+"lat": 53.8119,
+"lon": -1.3355,
+"mw": 10.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hoprigshiels Community Wind Farm",
+"lat": 55.9207,
+"lon": -2.3915,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hornsea 1 - Heron & Njord",
+"lat": 53.6815,
+"lon": 1.4207,
+"mw": 1200.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "House O'Hill",
+"lat": 57.6219,
+"lon": -2.0425,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Humber Gateway",
+"lat": 53.3875,
+"lon": 0.5006,
+"mw": 219.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Humphrey Group",
+"lat": 52.3367,
+"lon": 1.1266,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hunter's Hill",
+"lat": 54.439,
+"lon": -7.3415,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hunterston Test Centre",
+"lat": 55.736,
+"lon": -4.888,
+"mw": 13.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hyndburn Wind Farm",
+"lat": 53.7143,
+"lon": -2.389,
+"mw": 24.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Hywind Scotland Pilot Park (Hywind 2) Demonstrator",
+"lat": 57.5075,
+"lon": -1.4426,
+"mw": 30.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Inishative",
+"lat": 54.5669,
+"lon": -7.0096,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Inner Dowsing",
+"lat": 53.188,
+"lon": 0.4465,
+"mw": 97.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Inverclyde Wind Farm (Corlic Hill)",
+"lat": 55.9185,
+"lon": -4.7289,
+"mw": 24.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Jacks Lane",
+"lat": 52.8841,
+"lon": 0.6874,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Jacksbank Wind Farm (Glenbervie)",
+"lat": 56.9399,
+"lon": -2.3866,
+"mw": 6.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "K L Technologies Wind Turbine",
+"lat": 52.7712,
+"lon": 0.3857,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "KELLAS WIND FARM",
+"lat": 57.5677,
+"lon": -3.396,
+"mw": 18.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Keadby",
+"lat": 53.6118,
+"lon": -0.7637,
+"mw": 68.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Keith Hill (resubmission)",
+"lat": 55.8173,
+"lon": -2.8255,
+"mw": 4.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kelburn",
+"lat": 55.7563,
+"lon": -4.8062,
+"mw": 28.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kelmarsh Wind Farm (Resubmission)",
+"lat": 52.4028,
+"lon": -0.9598,
+"mw": 12.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kentish Flats",
+"lat": 51.4606,
+"lon": 1.0938,
+"mw": 90.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kentish Flats Extension",
+"lat": 51.45,
+"lon": 1.08,
+"mw": 49.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kilbraur",
+"lat": 57.9924,
+"lon": -3.9787,
+"mw": 67.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kilbraur Windfarm",
+"lat": 58.0404,
+"lon": -4.0588,
+"mw": 47.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kildrummy",
+"lat": 57.2253,
+"lon": -2.7029,
+"mw": 18.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kilgallioch wind farm",
+"lat": 54.9885,
+"lon": -4.8017,
+"mw": 239.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kiln Pit Hill",
+"lat": 54.886,
+"lon": -1.9144,
+"mw": 14.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kinegar Quarry (resubmission)",
+"lat": 55.9348,
+"lon": -2.3637,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kingsburn",
+"lat": 56.089,
+"lon": -4.1231,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kingspan",
+"lat": 53.2897,
+"lon": -3.2008,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kirkby Moor",
+"lat": 54.2575,
+"lon": -3.1357,
+"mw": 4.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kirkheaton",
+"lat": 55.0865,
+"lon": -1.989,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Knabs Ridge",
+"lat": 53.999,
+"lon": -1.6496,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Kype Muir Wind Farm",
+"lat": 55.6327,
+"lon": -4.0361,
+"mw": 88.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "LADEHEAD FARM - WIND TURBINES",
+"lat": 55.6495,
+"lon": -3.9221,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lairg Wind Farm",
+"lat": 58.0027,
+"lon": -4.3487,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lambrigg",
+"lat": 54.3363,
+"lon": -2.6351,
+"mw": 6.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lambs Hill",
+"lat": 54.5462,
+"lon": -1.3263,
+"mw": 8.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lancaster University (wind)",
+"lat": 54.0072,
+"lon": -2.7795,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Land approx 75m South of 141",
+"lat": 54.6863,
+"lon": -7.0886,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Land at Overside and Greenwellheads Farms",
+"lat": 57.5822,
+"lon": -1.8993,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Land near Ventonteague (Resubmission)",
+"lat": 50.3208,
+"lon": -5.0556,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Langford Wind Farm",
+"lat": 52.059,
+"lon": -0.2453,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Langhope Rig",
+"lat": 55.4707,
+"lon": -2.9399,
+"mw": 16.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Langley",
+"lat": 54.8237,
+"lon": -1.6758,
+"mw": 8.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lawrence Landfill",
+"lat": 51.7745,
+"lon": -5.0008,
+"mw": 1.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lendrum's Bridge",
+"lat": 54.3927,
+"lon": -7.1834,
+"mw": 5.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lendrum's Bridge Extension",
+"lat": 54.3938,
+"lon": -7.1489,
+"mw": 7.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Levenmouth demonstration turbine (Fife Energy Park)",
+"lat": 56.1607,
+"lon": -2.958,
+"mw": 7.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lilbourne Wind Farm",
+"lat": 52.3942,
+"lon": -1.1669,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lincs",
+"lat": 53.1842,
+"lon": 0.4981,
+"mw": 270.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lindhurst",
+"lat": 53.1175,
+"lon": -1.1516,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lissett",
+"lat": 54.0071,
+"lon": -0.2885,
+"mw": 29.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Little Belhus Restoration Site",
+"lat": 51.5225,
+"lon": 0.2776,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Little Byth",
+"lat": 57.607,
+"lon": -2.2901,
+"mw": 4.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Little Cheyne Court",
+"lat": 50.9638,
+"lon": 0.8227,
+"mw": 59.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Little Raith Farm",
+"lat": 56.1194,
+"lon": -3.2522,
+"mw": 25.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Llanbabo Wind Farm",
+"lat": 53.3544,
+"lon": -4.4656,
+"mw": 20.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Llandinam Windfarm",
+"lat": 52.4421,
+"lon": -3.4308,
+"mw": 31.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Llangwyryfon",
+"lat": 52.3069,
+"lon": -4.0292,
+"mw": 9.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Llyn Alaw",
+"lat": 53.3534,
+"lon": -4.4379,
+"mw": 20.4,
+"year": null,
+"geo": "CARMA"
+},
+{
+"name": "Llynfi Afan Renewable Energy Park",
+"lat": 51.6427,
+"lon": -3.6147,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Llynfi Renewable Energy Park  Land at Mynydd Caerau",
+"lat": 51.6449,
+"lon": -3.6211,
+"mw": 18.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Loch Sminig Wind Project",
+"lat": 58.3836,
+"lon": -6.493,
+"mw": 2.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lochcarnan Community Windfarm",
+"lat": 57.2337,
+"lon": -7.3479,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lochelbank",
+"lat": 56.3054,
+"lon": -3.4329,
+"mw": 9.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lochend  Wind Farm",
+"lat": 58.5951,
+"lon": -3.2629,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lochhead",
+"lat": 55.6959,
+"lon": -3.9823,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lochluichart",
+"lat": 57.6546,
+"lon": -4.8167,
+"mw": 69.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lochluichart (Extension)",
+"lat": 57.6801,
+"lon": -4.8414,
+"mw": 18.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lodge Farm 1",
+"lat": 51.7263,
+"lon": -5.0609,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Loftsome Bridge",
+"lat": 53.7568,
+"lon": -0.9377,
+"mw": 1.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "London Array",
+"lat": 51.6217,
+"lon": 1.4958,
+"mw": 630.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Long Hill Road",
+"lat": 52.5731,
+"lon": 0.0893,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Long Mountain",
+"lat": 54.9841,
+"lon": -6.442,
+"mw": 27.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Longlands Lane",
+"lat": 51.5633,
+"lon": -3.7479,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Longpark",
+"lat": 55.6692,
+"lon": -2.8275,
+"mw": 38.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Loscar",
+"lat": 53.3145,
+"lon": -1.236,
+"mw": 4.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lough Hill",
+"lat": 54.6343,
+"lon": -7.6052,
+"mw": 7.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Low Spinney",
+"lat": 52.5024,
+"lon": -1.1792,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lowca Wind Farm",
+"lat": 54.5974,
+"lon": -3.571,
+"mw": 4.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lynemouth",
+"lat": 55.2016,
+"lon": -1.5396,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Lynn",
+"lat": 53.1356,
+"lon": 0.4515,
+"mw": 97.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "M1 J18 Wind Turbines",
+"lat": 52.3495,
+"lon": -1.1577,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "M1 Wind Farm",
+"lat": 52.1617,
+"lon": -0.8617,
+"mw": 7.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "MSD Cramlington",
+"lat": 55.1035,
+"lon": -1.6222,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Maerdy",
+"lat": 51.6978,
+"lon": -3.5179,
+"mw": 24.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Maesgwyn",
+"lat": 51.7365,
+"lon": -3.6596,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Maesgwyn Wind Farm - extension",
+"lat": 51.7406,
+"lon": -3.6442,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Magherafelt",
+"lat": 54.769,
+"lon": -6.6477,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mains of Hatton",
+"lat": 57.6153,
+"lon": -2.0667,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "March",
+"lat": 52.5713,
+"lon": 0.1215,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mark Hill",
+"lat": 55.1284,
+"lon": -4.7463,
+"mw": 56.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Marr Windfarm",
+"lat": 53.533,
+"lon": -1.2397,
+"mw": 8.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Marshill Farm",
+"lat": 55.6871,
+"lon": -3.9334,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Marston Vale Country Park Wind Turbine",
+"lat": 52.0647,
+"lon": -0.5354,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mawdesley Moss",
+"lat": 53.6335,
+"lon": -2.7803,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Meall an Tuirc Wind Farm",
+"lat": 57.71,
+"lon": -4.427,
+"mw": 17.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Meikle Carewe",
+"lat": 57.0188,
+"lon": -2.2783,
+"mw": 10.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Melton Waste Park (resubmission)",
+"lat": 53.7172,
+"lon": -0.5336,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Methlick Farmers Wind Energy Project",
+"lat": 57.4276,
+"lon": -2.2431,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mid Hill",
+"lat": 56.9688,
+"lon": -2.4862,
+"mw": 75.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mid Hill I",
+"lat": 56.9688,
+"lon": -2.4862,
+"mw": 57.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Middle Balbeggie",
+"lat": 56.1537,
+"lon": -3.1645,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Middle Muir Wind Farm",
+"lat": 55.5129,
+"lon": -3.804,
+"mw": 51.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Middlemoor",
+"lat": 55.4986,
+"lon": -1.7678,
+"mw": 54.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Middleton",
+"lat": 55.7751,
+"lon": -4.3426,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Middlewick",
+"lat": 51.6631,
+"lon": 0.8925,
+"mw": 20.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Millennium",
+"lat": 57.1552,
+"lon": -4.8836,
+"mw": 65.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Millennium Extension",
+"lat": 57.1502,
+"lon": -4.8912,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Millennium Windfarm",
+"lat": 57.1552,
+"lon": -4.8836,
+"mw": 40.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Millour Hill Community Windfarm (Extension) resubmission",
+"lat": 55.7358,
+"lon": -4.7809,
+"mw": 6.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Millour Hill Community Windfarm (Re-submission)",
+"lat": 55.7307,
+"lon": -4.775,
+"mw": 18.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Milton Keynes Wind Farm",
+"lat": 52.1328,
+"lon": -0.6865,
+"mw": 14.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Milton of Fisherie Wind Cluster",
+"lat": 57.6204,
+"lon": -2.4191,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Minnygap (Resubmission)",
+"lat": 55.2488,
+"lon": -3.5148,
+"mw": 25.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Minsca",
+"lat": 55.1221,
+"lon": -3.3529,
+"mw": 36.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Moel Maelogen A",
+"lat": 53.1363,
+"lon": -3.725,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Moel Maelogen A Phase 2",
+"lat": 53.1363,
+"lon": -3.725,
+"mw": 11.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Molly Mountain",
+"lat": 54.1979,
+"lon": -7.6365,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Monan Hill Wind Turbines",
+"lat": 57.9417,
+"lon": -6.8318,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Monnaboy Wind Farm",
+"lat": 54.9791,
+"lon": -7.1341,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Moor House Wind Farm (resubmission)",
+"lat": 54.5746,
+"lon": -1.4972,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Moorhouse Farm",
+"lat": 55.9039,
+"lon": -2.2508,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mornflake Oats Wind Turbine",
+"lat": 57.6599,
+"lon": -2.6462,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mossmorran",
+"lat": 56.0905,
+"lon": -3.3177,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Moy",
+"lat": 57.3888,
+"lon": -4.0488,
+"mw": 60.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Muirake",
+"lat": 57.6114,
+"lon": -2.7244,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Muirhall",
+"lat": 55.7669,
+"lon": -3.5858,
+"mw": 12.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Muirhall Extension",
+"lat": 55.7584,
+"lon": -3.6055,
+"mw": 6.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Muirhall South",
+"lat": 55.7584,
+"lon": -3.6055,
+"mw": 8.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Brombil",
+"lat": 51.583,
+"lon": -3.7457,
+"mw": 8.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Bwllfa Wind Farm - Resubmission",
+"lat": 51.7147,
+"lon": -3.5098,
+"mw": 22.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Clogau",
+"lat": 52.5784,
+"lon": -3.4285,
+"mw": 14.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Gorddu",
+"lat": 52.4663,
+"lon": -3.971,
+"mw": 10.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Portref",
+"lat": 51.5564,
+"lon": -3.4597,
+"mw": 9.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Portref Wind Farm extension",
+"lat": 51.5604,
+"lon": -3.4496,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Y Gwair Wind Farm (resubmission)",
+"lat": 51.7492,
+"lon": -3.9381,
+"mw": 32.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd Y Gwrhyd Windfarm (resubmission)",
+"lat": 51.7784,
+"lon": -3.8472,
+"mw": 4.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Mynydd y Betws",
+"lat": 51.7728,
+"lon": -3.929,
+"mw": 34.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Myres Hill",
+"lat": 55.6919,
+"lon": -4.279,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Myreton Crossroads",
+"lat": 57.599,
+"lon": -2.8425,
+"mw": 1.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "NEILSTON WIND FARM",
+"lat": 55.7541,
+"lon": -4.4667,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Nash Waste Water Treatment Works Turbine",
+"lat": 51.5511,
+"lon": -2.9591,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "National Wind Turbine Test Site",
+"lat": 55.6907,
+"lon": -4.2844,
+"mw": 4.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ness point Wind Turbine 1",
+"lat": 52.4804,
+"lon": 1.761,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Nethercott Farm",
+"lat": 50.7443,
+"lon": -4.3354,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Netherton of Windyhills",
+"lat": 57.6027,
+"lon": -2.8559,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "New Albion Wind Farm",
+"lat": 52.4502,
+"lon": -0.7554,
+"mw": 14.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "New Barn Farm - Burnley",
+"lat": 53.7732,
+"lon": -2.3034,
+"mw": 4.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "New Holland",
+"lat": 58.9133,
+"lon": -2.8689,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Newstead and Annesley Wind Turbine",
+"lat": 53.0753,
+"lon": -1.2178,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Newthorpe Wind Turbine",
+"lat": 52.9988,
+"lon": -1.2979,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Newton Down",
+"lat": 51.5022,
+"lon": -3.669,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Newton Marsh Wind Project",
+"lat": 53.5093,
+"lon": 0.009,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Nissan Motors Plant Extn",
+"lat": 54.9139,
+"lon": -1.4808,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Nissan Wind Farm",
+"lat": 54.9139,
+"lon": -1.4808,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Noble Foods",
+"lat": 56.1641,
+"lon": -3.1593,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "North Hoyle",
+"lat": 53.4172,
+"lon": -3.4486,
+"mw": 60.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "North Pickenham",
+"lat": 52.6292,
+"lon": 0.7321,
+"mw": 14.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "North Pickenham Airfield",
+"lat": 52.6256,
+"lon": 0.7335,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "North Red Bog",
+"lat": 57.5876,
+"lon": -2.0091,
+"mw": 1.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "North Rhins",
+"lat": 54.8771,
+"lon": -5.0881,
+"mw": 22.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "North Steads Wind Farm",
+"lat": 55.265,
+"lon": -1.6248,
+"mw": 18.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "North Yell Wind Farm (Garth Community Wind Farm)",
+"lat": 60.6661,
+"lon": -1.0052,
+"mw": 4.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Norton Fields Farm",
+"lat": 52.1643,
+"lon": -2.1427,
+"mw": 1.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Novar 2",
+"lat": 57.71,
+"lon": -4.427,
+"mw": 36.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Nutberry",
+"lat": 55.5995,
+"lon": -3.9216,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Oakdale",
+"lat": 51.6869,
+"lon": -3.1714,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Oldside Wind Farm",
+"lat": 54.6596,
+"lon": -3.5564,
+"mw": 5.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ora More",
+"lat": 54.3385,
+"lon": -7.8959,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Orchard End Windfarm",
+"lat": 53.9001,
+"lon": -2.8657,
+"mw": 4.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ormonde",
+"lat": 54.0889,
+"lon": -3.4386,
+"mw": 150.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Orton Park Farm",
+"lat": 54.869,
+"lon": -3.0067,
+"mw": 1.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Otterham Down Wind Farm (Resubmission)",
+"lat": 50.6849,
+"lon": -4.6103,
+"mw": 3.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Out Newton",
+"lat": 53.6689,
+"lon": 0.0994,
+"mw": 9.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ovenden Moor",
+"lat": 53.7708,
+"lon": -1.9408,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Owenreagh Extension",
+"lat": 54.8066,
+"lon": -7.3341,
+"mw": 5.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Owenreagh Wind Farm",
+"lat": 54.8097,
+"lon": -7.339,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "PROMISED LAND FARM",
+"lat": 53.5113,
+"lon": -2.7378,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pant y wal",
+"lat": 51.6129,
+"lon": -3.505,
+"mw": 25.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pant y wal extension",
+"lat": 51.5872,
+"lon": -3.522,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Parc Cynog",
+"lat": 51.7569,
+"lon": -4.5297,
+"mw": 3.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Parc Cynog Extension",
+"lat": 51.7592,
+"lon": -4.5337,
+"mw": 8.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Park Spring",
+"lat": 53.574,
+"lon": -1.4021,
+"mw": 8.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pates Hill",
+"lat": 55.8164,
+"lon": -3.6113,
+"mw": 14.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Paul's Hill",
+"lat": 57.4462,
+"lon": -3.4762,
+"mw": 64.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pearie Law",
+"lat": 55.8205,
+"lon": -3.5624,
+"mw": 19.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pen Bryn Oer Wind Farm",
+"lat": 51.7749,
+"lon": -3.2759,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pen y Cymoedd",
+"lat": 51.6555,
+"lon": -3.6957,
+"mw": 228.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Penmanshiel Wind Farm",
+"lat": 55.8969,
+"lon": -2.3213,
+"mw": 28.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Penny Hill Lane",
+"lat": 53.3834,
+"lon": -1.2975,
+"mw": 19.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Penrhys Wind Farm/Ferndale Power Factory",
+"lat": 51.6511,
+"lon": -3.4512,
+"mw": 6.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pentland Road",
+"lat": 58.2572,
+"lon": -6.5108,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Plascow wind cluster (resubmission)",
+"lat": 54.9563,
+"lon": -3.7602,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pogbie Wind Farm 1",
+"lat": 55.8218,
+"lon": -2.833,
+"mw": 5.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pogbie Wind Farm 2",
+"lat": 55.8395,
+"lon": -2.8421,
+"mw": 4.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Point Wind / Beinn Ghrideag Farm",
+"lat": 58.2079,
+"lon": -6.4807,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Pollnalaght (Cornavarrow)",
+"lat": 54.5683,
+"lon": -7.441,
+"mw": 38.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Port of Liverpool",
+"lat": 53.4496,
+"lon": -3.005,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Port of Sheerness Wind Farm Ltd",
+"lat": 51.443,
+"lon": 0.7479,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Port of Tilbury",
+"lat": 51.4573,
+"lon": 0.3368,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Potato Pot",
+"lat": 54.6027,
+"lon": -3.5031,
+"mw": 7.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Princes Gate Spring Water",
+"lat": 51.772,
+"lon": -4.6844,
+"mw": 1.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Quarrendon Fields",
+"lat": 51.8424,
+"lon": -0.836,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Quixwood Moor",
+"lat": 55.8674,
+"lon": -2.3527,
+"mw": 29.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Race Bank (Phase 1)",
+"lat": 53.136,
+"lon": 0.5892,
+"mw": 286.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rampion Offshore Wind Farm (Hastings Zone)",
+"lat": 50.64,
+"lon": -0.18,
+"mw": 400.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ramsey",
+"lat": 52.4469,
+"lon": -0.1063,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ramsey 2 Wind Farm",
+"lat": 52.4681,
+"lon": -0.1224,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ranson Moor (phase 1)",
+"lat": 52.5127,
+"lon": 0.0314,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ranson Moor Wind Farm (Phase 2)",
+"lat": 52.5106,
+"lon": 0.0373,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rathsherry (Revised Application)",
+"lat": 54.9515,
+"lon": -6.1757,
+"mw": 21.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ray",
+"lat": 55.1822,
+"lon": -2.0714,
+"mw": 54.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Reaps Moss Wind Farm (resubmitted)",
+"lat": 53.7002,
+"lon": -2.1671,
+"mw": 10.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Red Gap Moor Wind Farm",
+"lat": 54.6468,
+"lon": -1.3206,
+"mw": 12.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Red Tile",
+"lat": 52.4305,
+"lon": -0.0292,
+"mw": 24.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rhodders",
+"lat": 56.2042,
+"lon": -3.7824,
+"mw": 12.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rhyl Flats",
+"lat": 53.3776,
+"lon": -3.6402,
+"mw": 90.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rigged Hill",
+"lat": 55.0219,
+"lon": -6.8198,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Robin Rigg East",
+"lat": 54.7642,
+"lon": -3.6955,
+"mw": 90.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Robin Rigg West",
+"lat": 54.7473,
+"lon": -3.7293,
+"mw": 90.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rodbaston",
+"lat": 52.7024,
+"lon": -2.1172,
+"mw": 2.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Roos",
+"lat": 53.7518,
+"lon": -0.0697,
+"mw": 17.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rosehall",
+"lat": 57.9956,
+"lon": -4.547,
+"mw": 24.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rosehill Wind Turbines",
+"lat": 56.055,
+"lon": -3.8281,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Roskrow Barton",
+"lat": 50.1773,
+"lon": -5.1316,
+"mw": 1.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rothes",
+"lat": 57.5373,
+"lon": -3.363,
+"mw": 51.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rothes 2",
+"lat": 57.5373,
+"lon": -3.363,
+"mw": 41.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rothiesholm",
+"lat": 59.0973,
+"lon": -2.6601,
+"mw": 2.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Roughside Hill",
+"lat": 55.7046,
+"lon": -3.0677,
+"mw": 30.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Royd Moor",
+"lat": 53.5322,
+"lon": -1.6696,
+"mw": 6.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Rusholme",
+"lat": 53.7303,
+"lon": -0.948,
+"mw": 24.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ryder Point Quarry Wind Turbines",
+"lat": 53.0916,
+"lon": -1.6214,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Saltend Wind Turbine",
+"lat": 53.7444,
+"lon": -0.2365,
+"mw": 1.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sancton Hill Wind Farm",
+"lat": 53.8451,
+"lon": -0.6099,
+"mw": 10.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sanquhar Community Windfarm",
+"lat": 55.3442,
+"lon": -4.0466,
+"mw": 32.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Scout Moor",
+"lat": 53.669,
+"lon": -2.2679,
+"mw": 65.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Screggagh",
+"lat": 54.4624,
+"lon": -7.3329,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Scroby Sands",
+"lat": 52.6439,
+"lon": 1.7889,
+"mw": 60.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Seaforth",
+"lat": 53.4652,
+"lon": -3.0393,
+"mw": 3.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Seamer Wind Farm - Hambleton",
+"lat": 54.4959,
+"lon": -1.2624,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Seamer Windfarm - Stockton on Tees",
+"lat": 54.4942,
+"lon": -1.2585,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Seegronan",
+"lat": 54.6333,
+"lon": -6.3,
+"mw": 13.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Severn Trent STW",
+"lat": 52.698,
+"lon": -1.1179,
+"mw": 2.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Severn Trent Water - Stoke Bardolph Wind Turbine",
+"lat": 52.9758,
+"lon": -1.044,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Shantavny Scotch",
+"lat": 54.4766,
+"lon": -7.09,
+"mw": 16.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sharpness Docks",
+"lat": 51.7237,
+"lon": -2.4829,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Shepham Lane (Resubmission)",
+"lat": 50.8295,
+"lon": 0.2709,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sheringham Shoal BMU 1 & 2",
+"lat": 53.1353,
+"lon": 1.1479,
+"mw": 316.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Shielburn Farm",
+"lat": 57.4998,
+"lon": -2.542,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Shooters",
+"lat": 51.2544,
+"lon": -2.5834,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sibelco Brassington",
+"lat": 53.0909,
+"lon": -1.6284,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Siddick Wind Farm",
+"lat": 54.6741,
+"lon": -3.543,
+"mw": 4.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sisters",
+"lat": 55.2499,
+"lon": -1.6182,
+"mw": 8.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sixpenny Wood",
+"lat": 53.738,
+"lon": -0.8114,
+"mw": 20.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Skeddoway Farm Wind Turbine",
+"lat": 56.1665,
+"lon": -3.1593,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Skeddoway Farm Wind Turbine (Resubmission)",
+"lat": 56.1665,
+"lon": -3.1593,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Skelmonae Wind Farm",
+"lat": 57.4208,
+"lon": -2.1898,
+"mw": 3.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Slieve Divena",
+"lat": 54.5086,
+"lon": -7.1064,
+"mw": 30.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Slieve Divena Phase 2 Wind Farm",
+"lat": 54.5086,
+"lon": -7.1064,
+"mw": 18.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Slieve Kirk",
+"lat": 54.9203,
+"lon": -7.2889,
+"mw": 73.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Slieve Rushen Extension",
+"lat": 54.1903,
+"lon": -7.6284,
+"mw": 54.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Slieve Rushen Phase 1 Wind Farm",
+"lat": 54.1903,
+"lon": -7.6284,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Slieveglass",
+"lat": 54.6355,
+"lon": -7.5692,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sober Hill",
+"lat": 53.8349,
+"lon": -0.5967,
+"mw": 12.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Solutia",
+"lat": 51.5666,
+"lon": -2.9626,
+"mw": 5.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Somerton",
+"lat": 52.7099,
+"lon": 1.6545,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "South Sharpley Wind Farm",
+"lat": 54.8404,
+"lon": -1.4022,
+"mw": 6.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Southern Law",
+"lat": 54.7222,
+"lon": -1.4349,
+"mw": 5.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Southrigg",
+"lat": 55.8711,
+"lon": -3.7295,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Spaldington",
+"lat": 53.7952,
+"lon": -0.7998,
+"mw": 11.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Spicer Hill Wind Farm",
+"lat": 53.5368,
+"lon": -1.6922,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Spurness Extension",
+"lat": 59.1893,
+"lon": -2.6925,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Srondoire Community Wind Farm",
+"lat": 55.9341,
+"lon": -5.4805,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "St Breock",
+"lat": 50.4956,
+"lon": -4.8213,
+"mw": 10.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "St Fergus Moss Wind Farm",
+"lat": 57.572,
+"lon": -1.9111,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "St John Hill",
+"lat": 56.8935,
+"lon": -2.2724,
+"mw": 7.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "St John's Well",
+"lat": 57.4266,
+"lon": -2.3252,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "St Johns Wells Wind Cluster Extension",
+"lat": 57.4182,
+"lon": -2.3353,
+"mw": 3.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "St. Johns Hill",
+"lat": 56.8886,
+"lon": -2.2724,
+"mw": 25.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Stags Holt",
+"lat": 52.5698,
+"lon": 0.1233,
+"mw": 20.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Stags Holt Extension",
+"lat": 52.5698,
+"lon": 0.1233,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Standford Hill",
+"lat": 51.395,
+"lon": 0.8509,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Stonish Hill Re-submission (Bilsthorpe)",
+"lat": 53.1511,
+"lon": -1.0146,
+"mw": 10.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Strath of Brydock",
+"lat": 57.6262,
+"lon": -2.5811,
+"mw": 6.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Strath of Brydock",
+"lat": 57.6262,
+"lon": -2.5811,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Strathy North",
+"lat": 58.49,
+"lon": -4.0336,
+"mw": 67.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Stronelairg Wind Farm",
+"lat": 57.1269,
+"lon": -4.5264,
+"mw": 228.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Stroupster",
+"lat": 58.5719,
+"lon": -3.137,
+"mw": 29.9,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Sunnyside wind cluster",
+"lat": 55.379,
+"lon": -3.9489,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Swaffham II",
+"lat": 52.6577,
+"lon": 0.7007,
+"mw": 1.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Swinford",
+"lat": 52.4119,
+"lon": -1.1663,
+"mw": 22.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Taff Ely",
+"lat": 51.5694,
+"lon": -3.4648,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tallentire",
+"lat": 54.7069,
+"lon": -3.3595,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tangy",
+"lat": 55.4953,
+"lon": -5.6666,
+"mw": 18.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tangy Wind Farm Extension/Tangy 2",
+"lat": 55.4786,
+"lon": -5.5305,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tappaghan Extension",
+"lat": 54.5471,
+"lon": -7.6956,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tappaghan Wind Farm",
+"lat": 54.5471,
+"lon": -7.6956,
+"mw": 28.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tedder Hill",
+"lat": 53.7523,
+"lon": -0.0265,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Teesside",
+"lat": 54.6453,
+"lon": -1.0955,
+"mw": 62.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Teiges",
+"lat": 54.3031,
+"lon": -7.3985,
+"mw": 11.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Thanet",
+"lat": 51.4299,
+"lon": 1.6334,
+"mw": 300.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "The Haven",
+"lat": 52.129,
+"lon": -2.3184,
+"mw": 1.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "The Limes Wind Turbines",
+"lat": 53.7518,
+"lon": -0.2348,
+"mw": 1.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "The Michelin Tyre Factory - Ballymena",
+"lat": 54.8728,
+"lon": -6.1986,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "The Rosti Factory",
+"lat": 55.7247,
+"lon": -3.9606,
+"mw": 2.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Thorfinn Wind Farm - NM1500",
+"lat": 59.1131,
+"lon": -3.1438,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Thorfinn Wind Farm - NM2000",
+"lat": 59.109,
+"lon": -3.1404,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Thornog Windfarm",
+"lat": 54.6064,
+"lon": -7.5596,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Thornog Windfarm Extension",
+"lat": 54.6064,
+"lon": -7.5596,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tievenameenta",
+"lat": 54.705,
+"lon": -7.591,
+"mw": 34.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tir Mostyn & Foel Goch",
+"lat": 53.117,
+"lon": -3.4911,
+"mw": 21.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tirgwynt",
+"lat": 52.6105,
+"lon": -3.4791,
+"mw": 24.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tod Hill Farm Wind Turbines",
+"lat": 56.0325,
+"lon": -3.8621,
+"mw": 12.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Toddleburn",
+"lat": 55.7686,
+"lon": -2.8774,
+"mw": 27.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Todmorden",
+"lat": 53.7006,
+"lon": -2.159,
+"mw": 12.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tom Nan Clach (redesign)",
+"lat": 57.3929,
+"lon": -3.8917,
+"mw": 39.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tormywheel",
+"lat": 55.8048,
+"lon": -3.6721,
+"mw": 30.8,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Torrance Farm",
+"lat": 55.8718,
+"lon": -3.7461,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Torrance Farm Wind Park Extension",
+"lat": 55.8766,
+"lon": -3.7452,
+"mw": 5.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tow Law",
+"lat": 54.7638,
+"lon": -1.8228,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Townlands of Carrickatane",
+"lat": 54.8949,
+"lon": -7.1997,
+"mw": 20.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Trimdon",
+"lat": 54.7204,
+"lon": -1.4426,
+"mw": 5.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Trysglwyn",
+"lat": 53.3748,
+"lon": -4.3465,
+"mw": 5.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tullo",
+"lat": 56.9639,
+"lon": -2.2108,
+"mw": 17.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tullo Wind Farm North Extension (Shiels Wind Farm)",
+"lat": 56.844,
+"lon": -2.4101,
+"mw": 7.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tullo Wind Farm South (Ext.)",
+"lat": 56.8274,
+"lon": -2.4049,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tullymurdoch Wind Farm",
+"lat": 56.6549,
+"lon": -3.3134,
+"mw": 14.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Turncole",
+"lat": 51.6515,
+"lon": 0.8678,
+"mw": 17.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Tween Bridge",
+"lat": 53.6223,
+"lon": -0.9356,
+"mw": 44.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Twin Rivers",
+"lat": 53.6082,
+"lon": -0.905,
+"mw": 28.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Upper Ardgrain Wind Farm",
+"lat": 57.4064,
+"lon": -2.0598,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Upper Holton Wind Farm",
+"lat": 52.3665,
+"lon": 1.5311,
+"mw": 11.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Upper Wheedlemont Farm",
+"lat": 57.3233,
+"lon": -2.8752,
+"mw": 1.7,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wadlow",
+"lat": 52.166,
+"lon": 0.316,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Walkway",
+"lat": 54.6636,
+"lon": -1.3969,
+"mw": 14.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Walney 1",
+"lat": 54.0394,
+"lon": -3.5158,
+"mw": 184.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Walney 2",
+"lat": 54.0807,
+"lon": -3.609,
+"mw": 184.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Walney 3",
+"lat": 54.09,
+"lon": -3.74,
+"mw": 660.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wandylaw",
+"lat": 55.5196,
+"lon": -1.7642,
+"mw": 20.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wardlaw Wood",
+"lat": 55.7225,
+"lon": -4.7895,
+"mw": 18.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Watford Lodge",
+"lat": 52.3265,
+"lon": -1.1069,
+"mw": 12.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wathegar 2 Wind Farm",
+"lat": 58.4352,
+"lon": -3.2159,
+"mw": 18.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wathegar wind farm",
+"lat": 58.4393,
+"lon": -3.2257,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wear Point",
+"lat": 51.7021,
+"lon": -4.9965,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Welton Of Creuchies",
+"lat": 56.637,
+"lon": -3.2794,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wern Ddu Wind Farm",
+"lat": 53.0255,
+"lon": -3.4059,
+"mw": 9.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "West Browncastle",
+"lat": 55.659,
+"lon": -4.2091,
+"mw": 30.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "West Durham Wind Farm",
+"lat": 54.7638,
+"lon": -1.815,
+"mw": 24.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "West Hill  Flotta",
+"lat": 58.827,
+"lon": -3.1231,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "West Knock Wind Cluster",
+"lat": 57.4938,
+"lon": -2.0268,
+"mw": 2.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "West of Duddon Sands",
+"lat": 53.9851,
+"lon": -3.462,
+"mw": 389.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "West of Rhiwfelin Fach Farm",
+"lat": 51.5589,
+"lon": -3.3914,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Westermost Rough",
+"lat": 53.0977,
+"lon": 0.5615,
+"mw": 210.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Westfield",
+"lat": 56.1431,
+"lon": -3.2569,
+"mw": 9.8,
+"year": null,
+"geo": "CARMA"
+},
+{
+"name": "Westmill Wind Farm",
+"lat": 51.6158,
+"lon": -1.6661,
+"mw": 6.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Westnewton",
+"lat": 54.7795,
+"lon": -3.3463,
+"mw": 6.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Weston Airfield Wind Turbines",
+"lat": 52.6953,
+"lon": 1.0915,
+"mw": 3.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wether Hill",
+"lat": 55.2231,
+"lon": -4.0452,
+"mw": 18.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wharrels Hill Wind Farm",
+"lat": 54.7231,
+"lon": -3.2746,
+"mw": 10.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Whitelee",
+"lat": 55.6812,
+"lon": -4.2791,
+"mw": 322.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Whitelee 2",
+"lat": 55.6772,
+"lon": -4.2868,
+"mw": 217.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Whitelee Windfarm Extension phase 2",
+"lat": 55.6394,
+"lon": -4.3176,
+"mw": 109.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Whitemill Wind Farm",
+"lat": 52.5926,
+"lon": 0.1406,
+"mw": 14.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Whiteside Hill",
+"lat": 55.3574,
+"lon": -4.0294,
+"mw": 25.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Whittlesey",
+"lat": 52.558,
+"lon": -0.1719,
+"mw": 9.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wind Farm Africa Alive",
+"lat": 52.4148,
+"lon": 1.7028,
+"mw": 4.1,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wind Turbine 1",
+"lat": 54.6879,
+"lon": -6.0196,
+"mw": 2.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Windy Standard",
+"lat": 55.2971,
+"lon": -4.1829,
+"mw": 21.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Windy Standard II Wind Farm (Brockloch Rig Phase 1)",
+"lat": 55.2922,
+"lon": -4.2031,
+"mw": 61.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Windyhill Road (Dunbeg) Wind Farm",
+"lat": 55.0804,
+"lon": -6.8886,
+"mw": 42.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wingates",
+"lat": 55.2753,
+"lon": -1.7964,
+"mw": 15.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Winscales Moor",
+"lat": 54.6423,
+"lon": -3.4968,
+"mw": 6.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Winwick",
+"lat": 52.3657,
+"lon": -1.0622,
+"mw": 12.3,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Withernwick",
+"lat": 53.8457,
+"lon": -0.1726,
+"mw": 18.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Withernwick extension",
+"lat": 53.859,
+"lon": -0.1656,
+"mw": 8.2,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wolf Bog",
+"lat": 54.8043,
+"lon": -6.0806,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Woodlands Barton Wind Project",
+"lat": 50.4253,
+"lon": -4.8141,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Woodlands Wind Farm",
+"lat": 55.6333,
+"lon": -3.9105,
+"mw": 2.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Woolley Hill",
+"lat": 52.3398,
+"lon": -0.308,
+"mw": 10.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Workington (Eastman)",
+"lat": 54.6712,
+"lon": -3.5401,
+"mw": 4.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Worksopp",
+"lat": 53.2998,
+"lon": -1.0757,
+"mw": 2.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wryde Croft",
+"lat": 52.6422,
+"lon": -0.0323,
+"mw": 26.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Wythegill",
+"lat": 54.6741,
+"lon": -3.5231,
+"mw": 1.5,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Yelvertoft",
+"lat": 52.3748,
+"lon": -1.1511,
+"mw": 16.4,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Yonderton Farm",
+"lat": 57.4308,
+"lon": -1.9419,
+"mw": 1.0,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Yonderton Wind Cluster",
+"lat": 57.587,
+"lon": -2.4166,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+},
+{
+"name": "Ystgellog Farm Wind Farm",
+"lat": 53.3938,
+"lon": -4.4003,
+"mw": 4.6,
+"year": null,
+"geo": "UK Renewable Energy Planning Database"
+}
+]

@@ -118,6 +118,31 @@ Nothing is uploaded. Every file is parsed in the page.
 | Elevation | `.kml`, `.kmz` | What Google Earth exports. |
 | Elevation | `.xlsx`, `.csv` | Point elevations as easting/northing/level or lat/lon/level. |
 
+### Real UK sites, built in
+
+The Site tab has a **Real UK sites** picker holding 780 real UK wind farms and
+55 real UK civil radar sites. Choose a farm, choose a radar or take the nearest
+automatically, and the tool places the farm at its true bearing and range.
+
+| What | Count | Source | Licence |
+| --- | --- | --- | --- |
+| UK wind farms | 780 (23.2 GW) | WRI Global Power Plant Database v1.3.0, from the UK Renewable Energy Planning Database | CC BY 4.0 |
+| UK civil radar sites | 55 (17 en-route, 32 aerodrome) | `VATSIM-UK/UK-Sector-File` and `open-air-data/atc-radar`, merged on position | derived set is ODbL |
+
+Four things you must know before using it:
+
+- Wind farm positions are **facility centroids, not turbine positions**, and the
+  REPD's own grid references can be about a kilometre out.
+- The wind farm snapshot is from **early 2022** and is not current.
+- The two radar sources **disagree with each other** by a median of 1.4 km and by
+  up to 5.9 km. Neither is official.
+- **No military radar is included.** MOD safeguarding of air defence radar is what
+  most often decides a real UK application, and this tool carries none of it.
+
+The full provenance, the source-versus-source cross-check, and what the real
+geometry says about all 780 farms is in
+[`calibration/UK-SITES.md`](calibration/UK-SITES.md).
+
 The `.xlsx` reader is built on the browser's own `DecompressionStream` rather
 than a library, because an `.xlsx` is a ZIP of XML and the platform can already
 unzip. That keeps the tool a static, offline, dependency-free drop.
@@ -272,7 +297,7 @@ but wrong assessment:
 cd windfarm-radar && npm test
 ```
 
-Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
+75 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
 v = −0.78 cut-off, 13.1 dB required SNR for Pd = 0.9 / Pfa = 1e-6, the 4.12·√h
 horizon rule, and a cosecant-squared check that the pattern compensates R⁻⁴
 exactly for a constant-altitude target. The behavioural tests check that the
@@ -319,10 +344,23 @@ js/
   importers.js      xlsx, csv, ESRI ASCII grid, KML/KMZ, optional online lookup
   sweep.js          Two-parameter sweeps over the whole model
   heatmap.js        Heat map rendering, PNG and SVG export
+  uksites.js        Real UK wind farm and civil radar positions (generated)
+  references.js     The evidence register
 test/
   physics.test.mjs  Formula validation against known values
   analysis.test.mjs Behavioural tests on the engine
   report.test.mjs   Exports carry their caveats and contain no formatting failures
+  uksites.test.mjs  The UK data is sane, and states its limits where users see them
+data/
+  uk-wind-farms.json    780 UK wind facilities
+  uk-radar-sites.json   55 UK civil radar sites, with source disagreement recorded
+calibration/
+  README.md          SCADA calibration: four model assumptions corrected
+  UK-SITES.md        UK site data: provenance, cross-check, and what it says
+  extract_scada.py   Streaming extractor for the SCADA dataset
+  fetch_uksites.py   Downloads the UK source data
+  build_uksites.py   Generates js/uksites.js from it
+  uk_sites.mjs       Correlates all 780 farms against all 55 radar sites
 samples/
   turbines-example.xlsx / .csv / .kml
   terrain-example.asc / .csv

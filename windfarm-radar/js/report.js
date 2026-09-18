@@ -185,6 +185,15 @@ to assert the performance of any aircraft.</p>
       or any national requirement, and no such document was retrieved or read. The tool computes
       physics. It does not know what any authority requires. Do not present any output as showing
       conformance with anything.</li>
+  <li><strong>Where the real UK sites come from.</strong> The site picker places a real wind
+      farm against a real civil radar. Farm positions are facility centroids from the UK
+      Renewable Energy Planning Database by way of WRI's Global Power Plant Database v1.3.0
+      (CC BY 4.0), last released in early 2022, so they are neither current nor per-turbine.
+      Radar positions are merged from two community aviation data sets, which disagree with
+      each other by a median of 1.4 km and by up to 5.9 km; neither is an official source.
+      No military radar is included in either set or in this tool, and MOD safeguarding is
+      what most often decides a real UK application. Placing a pairing gives you a realistic
+      geometry to explore. It does not give you a site assessment.</li>
   <li>Wind farm effects on communications, navigation aids, or seismic arrays.</li>
   <li>Aerodrome obstacle limitation surfaces and physical safeguarding.</li>
   <li>Weather radar product corruption beyond the generic clutter treatment.</li>
@@ -423,6 +432,14 @@ export function buildReportMarkdown(result, delta) {
   P(`| First blind speed | ${r.firstBlindSpeedMs.toFixed(1)} m/s (${(r.firstBlindSpeedMs / 0.514444).toFixed(0)} kt) |`);
   P(`| Clutter filter | ±${r.mtiNotchMs} m/s notch, ${r.mtiRejectionDb} dB rejection |`);
   P(`| k-factor | ${s.environment.kFactor.toFixed(3)} (surface horizon ${(r.horizonM / 1000).toFixed(1)} km) |`);
+  P('');
+  if (s.farm.ukPairing) {
+    const u = s.farm.ukPairing;
+    P(`| Real pairing loaded | ${u.farm} to ${u.radar} (${u.role}) |`);
+    P(`| True great-circle range | ${(u.trueRangeM / 1000).toFixed(1)} km`
+      + `${u.clamped ? ', CLAMPED to the 60 km limit of this model' : ''} |`);
+    P(`| Position provenance | REPD facility centroid (not turbine positions); community radar site data |`);
+  }
   P('');
   P(`| Wind farm | Value |`);
   P('| --- | --- |');

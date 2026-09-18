@@ -14,6 +14,7 @@ import { cylinderRcsDbsm } from './rf.js';
 import { SEVERITY_LABELS } from './findings.js';
 import { referencesFor, STATUS_LABELS } from './references.js';
 import { M_PER_FT } from './geo.js';
+import { UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, pairingGeometry } from './uksites.js';
 
 export function getPath(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
@@ -263,6 +264,15 @@ export const TABS = {
         + 'the site origin. The projection is equirectangular, accurate to well under a metre over these '
         + 'distances, and is NOT a national grid transformation.' },
     ] },
+    { group: 'Real UK sites', fields: [
+      { type: 'uk-picker', id: 'uk-picker' },
+      { type: 'hint', text: 'Wind farm positions are facility centroids from the UK Renewable Energy '
+        + 'Planning Database, by way of WRI\u2019s Global Power Plant Database v1.3.0 (CC BY 4.0, last '
+        + 'released early 2022). They are NOT turbine positions, and the REPD\u2019s own grid references '
+        + 'can be a kilometre out. Radar positions come from two community aviation sources that disagree '
+        + 'with each other by a median of 1.4 km. NO military radar is included. Use this to set up a '
+        + 'realistic geometry quickly, not to assess a real application.' },
+    ] },
     { group: 'Import real data', fields: [
       { type: 'action', id: 'import-turbines', label: 'Turbine schedule', button: 'Choose .xlsx or .csv',
         note: 'Reads ID, position, ground level, hub height, rotor diameter, tip height, rotor speed and '
@@ -484,6 +494,119 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
     });
     label.append(inp);
     return label;
+  }
+
+  if (f.type === 'uk-picker') {
+    const wrap = document.createElement('div');
+    wrap.className = 'field action-field';
+    const head = document.createElement('span');
+    head.className = 'field-label';
+    head.innerHTML = '<span>Place a real pairing</span>'
+      + `<span class="field-value">${UK_WIND_FARMS.length} farms, ${UK_RADAR_SITES.length} radar sites</span>`;
+    wrap.append(head);
+
+    const farmSel = document.createElement('select');
+    farmSel.style.width = '100%';
+    farmSel.innerHTML = '<option value="">Choose a wind farm\u2026</option>'
+      + UK_WIND_FARMS
+        .map((r, i) => [i, r[0], r[3]])
+        .sort((a, b) => a[1].localeCompare(b[1]))
+        .map(([i, name, mw]) => `<option value="${i}">${name} \u2014 ${mw} MW</option>`)
+        .join('');
+    wrap.append(farmSel);
+
+    const radarSel = document.createElement('select');
+    radarSel.style.width = '100%';
+    radarSel.style.marginTop = '6px';
+    radarSel.innerHTML = '<option value="">Nearest radar (automatic)</option>'
+      + UK_RADAR_SITES
+        .map((r, i) => [i, r[0], r[1]])
+        .sort((a, b) => a[1].localeCompare(b[1]))
+        .map(([i, name, role]) => `<option value="${i}">${name} \u2014 ${role}</option>`)
+        .join('');
+    wrap.append(radarSel);
+
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.style.marginTop = '8px';
+    note.textContent = 'Pick a farm to see its true range and bearing to a radar.';
+    wrap.append(note);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn action-btn';
+    btn.type = 'button';
+    btn.textContent = 'Place this pairing';
+    btn.disabled = true;
+    btn.style.marginTop = '8px';
+    wrap.append(btn);
+
+    let geom = null;
+    const MAX_RANGE_M = 60000; // the distance slider tops out here
+
+    const describe = () => {
+      if (!geom) {
+        note.textContent = 'Pick a farm to see its true range and bearing to a radar.';
+        btn.disabled = true;
+        return;
+      }
+      const km = (geom.rangeM / 1000).toFixed(1);
+      const parts = [
+        `${geom.farm.name} to ${geom.radar.name} (${geom.radar.role}): `
+        + `${km} km on a bearing of ${geom.bearingDeg.toFixed(0)}\u00b0 from the radar.`,
+      ];
+      if (geom.rangeM > MAX_RANGE_M) {
+        parts.push(`The distance control stops at ${MAX_RANGE_M / 1000} km, so this will be placed at `
+          + `${MAX_RANGE_M / 1000} km, not ${km} km. The bearing is real; the range is not.`);
+      }
+      if (geom.radar.disagreementM) {
+        parts.push(`The two radar sources put this site ${geom.radar.disagreementM} m apart, `
+          + 'so treat the range as good to roughly that.');
+      } else if (geom.radar.sources.length === 1) {
+        parts.push(`Only one source carries this site (${geom.radar.sources[0]}), so its position is `
+          + 'unchecked.');
+      }
+      if (geom.tangentPlaneWarning) {
+        parts.push('Over 100 km the flat-plane geometry this tool draws in is no longer a fair picture '
+          + 'of the real surface.');
+      }
+      parts.push('Land or sea is NOT set from this data: choose the surface yourself above.');
+      note.textContent = parts.join(' ');
+      btn.disabled = false;
+    };
+
+    const recompute = () => {
+      const fi = farmSel.value === '' ? null : Number(farmSel.value);
+      if (fi == null) { geom = null; describe(); return; }
+      const ri = radarSel.value === '' ? null : Number(radarSel.value);
+      geom = pairingGeometry(fi, ri);
+      describe();
+    };
+    farmSel.addEventListener('change', recompute);
+    radarSel.addEventListener('change', recompute);
+
+    btn.addEventListener('click', () => {
+      if (!geom) return;
+      scenario.site.originLat = Number(geom.farm.lat.toFixed(4));
+      scenario.site.originLon = Number(geom.farm.lon.toFixed(4));
+      scenario.farm.centreBearingDeg = Math.round(geom.bearingDeg);
+      scenario.farm.centreRangeM = Math.round(Math.min(geom.rangeM, MAX_RANGE_M) / 250) * 250;
+      scenario.farm.ukPairing = {
+        farm: geom.farm.name, radar: geom.radar.name, role: geom.radar.role,
+        trueRangeM: Math.round(geom.rangeM), clamped: geom.rangeM > MAX_RANGE_M,
+      };
+      onChange();
+    });
+
+    const mil = document.createElement('p');
+    mil.className = 'hint';
+    mil.style.marginTop = '8px';
+    mil.textContent = 'Military air defence radar is absent from both sources and from this tool. '
+      + UK_MILITARY_RADAR_NOTE.caution
+      + ' Sites named in search results, unverified: '
+      + UK_MILITARY_RADAR_NOTE.sites.map((x) => x.name).join(', ') + '.';
+    wrap.append(mil);
+
+    return wrap;
   }
 
   if (f.type === 'action') {
