@@ -76,6 +76,19 @@ view.onHover = (tr) => {
 
 // ------------------------------------------------------------- analysis run
 
+
+// The badge over the viewport. TWO factors are in force and they are different,
+// so both are named: heights go through the vertical multiplier, structural
+// widths through the girth multiplier, and spans through neither.
+function updateScalebar() {
+  el.scalebar.textContent = `rings ${(view.ringStepM / 1000).toFixed(0)} km`
+    + (view.vExag !== 1
+      ? ` \u00b7 vertical \u00d7${view.vExag} (heights exaggerated, geometry preserved)`
+      : ' \u00b7 true scale')
+    + (view.girthExag > 1.5
+      ? ` \u00b7 girth \u00d7${view.girthExag} (every structural width; spans are true)` : '');
+}
+
 function run(skipCoverage) {
   const t0 = performance.now();
   try {
@@ -108,10 +121,7 @@ function run(skipCoverage) {
   el.turbineCount.textContent = `${result.turbineResults.length}`;
   el.profileBearing.textContent = `${profile.activeBearing.toFixed(0).padStart(3, '0')}°`;
   el.ppiNote.textContent = `${result.radar.rpm} rpm · ${(result.radar.rangeResolutionM).toFixed(0)} m cells`;
-  el.scalebar.textContent = `rings ${(view.ringStepM / 1000).toFixed(0)} km`
-    + (view.vExag !== 1 ? ` · vertical ×${view.vExag} (heights exaggerated, geometry preserved)` : ' · true scale')
-    + (view.girthExag > 1.5 ? ` · structures ×${view.girthExag.toFixed(0)} thicker than life`
-      + (view.chordExag > 1.5 ? `, blade chord ×${view.chordExag.toFixed(0)}` : '') : '');
+  updateScalebar();
 
   if (!skipCoverage && ms > 400) {
     console.info(`Full assessment took ${ms.toFixed(0)} ms.`);
@@ -353,14 +363,36 @@ function buildToggles() {
     out.textContent = `×${view.vExag}`;
     if (result) {
       view.build(result);
-      el.scalebar.textContent = `rings ${(view.ringStepM / 1000).toFixed(0)} km`
-        + (view.vExag !== 1 ? ` · vertical ×${view.vExag} (heights exaggerated, geometry preserved)` : ' · true scale')
-    + (view.girthExag > 1.5 ? ` · structures ×${view.girthExag.toFixed(0)} thicker than life`
-      + (view.chordExag > 1.5 ? `, blade chord ×${view.chordExag.toFixed(0)}` : '') : '');
+      updateScalebar();
     }
   });
   vx.append(document.createTextNode('Vertical'), slider, out);
   el.toggles.append(vx);
+
+  // Structural girth. ONE factor for every width in the machine, so the drawn
+  // turbine has consistent proportions; spans are never touched.
+  const gx = document.createElement('label');
+  const gout = document.createElement('span');
+  gout.style.fontFamily = 'var(--mono)';
+  const gslider = document.createElement('input');
+  gslider.type = 'range';
+  gslider.min = 1; gslider.max = 40; gslider.step = 1;
+  gslider.style.width = '86px';
+  const syncGirth = () => {
+    gslider.value = view.girthExag ?? 1;
+    gout.textContent = `\u00d7${view.girthExag ?? 1}`;
+  };
+  syncGirth();
+  gslider.addEventListener('input', () => {
+    view.girthExag = Number(gslider.value);
+    gout.textContent = `\u00d7${view.girthExag}`;
+    if (result) { view.build(result); updateScalebar(); }
+  });
+  gx.append(document.createTextNode('Girth'), gslider, gout);
+  gx.title = 'How much thicker than life every structural width is drawn. Spans, and so tip '
+    + 'heights and the ground area the rotor covers, are never scaled.';
+  el.toggles.append(gx);
+  view._syncGirth = syncGirth;
 }
 
 // ----------------------------------------------------------- section bearing

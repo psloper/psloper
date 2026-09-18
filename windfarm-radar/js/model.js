@@ -80,6 +80,7 @@ export const TURBINE_PRESETS = {
     label: '0.85 MW (legacy onshore)',
     hubHeightM: 50, rotorDiameterM: 52, rpm: 28, bladeCount: 3, bladeChordM: 1.4,
     towerBaseDiameterM: 3.0, towerTopDiameterM: 2.0,
+    nacelleLengthM: 6.0, nacelleWidthM: 2.3, nacelleHeightM: 2.1, hubDiameterM: 2.0,
     cutInMs: 4.0, ratedMs: 16, cutOutMs: 25,
     towerRcsDbsm: 26, bladeRcsDbsm: 18,
   },
@@ -87,6 +88,7 @@ export const TURBINE_PRESETS = {
     label: '2.3 MW (typical onshore)',
     hubHeightM: 80, rotorDiameterM: 93, rpm: 16, bladeCount: 3, bladeChordM: 2.2,
     towerBaseDiameterM: 4.2, towerTopDiameterM: 2.6,
+    nacelleLengthM: 10.5, nacelleWidthM: 3.4, nacelleHeightM: 3.2, hubDiameterM: 3.0,
     cutInMs: 3.5, ratedMs: 13, cutOutMs: 25,
     towerRcsDbsm: 33, bladeRcsDbsm: 24,
   },
@@ -94,6 +96,7 @@ export const TURBINE_PRESETS = {
     label: '4.5 MW (modern onshore)',
     hubHeightM: 110, rotorDiameterM: 150, rpm: 11, bladeCount: 3, bladeChordM: 3.0,
     towerBaseDiameterM: 5.5, towerTopDiameterM: 3.2,
+    nacelleLengthM: 14.0, nacelleWidthM: 4.2, nacelleHeightM: 4.0, hubDiameterM: 4.0,
     cutInMs: 3.0, ratedMs: 12, cutOutMs: 25,
     towerRcsDbsm: 37, bladeRcsDbsm: 28,
   },
@@ -101,6 +104,7 @@ export const TURBINE_PRESETS = {
     label: '15 MW (offshore)',
     hubHeightM: 150, rotorDiameterM: 236, rpm: 7.5, bladeCount: 3, bladeChordM: 4.5,
     towerBaseDiameterM: 10.0, towerTopDiameterM: 6.0,
+    nacelleLengthM: 21.0, nacelleWidthM: 8.0, nacelleHeightM: 7.5, hubDiameterM: 7.0,
     cutInMs: 3.0, ratedMs: 11, cutOutMs: 28,
     towerRcsDbsm: 42, bladeRcsDbsm: 33,
   },
@@ -749,6 +753,14 @@ function makeTurbine(index, east, north, f, terrain, wind, override = {}) {
     ratedRpm,
     towerBaseDiameterM,
     towerTopDiameterM,
+    // Nacelle and hub are real dimensions, not drawing constants. The model
+    // already treats the nacelle as a scatterer with a broadside and a head-on
+    // RCS; these are the physical sizes those numbers belong to. They scale
+    // with the rotor when a preset does not give them.
+    nacelleLengthM: override.nacelleLengthM ?? f.nacelleLengthM ?? rotorRadiusM * 0.19,
+    nacelleWidthM: override.nacelleWidthM ?? f.nacelleWidthM ?? towerTopDiameterM * 1.3,
+    nacelleHeightM: override.nacelleHeightM ?? f.nacelleHeightM ?? towerTopDiameterM * 1.25,
+    hubDiameterM: override.hubDiameterM ?? f.hubDiameterM ?? towerTopDiameterM * 1.25,
     construction: override.construction ?? f.construction ?? 'carbon-spar',
     towerMaterial: override.towerMaterial ?? f.towerMaterial ?? 'steel',
     drivetrain: override.drivetrain ?? f.drivetrain ?? 'geared',

@@ -749,23 +749,30 @@ export class SceneView {
     // 40 km scene; HEIGHTS are true (times the vertical multiplier).
     const shaftR = Math.max(this.extent * 0.0016, 3.0);
 
-    // Structures are drawn thicker than life so they survive a 40 km scene.
-    // ONE multiplier for every structural girth, derived from the first
-    // machine, so relative proportions stay true: a fatter tower is drawn
-    // fatter. Spans along the blade are NOT widened, so the rotor covers the
-    // ground it really covers.
-    const firstT = r.turbineResults[0]?.turbine;
-    const trueR = firstT ? (firstT.towerBaseDiameterM ?? 5) / 2 : 2.5;
-    // A tower has to be a couple of pixels wide to exist on screen, and no
-    // wider. The old value here was tuned for a hexagonal box and drew towers
-    // as barrels next to a true-span rotor, which is why they looked wrong.
-    const towerTargetR = Math.max(this.extent * 0.00055, 2.0);
-    const girth = clamp(towerTargetR / Math.max(trueR, 0.5), 1, 24);
-    // The nacelle is long rather than fat, so it needs less widening than the
-    // tower or it swallows the hub.
-    const girthLong = Math.max(1, Math.sqrt(girth));
-    this.girthExag = girth;
-    this.chordExag = null; // set per machine below; the badge reports the first
+    // ONE factor, applied to EVERY structural girth and to nothing else.
+    //
+    // A 5.5 m tower across a 40 km scene is a fraction of a pixel, so girths
+    // have to be drawn thicker than life. Earlier there were three different
+    // factors here: one for the tower, its square root for the nacelle, and a
+    // third, capped one for blade chord. Three factors means the drawn machine
+    // is not a machine of any proportions, so no proportion in the picture can
+    // be trusted. There is now one, it is under the user's control, and the
+    // badge states it.
+    //
+    // It is applied to tower diameters, nacelle width, height and length, hub
+    // diameter, blade chord and blade thickness. It is NEVER applied to a SPAN:
+    // blade span and hub height stay true, so tip heights and the ground area
+    // the rotor covers are real. Girth and span therefore cannot both be to
+    // scale, and that is a property of the problem rather than a fudge: say it
+    // on the badge instead of hiding it in three constants.
+    if (this.girthExag == null) {
+      // First build: choose a factor that makes the thinnest structure, the
+      // blade chord, about a pixel and a half across. The user can change it.
+      const t0 = r.turbineResults[0]?.turbine;
+      const thinnest = t0 ? Math.min(t0.bladeChordM ?? 3, (t0.towerTopDiameterM ?? 3)) : 3;
+      this.girthExag = clamp(Math.round((this.extent * 0.00045) / Math.max(thinnest, 0.5)), 1, 40);
+    }
+    const girth = clamp(this.girthExag, 1, 40);
 
     // Geometry is shared between machines of the same specification. The cache
     // is local to this build: clearGroup disposes what it finds, so a cache
@@ -800,6 +807,7 @@ export class SceneView {
           () => new THREE.CylinderGeometry(topR, baseR, hubY, 20, 1)),
         towerMat,
       );
+      tower.userData.part = 'tower';
       tower.position.y = hubY / 2;
       g.add(tower);
 
@@ -810,13 +818,17 @@ export class SceneView {
       rotor.rotation.y = (180 - t.yawDeg) * DEG;
       g.add(rotor);
 
-      const nacL = Math.max(t.rotorRadiusM * 0.20, topR * 3) * girthLong;
-      const nacW = topR * 2.2;
+      // Nacelle length is a span along the rotor axis, so it is NOT widened;
+      // its width and height are girths, so they are.
+      const nacL = t.nacelleLengthM;
+      const nacW = t.nacelleWidthM * girth;
+      const nacH = t.nacelleHeightM * girth;
       const nacelle = new THREE.Mesh(
-        geoCache(`nc:${nacL.toFixed(1)}:${nacW.toFixed(1)}`,
-          () => nacelleGeometry(nacL, nacW, nacW * 0.92)),
+        geoCache(`nc:${nacL.toFixed(1)}:${nacW.toFixed(1)}:${nacH.toFixed(1)}`,
+          () => nacelleGeometry(nacL, nacW, nacH)),
         new THREE.MeshStandardMaterial({ color: 0xe6ebee, roughness: 0.5, metalness: 0.2 }),
       );
+      nacelle.userData.part = 'nacelle';
       rotor.add(nacelle);
 
       const spinner = new THREE.Group();
@@ -827,11 +839,13 @@ export class SceneView {
       // a rotation about y is safe: the two commute.
       spinner.scale.y = this.vExag;
 
-      const spinR = topR * 1.15;
+      const spinR = t.hubDiameterM / 2 * girth;
+      const spinL = t.hubDiameterM * 0.95;   // a span, so left alone
       const nose = new THREE.Mesh(
-        geoCache(`sp:${spinR.toFixed(1)}`, () => spinnerGeometry(spinR, spinR * 2.1)),
+        geoCache(`sp:${spinR.toFixed(1)}:${spinL.toFixed(1)}`, () => spinnerGeometry(spinR, spinL)),
         new THREE.MeshStandardMaterial({ color: 0xeef2f5, roughness: 0.45, metalness: 0.1 }),
       );
+      nose.userData.part = 'spinner';
       spinner.add(nose);
 
       const bladeLen = t.rotorRadiusM;
@@ -839,19 +853,13 @@ export class SceneView {
         color: 0xf2f5f7, roughness: 0.4, metalness: 0.05,
         emissive: colour, emissiveIntensity: 0.3,
       });
-      // Chord gets its OWN, smaller multiplier. A blade is a slender thing: at
-      // the tower's girth factor a 3 m chord on a 75 m blade would be drawn 70 m
-      // wide, which is not a blade. So chord is widened only as far as keeps the
-      // planform recognisable, and a change to blade chord in the model still
-      // moves the picture because the cap scales with span.
-      const trueChord = t.bladeChordM ?? 3;
-      const chordExag = clamp(Math.min(girth, t.rotorRadiusM * 0.13 / Math.max(trueChord, 0.5)), 1, girth);
-      const chord = trueChord * chordExag;
-      if (this.chordExag == null) this.chordExag = chordExag;
+      // Chord is a girth, so it takes the same factor as everything else.
+      const chord = (t.bladeChordM ?? 3) * girth;
       const bladeGeo = geoCache(`bl:${bladeLen.toFixed(0)}:${chord.toFixed(1)}`,
         () => bladeGeometry(bladeLen, chord));
       for (let b = 0; b < t.bladeCount; b++) {
         const blade = new THREE.Mesh(bladeGeo, bladeMat);
+        blade.userData.part = 'blade';
         blade.position.y = spinR * 0.5;
         const arm = new THREE.Group();
         arm.rotation.z = (b / t.bladeCount) * Math.PI * 2;
@@ -871,6 +879,7 @@ export class SceneView {
         new THREE.MeshBasicMaterial({ visible: false }),
       );
       proxy.position.y = proxyH / 2;
+      proxy.userData.part = 'pick';
       proxy.userData.turbine = tr;
       g.add(proxy);
       this._pickables.push(proxy);
