@@ -7,9 +7,10 @@
 import { M_PER_FT } from './geo.js';
 import { SEVERITY_LABELS } from './findings.js';
 import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
+import { buildXlsx, buildDocx } from './officewriter.js';
 
 
-export const IMPORT_HTML = "<h3>Getting data in and out</h3>\n<p>Written to be followed, not skimmed. Nothing here needs a login, an internet connection, or any software you do not already have. Every file is read inside the page: <strong>nothing you open is uploaded anywhere.</strong></p>\n<hr />\n<h3>Part 1: Getting data OUT</h3>\n<h4>Step 1. Set the scenario up the way you want it reported</h4>\n<p>Everything exported is a snapshot of what is on screen at that moment. Change a slider after exporting and the export does not change with it.</p>\n<h4>Step 2. Click <strong>Export</strong> in the top bar</h4>\n<p>A panel opens listing everything available.</p>\n<h4>Step 3. Pick what you need</h4>\n<table><thead><tr><th>You want</th><th>Choose</th><th>You get</th><th>Opens in</th></tr></thead><tbody>\n<tr><td>Something to send someone</td><td><strong>Assessment report</strong></td><td><code>.md</code></td><td>Word, Notepad, any editor, GitHub</td></tr>\n<tr><td>The numbers to work on yourself</td><td><strong>Assessment</strong></td><td><code>.csv</code></td><td>Excel</td></tr>\n<tr><td>The turbine-by-turbine results</td><td><strong>Turbines</strong></td><td><code>.csv</code></td><td>Excel</td></tr>\n<tr><td>The aircraft track</td><td><strong>Flight track</strong></td><td><code>.csv</code></td><td>Excel</td></tr>\n<tr><td>To reload this exact set-up later</td><td><strong>Scenario</strong></td><td><code>.json</code></td><td>this tool</td></tr>\n<tr><td>A picture of a sweep</td><td>Heat map <strong>PNG</strong> or <strong>SVG</strong></td><td>image</td><td>anything</td></tr>\n</tbody></table>\n<h4>Step 4. Click the button. The file saves to your Downloads folder</h4>\n<p><strong>If nothing downloads</strong>, the page is running somewhere that blocks downloads. Use the <strong>View / copy</strong> button beside it instead, then select all the text and copy it into a file yourself. The content is identical.</p>\n<h4>Step 5. To reload a scenario later</h4>\n<p>Export <strong>Scenario</strong> as <code>.json</code>, keep the file, and open it with the scenario import. Everything comes back, including imported turbine schedules.</p>\n<hr />\n<h3>Part 2: Getting data IN</h3>\n<p>There are <strong>four</strong> separate things you can import. They are different, and picking the wrong one is the commonest mistake.</p>\n<table><thead><tr><th>What you have</th><th>Use</th><th>One row per</th></tr></thead><tbody>\n<tr><td>A layout: every turbine, with coordinates</td><td><strong>Turbine schedule</strong></td><td>machine</td></tr>\n<tr><td>A list of projects</td><td><strong>Wind farm site list</strong></td><td>project</td></tr>\n<tr><td>A list of radar sites</td><td><strong>Radar site list</strong></td><td>radar</td></tr>\n<tr><td>Ground heights</td><td><strong>Elevation data</strong></td><td>point</td></tr>\n</tbody></table>\n<p>All four live on the <strong>Site &amp; data</strong> tab, under <strong>Import real data</strong>.</p>\n<hr />\n<h4>Before you start: get your coordinates right</h4>\n<p>You can use <strong>either</strong> of these. Not a mixture.</p>\n<p><strong>Option A, latitude and longitude.</strong> Decimal degrees, WGS84. Correct: <code>55.37770</code> and <code>-3.75300</code>. <strong>Wrong:</strong> <code>55\u00b0 22' 39\" N</code>. Convert it first: degrees + minutes/60 + seconds/3600, and put a minus sign in front for west or south.</p>\n<p><strong>Option B, eastings and northings.</strong> Whole metres, in whatever grid your survey used. You must then also set <strong>Radar easting</strong> and <strong>Radar northing</strong> on the Site &amp; data tab to the radar's position in that same grid, because the tool reads your coordinates relative to it. Get that wrong and everything lands in the wrong place.</p>\n<p class=\"hint\">If in doubt use latitude and longitude. It needs no other settings.</p>\n<hr />\n<h4>Import 1: a wind farm site list (one row per project)</h4>\n<h5>Step 1. Open the template</h5>\n<p><code>samples/windfarm-sites-template.csv</code>. Double-click it; it opens in Excel.</p>\n<h5>Step 2. Look at what the columns mean</h5>\n<table><thead><tr><th>Column</th><th>Required?</th><th>What it is</th><th>If you leave it out</th></tr></thead><tbody>\n<tr><td><code>name</code></td><td><strong>Required</strong></td><td>Anything you will recognise</td><td>The row is skipped</td></tr>\n<tr><td><code>latitude</code>, <code>longitude</code></td><td><strong>Required</strong>*</td><td>Decimal degrees</td><td>The row is skipped</td></tr>\n<tr><td><code>easting</code>, <code>northing</code></td><td><strong>Required</strong>*</td><td>Metres in your grid</td><td>The row is skipped</td></tr>\n<tr><td><code>capacity mw</code></td><td>Optional</td><td>Megawatts, a number</td><td>Recorded as 0 MW</td></tr>\n<tr><td><code>status</code></td><td>Optional</td><td>Operational, Under Construction, Awaiting Construction, Application Submitted, Refused, Withdrawn</td><td>Shown as \"Not stated\"</td></tr>\n<tr><td><code>offshore</code></td><td>Optional</td><td><code>yes</code> or <code>no</code></td><td>Sea or land stays as you set it</td></tr>\n<tr><td><code>reference</code></td><td>Optional</td><td>Your planning or job reference</td><td>Nothing</td></tr>\n<tr><td><code>turbines</code></td><td>Optional</td><td>How many machines</td><td>Nothing</td></tr>\n<tr><td><code>tip height</code></td><td>Optional</td><td>Metres to blade tip</td><td>Nothing</td></tr>\n</tbody></table>\n<p>* You need <strong>one</strong> of the two position pairs, not both.</p>\n<h5>Step 3. Delete the example rows and type yours in</h5>\n<p>Keep the header row exactly as it is. You may add columns the tool does not know about; they are ignored rather than causing an error.</p>\n<h5>Step 4. Save as CSV or XLSX</h5>\n<p>Excel: <strong>File \u2192 Save As \u2192</strong> pick <code>CSV UTF-8 (Comma delimited)</code> or <code>Excel Workbook (.xlsx)</code>. Both work. If Excel warns you about losing formatting, that is fine; say yes.</p>\n<h5>Step 5. Import it</h5>\n<p>Site &amp; data tab \u2192 <strong>Wind farm site list</strong> \u2192 <strong>Choose .xlsx or .csv</strong> \u2192 pick your file.</p>\n<h5>Step 6. Read the message underneath</h5>\n<p>It tells you how many rows came in, how many were skipped and why, and <strong>every column you left out</strong>. It does not fill anything in silently.</p>\n<h5>Step 7. Use them</h5>\n<p><strong>Real UK sites</strong> picker \u2192 your file appears as its own group at the top of the list, above the UK planning database. Pick one, pick a radar, press <strong>Place this pairing</strong>.</p>\n<hr />\n<h4>Import 2: a radar site list (one row per radar)</h4>\n<h5>Step 1. Open <code>samples/radar-sites-template.csv</code></h5>\n<h5>Step 2. The columns</h5>\n<table><thead><tr><th>Column</th><th>Required?</th><th>What it is</th><th>If you leave it out</th></tr></thead><tbody>\n<tr><td><code>name</code></td><td><strong>Required</strong></td><td>The site name</td><td>The row is skipped</td></tr>\n<tr><td><code>latitude</code>, <code>longitude</code></td><td><strong>Required</strong>*</td><td>Decimal degrees</td><td>The row is skipped</td></tr>\n<tr><td><code>easting</code>, <code>northing</code></td><td><strong>Required</strong>*</td><td>Metres in your grid</td><td>The row is skipped</td></tr>\n<tr><td><code>role</code></td><td>Optional</td><td><code>en-route</code>, <code>aerodrome</code>, <code>air defence</code>, <code>weather</code>, <code>marine</code></td><td>Listed as unclassified</td></tr>\n<tr><td><code>antenna height</code></td><td><strong>Strongly advised</strong></td><td>Metres above ground to the aerial</td><td>Falls back to the Radar tab value, which is a guess</td></tr>\n<tr><td><code>ground level</code></td><td>Optional</td><td>Metres above sea level at the site</td><td>Nothing</td></tr>\n<tr><td><code>band</code></td><td>Optional</td><td>L-band, S-band, C-band, X-band</td><td>Nothing</td></tr>\n<tr><td><code>operator</code></td><td>Optional</td><td>Who runs it</td><td>Nothing</td></tr>\n<tr><td><code>notes</code></td><td>Optional</td><td>Anything, for example how sure you are of the position</td><td>Nothing</td></tr>\n</tbody></table>\n<p>* One of the two pairs.</p>\n<p class=\"hint\"><strong>Antenna height is the one to get right.</strong> It sets the radio horizon directly: the distance a radar can see goes as the square root of its height. A 10 m error moves the horizon by kilometres.</p>\n<h5>Step 3 to 7: exactly as above</h5>\n<p>Same save, same import button, same message, same picker. Imported radars appear in the radar dropdown as their own group.</p>\n<hr />\n<h4>Import 3: a turbine schedule (one row per machine)</h4>\n<p>Use this when you have a real layout, not a list of projects.</p>\n<table><thead><tr><th>Column</th><th>Required?</th><th>Notes</th></tr></thead><tbody>\n<tr><td><code>id</code></td><td>Recommended</td><td>Anything: WTG01, T1, a number</td></tr>\n<tr><td>position</td><td><strong>Required</strong></td><td><code>latitude</code>/<code>longitude</code> <strong>or</strong> <code>easting</code>/<code>northing</code></td></tr>\n<tr><td><code>ground level</code></td><td>Recommended</td><td>Metres above sea level at the base. Survey data beats anything the tool models</td></tr>\n<tr><td><code>hub height</code></td><td>Recommended</td><td>Metres</td></tr>\n<tr><td><code>rotor diameter</code></td><td>Recommended</td><td>Metres</td></tr>\n<tr><td><code>tip height</code></td><td>Optional</td><td>Used if hub height is missing</td></tr>\n<tr><td><code>rpm</code></td><td>Optional</td><td>Rotor speed</td></tr>\n<tr><td><code>tower base diameter</code>, <code>tower top diameter</code></td><td>Optional</td><td>Metres</td></tr>\n<tr><td><code>blade chord</code></td><td>Optional</td><td>Metres, the widest part of the blade</td></tr>\n<tr><td><code>blades</code></td><td>Optional</td><td>Usually 3</td></tr>\n</tbody></table>\n<p>Title blocks and blank rows above the table are skipped automatically, so a schedule straight from a consultant usually imports as it stands.</p>\n<p>Sample: <code>samples/turbines-example.xlsx</code> and <code>.csv</code>.</p>\n<hr />\n<h4>Import 4: elevation data</h4>\n<table><thead><tr><th>Format</th><th>Extension</th><th>Where it comes from</th></tr></thead><tbody>\n<tr><td>ESRI ASCII Grid</td><td><code>.asc</code></td><td>What almost every free elevation source exports. <strong>The best option</strong></td></tr>\n<tr><td>Google Earth</td><td><code>.kml</code>, <code>.kmz</code></td><td>Export a path or points</td></tr>\n<tr><td>A spreadsheet</td><td><code>.xlsx</code>, <code>.csv</code></td><td>Columns: position plus <code>elevation</code></td></tr>\n</tbody></table>\n<p>After importing, the tool reports what fraction of the modelled area your file actually covers. If that is low, the edges fall back to the synthetic surface and any masking conclusion near the edges is worthless.</p>\n<hr />\n<h3>Part 3: When it goes wrong</h3>\n<table><thead><tr><th>Message or symptom</th><th>What it means</th><th>Fix</th></tr></thead><tbody>\n<tr><td>\"No header row found\"</td><td>The tool could not find your column names</td><td>Check the header spelling against the tables above. It looks in the first 12 rows</td></tr>\n<tr><td>\"Found a name column but no position\"</td><td>No coordinates</td><td>Add <code>latitude</code> and <code>longitude</code>, or <code>easting</code> and <code>northing</code></td></tr>\n<tr><td>\"N rows skipped\"</td><td>Those rows had no name or no usable position</td><td>Look for blank names, text in a number column, or degrees-and-minutes instead of decimals</td></tr>\n<tr><td>Everything lands in the sea</td><td>Latitude and longitude swapped</td><td>In the UK, latitude is roughly 50 to 61 and longitude roughly \u22128 to +2</td></tr>\n<tr><td>Sites are in the wrong county</td><td>Eastings and northings, wrong radar grid position</td><td>Set <strong>Radar easting</strong> and <strong>Radar northing</strong> on the Site &amp; data tab</td></tr>\n<tr><td>Nothing downloads</td><td>The page cannot save files where it is running</td><td>Use <strong>View / copy</strong> and paste into a file</td></tr>\n<tr><td>Numbers import as text</td><td>Excel formatted the column as text</td><td>Select the column, <strong>Data \u2192 Text to Columns \u2192 Finish</strong></td></tr>\n</tbody></table>\n<hr />\n<h3>Part 4: A note you should not skip</h3>\n<p>The built-in UK wind farm positions are <strong>planning records, not survey data</strong>. Measured against the two sites where real turbine coordinates were available, they are out by about <strong>1,100 m</strong>. If you import your own surveyed positions, the tool says so and stops applying that figure, because it has no idea how accurate your file is.</p>\n<p>Nothing this tool produces can support a planning submission. It is for finding the obvious problems early.</p>";
+export const IMPORT_HTML = "<h3>Getting data in and out</h3>\n<p>Written to be followed, not skimmed. Nothing here needs a login, an internet connection, or any software you do not already have. Every file is read inside the page: <strong>nothing you open is uploaded anywhere.</strong></p>\n<hr />\n<h3>Part 1: Getting data OUT</h3>\n<h4>Step 1. Set the scenario up the way you want it reported</h4>\n<p>Everything exported is a snapshot of what is on screen at that moment. Change a slider after exporting and the export does not change with it.</p>\n<h4>Step 2. Click <strong>Export</strong> in the top bar</h4>\n<p>A panel opens listing everything available.</p>\n<h4>Step 3. Pick what you need</h4>\n<table><thead><tr><th>You want</th><th>Choose</th><th>You get</th><th>Opens in</th></tr></thead><tbody>\n<tr><td>Something to print or email</td><td><strong>Assessment report .pdf</strong></td><td>a print view</td><td>choose \"Save as PDF\" in the print dialog</td></tr>\n<tr><td>Something to edit and send</td><td><strong>Assessment report .docx</strong></td><td><code>.docx</code></td><td>Word, Google Docs, LibreOffice</td></tr>\n<tr><td>Every table in one workbook</td><td><strong>All tables .xlsx</strong></td><td><code>.xlsx</code></td><td>Excel, Google Sheets, LibreOffice</td></tr>\n<tr><td>Something to send someone</td><td><strong>Assessment report</strong></td><td><code>.md</code></td><td>Word, Notepad, any editor, GitHub</td></tr>\n<tr><td>The numbers to work on yourself</td><td><strong>Assessment</strong></td><td><code>.csv</code></td><td>Excel</td></tr>\n<tr><td>The turbine-by-turbine results</td><td><strong>Turbines</strong></td><td><code>.csv</code></td><td>Excel</td></tr>\n<tr><td>The aircraft track</td><td><strong>Flight track</strong></td><td><code>.csv</code></td><td>Excel</td></tr>\n<tr><td>To reload this exact set-up later</td><td><strong>Scenario</strong></td><td><code>.json</code></td><td>this tool</td></tr>\n<tr><td>A picture of a sweep</td><td>Heat map <strong>PNG</strong> or <strong>SVG</strong></td><td>image</td><td>anything</td></tr>\n</tbody></table>\n<h4>Step 3a. If you chose PDF</h4>\n<p>A new tab opens with the report laid out for print, and the print dialog appears. In the <strong>Destination</strong> or <strong>Printer</strong> list choose <strong>Save as PDF</strong>, then <strong>Save</strong>. The browser writes the PDF, which is why the text stays selectable and the page breaks fall in sensible places.</p>\n<p><strong>If nothing opens</strong>, your browser blocked the pop-up. Allow pop-ups for this page and press PDF again, or download the Word file and print that to PDF.</p>\n<h4>Step 3b. What is in the Excel workbook</h4>\n<p>Four sheets, one per table:</p>\n<table><thead><tr><th>Sheet</th><th>What is on it</th></tr></thead><tbody>\n<tr><td>Summary</td><td>Every number in the assessment, as item and value</td></tr>\n<tr><td>Turbines</td><td>One row per machine, 26 columns, numbers stored as numbers</td></tr>\n<tr><td>Flight track</td><td>One row per second of the aircraft track</td></tr>\n<tr><td>Evidence</td><td>The whole evidence register, with each source's status and caution</td></tr>\n</tbody></table>\n<p>Numbers are written as numbers, not text, so you can total and chart them without converting anything first.</p>\n<h4>Step 4. Click the button. The file saves to your Downloads folder</h4>\n<p><strong>If nothing downloads</strong>, the page is running somewhere that blocks downloads. Use the <strong>View / copy</strong> button beside it instead, then select all the text and copy it into a file yourself. The content is identical.</p>\n<h4>Step 5. To reload a scenario later</h4>\n<p>Export <strong>Scenario</strong> as <code>.json</code>, keep the file, and open it with the scenario import. Everything comes back, including imported turbine schedules.</p>\n<hr />\n<h3>Part 2: Getting data IN</h3>\n<p>There are <strong>four</strong> separate things you can import. They are different, and picking the wrong one is the commonest mistake.</p>\n<table><thead><tr><th>What you have</th><th>Use</th><th>One row per</th></tr></thead><tbody>\n<tr><td>A layout: every turbine, with coordinates</td><td><strong>Turbine schedule</strong></td><td>machine</td></tr>\n<tr><td>A list of projects</td><td><strong>Wind farm site list</strong></td><td>project</td></tr>\n<tr><td>A list of radar sites</td><td><strong>Radar site list</strong></td><td>radar</td></tr>\n<tr><td>Ground heights</td><td><strong>Elevation data</strong></td><td>point</td></tr>\n</tbody></table>\n<p>All four live on the <strong>Site &amp; data</strong> tab, under <strong>Import real data</strong>.</p>\n<hr />\n<h4>Before you start: get your coordinates right</h4>\n<p>You can use <strong>either</strong> of these. Not a mixture.</p>\n<p><strong>Option A, latitude and longitude.</strong> Decimal degrees, WGS84. Correct: <code>55.37770</code> and <code>-3.75300</code>. <strong>Wrong:</strong> <code>55\u00b0 22' 39\" N</code>. Convert it first: degrees + minutes/60 + seconds/3600, and put a minus sign in front for west or south.</p>\n<p><strong>Option B, eastings and northings.</strong> Whole metres, in whatever grid your survey used. You must then also set <strong>Radar easting</strong> and <strong>Radar northing</strong> on the Site &amp; data tab to the radar's position in that same grid, because the tool reads your coordinates relative to it. Get that wrong and everything lands in the wrong place.</p>\n<p class=\"hint\">If in doubt use latitude and longitude. It needs no other settings.</p>\n<hr />\n<h4>Import 1: a wind farm site list (one row per project)</h4>\n<h5>Step 1. Open the template</h5>\n<p><code>samples/windfarm-sites-template.csv</code>. Double-click it; it opens in Excel.</p>\n<h5>Step 2. Look at what the columns mean</h5>\n<table><thead><tr><th>Column</th><th>Required?</th><th>What it is</th><th>If you leave it out</th></tr></thead><tbody>\n<tr><td><code>name</code></td><td><strong>Required</strong></td><td>Anything you will recognise</td><td>The row is skipped</td></tr>\n<tr><td><code>latitude</code>, <code>longitude</code></td><td><strong>Required</strong>*</td><td>Decimal degrees</td><td>The row is skipped</td></tr>\n<tr><td><code>easting</code>, <code>northing</code></td><td><strong>Required</strong>*</td><td>Metres in your grid</td><td>The row is skipped</td></tr>\n<tr><td><code>capacity mw</code></td><td>Optional</td><td>Megawatts, a number</td><td>Recorded as 0 MW</td></tr>\n<tr><td><code>status</code></td><td>Optional</td><td>Operational, Under Construction, Awaiting Construction, Application Submitted, Refused, Withdrawn</td><td>Shown as \"Not stated\"</td></tr>\n<tr><td><code>offshore</code></td><td>Optional</td><td><code>yes</code> or <code>no</code></td><td>Sea or land stays as you set it</td></tr>\n<tr><td><code>reference</code></td><td>Optional</td><td>Your planning or job reference</td><td>Nothing</td></tr>\n<tr><td><code>turbines</code></td><td>Optional</td><td>How many machines</td><td>Nothing</td></tr>\n<tr><td><code>tip height</code></td><td>Optional</td><td>Metres to blade tip</td><td>Nothing</td></tr>\n</tbody></table>\n<p>* You need <strong>one</strong> of the two position pairs, not both.</p>\n<h5>Step 3. Delete the example rows and type yours in</h5>\n<p>Keep the header row exactly as it is. You may add columns the tool does not know about; they are ignored rather than causing an error.</p>\n<h5>Step 4. Save as CSV or XLSX</h5>\n<p>Excel: <strong>File \u2192 Save As \u2192</strong> pick <code>CSV UTF-8 (Comma delimited)</code> or <code>Excel Workbook (.xlsx)</code>. Both work. If Excel warns you about losing formatting, that is fine; say yes.</p>\n<h5>Step 5. Import it</h5>\n<p>Site &amp; data tab \u2192 <strong>Wind farm site list</strong> \u2192 <strong>Choose .xlsx or .csv</strong> \u2192 pick your file.</p>\n<h5>Step 6. Read the message underneath</h5>\n<p>It tells you how many rows came in, how many were skipped and why, and <strong>every column you left out</strong>. It does not fill anything in silently.</p>\n<h5>Step 7. Use them</h5>\n<p><strong>Real UK sites</strong> picker \u2192 your file appears as its own group at the top of the list, above the UK planning database. Pick one, pick a radar, press <strong>Place this pairing</strong>.</p>\n<hr />\n<h4>Import 2: a radar site list (one row per radar)</h4>\n<h5>Step 1. Open <code>samples/radar-sites-template.csv</code></h5>\n<h5>Step 2. The columns</h5>\n<table><thead><tr><th>Column</th><th>Required?</th><th>What it is</th><th>If you leave it out</th></tr></thead><tbody>\n<tr><td><code>name</code></td><td><strong>Required</strong></td><td>The site name</td><td>The row is skipped</td></tr>\n<tr><td><code>latitude</code>, <code>longitude</code></td><td><strong>Required</strong>*</td><td>Decimal degrees</td><td>The row is skipped</td></tr>\n<tr><td><code>easting</code>, <code>northing</code></td><td><strong>Required</strong>*</td><td>Metres in your grid</td><td>The row is skipped</td></tr>\n<tr><td><code>role</code></td><td>Optional</td><td><code>en-route</code>, <code>aerodrome</code>, <code>air defence</code>, <code>weather</code>, <code>marine</code></td><td>Listed as unclassified</td></tr>\n<tr><td><code>antenna height</code></td><td><strong>Strongly advised</strong></td><td>Metres above ground to the aerial</td><td>Falls back to the Radar tab value, which is a guess</td></tr>\n<tr><td><code>ground level</code></td><td>Optional</td><td>Metres above sea level at the site</td><td>Nothing</td></tr>\n<tr><td><code>band</code></td><td>Optional</td><td>L-band, S-band, C-band, X-band</td><td>Nothing</td></tr>\n<tr><td><code>operator</code></td><td>Optional</td><td>Who runs it</td><td>Nothing</td></tr>\n<tr><td><code>notes</code></td><td>Optional</td><td>Anything, for example how sure you are of the position</td><td>Nothing</td></tr>\n</tbody></table>\n<p>* One of the two pairs.</p>\n<p class=\"hint\"><strong>Antenna height is the one to get right.</strong> It sets the radio horizon directly: the distance a radar can see goes as the square root of its height. A 10 m error moves the horizon by kilometres.</p>\n<h5>Step 3 to 7: exactly as above</h5>\n<p>Same save, same import button, same message, same picker. Imported radars appear in the radar dropdown as their own group.</p>\n<hr />\n<h4>Import 3: a turbine schedule (one row per machine)</h4>\n<p>Use this when you have a real layout, not a list of projects.</p>\n<table><thead><tr><th>Column</th><th>Required?</th><th>Notes</th></tr></thead><tbody>\n<tr><td><code>id</code></td><td>Recommended</td><td>Anything: WTG01, T1, a number</td></tr>\n<tr><td>position</td><td><strong>Required</strong></td><td><code>latitude</code>/<code>longitude</code> <strong>or</strong> <code>easting</code>/<code>northing</code></td></tr>\n<tr><td><code>ground level</code></td><td>Recommended</td><td>Metres above sea level at the base. Survey data beats anything the tool models</td></tr>\n<tr><td><code>hub height</code></td><td>Recommended</td><td>Metres</td></tr>\n<tr><td><code>rotor diameter</code></td><td>Recommended</td><td>Metres</td></tr>\n<tr><td><code>tip height</code></td><td>Optional</td><td>Used if hub height is missing</td></tr>\n<tr><td><code>rpm</code></td><td>Optional</td><td>Rotor speed</td></tr>\n<tr><td><code>tower base diameter</code>, <code>tower top diameter</code></td><td>Optional</td><td>Metres</td></tr>\n<tr><td><code>blade chord</code></td><td>Optional</td><td>Metres, the widest part of the blade</td></tr>\n<tr><td><code>blades</code></td><td>Optional</td><td>Usually 3</td></tr>\n</tbody></table>\n<p>Title blocks and blank rows above the table are skipped automatically, so a schedule straight from a consultant usually imports as it stands.</p>\n<p>Sample: <code>samples/turbines-example.xlsx</code> and <code>.csv</code>.</p>\n<hr />\n<h4>Import 4: elevation data</h4>\n<table><thead><tr><th>Format</th><th>Extension</th><th>Where it comes from</th></tr></thead><tbody>\n<tr><td>ESRI ASCII Grid</td><td><code>.asc</code></td><td>What almost every free elevation source exports. <strong>The best option</strong></td></tr>\n<tr><td>Google Earth</td><td><code>.kml</code>, <code>.kmz</code></td><td>Export a path or points</td></tr>\n<tr><td>A spreadsheet</td><td><code>.xlsx</code>, <code>.csv</code></td><td>Columns: position plus <code>elevation</code></td></tr>\n</tbody></table>\n<p>After importing, the tool reports what fraction of the modelled area your file actually covers. If that is low, the edges fall back to the synthetic surface and any masking conclusion near the edges is worthless.</p>\n<hr />\n<h3>Part 3: When it goes wrong</h3>\n<table><thead><tr><th>Message or symptom</th><th>What it means</th><th>Fix</th></tr></thead><tbody>\n<tr><td>\"No header row found\"</td><td>The tool could not find your column names</td><td>Check the header spelling against the tables above. It looks in the first 12 rows</td></tr>\n<tr><td>\"Found a name column but no position\"</td><td>No coordinates</td><td>Add <code>latitude</code> and <code>longitude</code>, or <code>easting</code> and <code>northing</code></td></tr>\n<tr><td>\"row(s) skipped for no name or no position\"</td><td>Exactly that: those rows had neither</td><td>Look for blank names, text in a number column, or degrees-and-minutes instead of decimals</td></tr>\n<tr><td>Everything lands in the sea</td><td>Latitude and longitude swapped</td><td>In the UK, latitude is roughly 50 to 61 and longitude roughly \u22128 to +2</td></tr>\n<tr><td>Sites are in the wrong county</td><td>Eastings and northings, wrong radar grid position</td><td>Set <strong>Radar easting</strong> and <strong>Radar northing</strong> on the Site &amp; data tab</td></tr>\n<tr><td>Nothing downloads</td><td>The page cannot save files where it is running</td><td>Use <strong>View / copy</strong> and paste into a file</td></tr>\n<tr><td>Numbers import as text</td><td>Excel formatted the column as text</td><td>Select the column, <strong>Data \u2192 Text to Columns \u2192 Finish</strong></td></tr>\n</tbody></table>\n<hr />\n<h3>Part 4: A note you should not skip</h3>\n<p>The built-in UK wind farm positions are <strong>planning records, not survey data</strong>. Measured against the two sites where real turbine coordinates were available, they are out by about <strong>1,100 m</strong>. If you import your own surveyed positions, the tool says so and stops applying that figure, because it has no idea how accurate your file is.</p>\n<p>Nothing this tool produces can support a planning submission. It is for finding the obvious problems early.</p>";
 
 export const METHOD_HTML = `
 <div class="warn-box">
@@ -616,17 +617,192 @@ export const EXPORTS = {
     mime: 'application/json',
     build: (result) => JSON.stringify(result.scenario, null, 2),
   },
+  // Word and Excel are written in the page with no library, the same way the
+  // xlsx reader works. They are BINARY, so they carry no text preview.
+  word: {
+    label: 'Assessment report (Word)',
+    filename: 'assessment-report',
+    extension: 'docx',
+    mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    binary: true,
+    build: async (result, delta) => buildDocx(reportToBlocks(buildReportMarkdown(result, delta))),
+  },
+  excel: {
+    label: 'All tables (Excel)',
+    filename: 'assessment',
+    extension: 'xlsx',
+    mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    binary: true,
+    build: async (result) => buildXlsx(buildWorkbookSheets(result)),
+  },
 };
 
-export function downloadExport(kind, result, delta) {
+
+// ===========================================================================
+// Word, Excel and PDF
+// ===========================================================================
+
+/**
+ * Turn the report Markdown into Word blocks. The Markdown is the single source
+ * of the report's content, so Word and PDF are renderings of it rather than
+ * separate documents that can drift from it.
+ */
+export function reportToBlocks(md) {
+  const blocks = [];
+  const lines = md.split('\n');
+  let table = null;
+  let para = [];
+
+  const flush = () => {
+    if (para.length) { blocks.push({ type: 'para', text: para.join(' ') }); para = []; }
+  };
+  const flushTable = () => {
+    if (table && table.length) blocks.push({ type: 'table', rows: table });
+    table = null;
+  };
+
+  for (const raw of lines) {
+    const line = raw.replace(/\s+$/, '');
+    if (line.startsWith('|')) {
+      flush();
+      const cells = line.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+      if (cells.every((c) => /^:?-+:?$/.test(c))) continue;   // the separator row
+      (table = table || []).push(cells);
+      continue;
+    }
+    flushTable();
+    if (line.startsWith('#')) {
+      flush();
+      const level = line.length - line.replace(/^#+/, '').length;
+      blocks.push({ type: 'heading', level, text: line.slice(level).trim() });
+    } else if (line.startsWith('> ')) {
+      // A block quote runs over several lines in the Markdown and is ONE
+      // paragraph, so it accumulates like any other rather than becoming a
+      // paragraph per line.
+      para.push(line.slice(2).trim());
+    } else if (line.startsWith('- ')) {
+      flush();
+      blocks.push({ type: 'para', text: `\u2022 ${line.slice(2)}` });
+    } else if (!line.trim()) {
+      flush();
+    } else {
+      para.push(line.trim());
+    }
+  }
+  flush();
+  flushTable();
+  return blocks;
+}
+
+/** Every table the assessment produces, as sheets for one workbook. */
+export function buildWorkbookSheets(result) {
+  const toRows = (text) => text.split('\n').filter(Boolean).map((line) => {
+    const cells = [];
+    let cur = '';
+    let q = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const ch = line[i];
+      if (q) {
+        if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i += 1; } else q = false; } else cur += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === ',') { cells.push(cur); cur = ''; } else cur += ch;
+    }
+    cells.push(cur);
+    // Put numbers in as numbers so the spreadsheet can total and chart them.
+    return cells.map((c) => {
+      const t = c.trim();
+      if (t === '') return '';
+      const n = Number(t);
+      return Number.isFinite(n) && /^[-+]?[0-9.eE+-]+$/.test(t) ? n : c;
+    });
+  });
+
+  return [
+    { name: 'Summary', rows: (() => {
+      // Flatten the JSON payload into two columns, which is what a reader of a
+      // spreadsheet actually wants from a nested result object.
+      const rows = [['Item', 'Value']];
+      const walk = (obj, prefix) => {
+        for (const [k, v] of Object.entries(obj)) {
+          const key = prefix ? `${prefix} / ${k}` : k;
+          if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, key);
+          else if (Array.isArray(v)) rows.push([key, v.length ? `${v.length} item(s)` : '']);
+          else rows.push([key, v === null || v === undefined ? '' : v]);
+        }
+      };
+      walk(buildAssessmentPayload(result), '');
+      return rows;
+    })() },
+    { name: 'Turbines', rows: toRows(buildTurbinesCsv(result)) },
+    { name: 'Flight track', rows: toRows(buildTrackCsv(result)) },
+    { name: 'Evidence', rows: [
+      ['Reference', 'Status', 'What it reports', 'Caution'],
+      ...REFERENCES.map((r) => [r.title, STATUS_LABELS[r.status] || r.status,
+        r.reports || '', r.caution || '']),
+    ] },
+  ];
+}
+
+/**
+ * Open the report in a print view and ask the browser to print it. The browser
+ * writes the PDF, which means real pagination, real fonts and selectable text
+ * rather than a hand-rolled PDF that would do none of those things well.
+ */
+export function printReport(result, delta) {
+  const md = buildReportMarkdown(result, delta);
+  const blocks = reportToBlocks(md);
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const bold = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const body = blocks.map((b) => {
+    if (b.type === 'heading') return `<h${Math.min(b.level, 4)}>${bold(b.text)}</h${Math.min(b.level, 4)}>`;
+    if (b.type === 'table') {
+      return '<table>' + b.rows.map((row, i) => '<tr>' + row.map((c) => (i === 0
+        ? `<th>${bold(c)}</th>` : `<td>${bold(c)}</td>`)).join('') + '</tr>').join('') + '</table>';
+    }
+    return `<p>${bold(b.text)}</p>`;
+  }).join('\n');
+
+  const win = window.open('', '_blank');
+  if (!win) return false;    // pop-up blocked; the caller says so
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>${esc(result.scenario.name || 'Assessment report')}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font: 10.5pt/1.45 "Segoe UI", Calibri, Arial, sans-serif; color: #15191d; max-width: 180mm; }
+  h1 { font-size: 18pt; margin: 0 0 4pt; }
+  h2 { font-size: 13pt; margin: 16pt 0 4pt; border-bottom: 1px solid #ccc; padding-bottom: 2pt; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 3pt; }
+  h4 { font-size: 10.5pt; margin: 10pt 0 2pt; }
+  p { margin: 0 0 6pt; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 10pt; font-size: 9.5pt; }
+  th, td { border: 1px solid #bbb; padding: 3pt 5pt; text-align: left; vertical-align: top; }
+  th { background: #eef1f4; }
+  h2, h3, table { break-after: avoid; page-break-after: avoid; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
+</style></head><body>${body}</body></html>`);
+  win.document.close();
+  // Give the new document a moment to lay out before the print dialog opens,
+  // or Chrome occasionally prints a blank first page.
+  win.setTimeout(() => { win.focus(); win.print(); }, 250);
+  return true;
+}
+
+export async function downloadExport(kind, result, delta) {
   const e = EXPORTS[kind];
   if (!e) return;
-  download(`${e.filename}-${stamp()}.${e.extension}`, e.build(result, delta), e.mime);
+  const data = await e.build(result, delta);
+  download(`${e.filename}-${stamp()}.${e.extension}`, data, e.mime);
 }
 
 export function buildExport(kind, result, delta) {
   const e = EXPORTS[kind];
-  return e ? { text: e.build(result, delta), label: e.label, extension: e.extension } : null;
+  if (!e) return null;
+  // A Word or Excel file is a ZIP. There is nothing useful to show as text, so
+  // say that rather than printing bytes at the user.
+  if (e.binary) {
+    return { text: null, binary: true, label: e.label, extension: e.extension };
+  }
+  return { text: e.build(result, delta), label: e.label, extension: e.extension };
 }
 
 // Downloads started by the page are inert inside a sandboxed frame, so the

@@ -21,12 +21,39 @@ A panel opens listing everything available.
 
 | You want | Choose | You get | Opens in |
 | --- | --- | --- | --- |
+| Something to print or email | **Assessment report .pdf** | a print view | choose "Save as PDF" in the print dialog |
+| Something to edit and send | **Assessment report .docx** | `.docx` | Word, Google Docs, LibreOffice |
+| Every table in one workbook | **All tables .xlsx** | `.xlsx` | Excel, Google Sheets, LibreOffice |
 | Something to send someone | **Assessment report** | `.md` | Word, Notepad, any editor, GitHub |
 | The numbers to work on yourself | **Assessment** | `.csv` | Excel |
 | The turbine-by-turbine results | **Turbines** | `.csv` | Excel |
 | The aircraft track | **Flight track** | `.csv` | Excel |
 | To reload this exact set-up later | **Scenario** | `.json` | this tool |
 | A picture of a sweep | Heat map **PNG** or **SVG** | image | anything |
+
+## Step 3a. If you chose PDF
+
+A new tab opens with the report laid out for print, and the print dialog
+appears. In the **Destination** or **Printer** list choose **Save as PDF**, then
+**Save**. The browser writes the PDF, which is why the text stays selectable and
+the page breaks fall in sensible places.
+
+**If nothing opens**, your browser blocked the pop-up. Allow pop-ups for this
+page and press PDF again, or download the Word file and print that to PDF.
+
+## Step 3b. What is in the Excel workbook
+
+Four sheets, one per table:
+
+| Sheet | What is on it |
+| --- | --- |
+| Summary | Every number in the assessment, as item and value |
+| Turbines | One row per machine, 26 columns, numbers stored as numbers |
+| Flight track | One row per second of the aircraft track |
+| Evidence | The whole evidence register, with each source's status and caution |
+
+Numbers are written as numbers, not text, so you can total and chart them
+without converting anything first.
 
 ## Step 4. Click the button. The file saves to your Downloads folder
 
@@ -202,7 +229,7 @@ and any masking conclusion near the edges is worthless.
 | --- | --- | --- |
 | "No header row found" | The tool could not find your column names | Check the header spelling against the tables above. It looks in the first 12 rows |
 | "Found a name column but no position" | No coordinates | Add `latitude` and `longitude`, or `easting` and `northing` |
-| "N rows skipped" | Those rows had no name or no usable position | Look for blank names, text in a number column, or degrees-and-minutes instead of decimals |
+| "row(s) skipped for no name or no position" | Exactly that: those rows had neither | Look for blank names, text in a number column, or degrees-and-minutes instead of decimals |
 | Everything lands in the sea | Latitude and longitude swapped | In the UK, latitude is roughly 50 to 61 and longitude roughly −8 to +2 |
 | Sites are in the wrong county | Eastings and northings, wrong radar grid position | Set **Radar easting** and **Radar northing** on the Site & data tab |
 | Nothing downloads | The page cannot save files where it is running | Use **View / copy** and paste into a file |

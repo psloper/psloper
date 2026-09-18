@@ -24,6 +24,7 @@ import {
 } from './ui.js';
 import {
   METHOD_HTML, IMPORT_HTML, buildDelta, buildExport, downloadExport, downloadsAvailable,
+  printReport,
 } from './report.js';
 
 // ------------------------------------------------------------------- state
@@ -544,12 +545,39 @@ document.querySelectorAll('[data-export]').forEach((btn) => {
     e.preventDefault();
     if (!result) return;
     const kind = btn.dataset.export;
+    if (kind === 'pdf') {
+      // The browser writes the PDF, so the user gets real pagination and
+      // selectable text. A blocked pop-up is the one way this fails.
+      const opened = printReport(result, currentDelta());
+      if (!opened) {
+        $('#text-title').textContent = 'PDF';
+        $('#text-body').value = 'The print window was blocked by the browser.\n\n'
+          + 'Allow pop-ups for this page and press PDF again, or export the Word '
+          + 'file and print that to PDF instead.';
+        $('#dlg-export').close();
+        $('#dlg-text').showModal();
+      }
+      return;
+    }
     if (btn.dataset.mode === 'download') {
-      downloadExport(kind, result, currentDelta());
+      const b = btn;
+      const was = b.textContent;
+      b.disabled = true; b.textContent = 'Building...';
+      downloadExport(kind, result, currentDelta())
+        .catch((err) => { b.textContent = 'Failed'; console.error(err); })
+        .finally(() => { setTimeout(() => { b.disabled = false; b.textContent = was; }, 600); });
       return;
     }
     const built = buildExport(kind, result, currentDelta());
     if (!built) return;
+    if (built.binary) {
+      $('#text-title').textContent = `${built.label} (.${built.extension})`;
+      $('#text-body').value = `A .${built.extension} file is a ZIP of XML, so there is nothing `
+        + 'useful to show here. Use the download button beside this one.';
+      $('#dlg-export').close();
+      $('#dlg-text').showModal();
+      return;
+    }
     $('#text-title').textContent = `${built.label} (.${built.extension})`;
     $('#text-body').value = built.text;
     $('#dlg-export').close();

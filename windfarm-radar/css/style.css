@@ -663,3 +663,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   font-family: var(--mono); font-size: 11px; color: var(--ink-mute) !important;
   margin: 8px 0 0 !important; padding-top: 7px; border-top: 1px solid var(--rule);
 }
+
+/* The Office and PDF exports carry a one-line explanation of what you get. */
+.export-name em { display: block; font-style: normal; font-size: 11px;
+  color: var(--ink-3, #7d8b98); margin-top: 2px; }

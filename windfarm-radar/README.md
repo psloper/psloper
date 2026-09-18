@@ -274,10 +274,29 @@ everything switched off.
 
 ## Exports
 
-Assessment report (Markdown), full results (JSON), turbine table (CSV), flight
-track results (CSV), and the scenario alone (JSON, reloadable). Every export
-carries the method and limits with it. Everything happens in the browser;
-nothing is uploaded.
+| Format | What you get | Written by |
+| --- | --- | --- |
+| **PDF** | The report, laid out for A4, in a print view | the browser's own print engine, so the text stays selectable |
+| **Word** `.docx` | The report, editable, with real headings and tables | this tool, in the page |
+| **Excel** `.xlsx` | Four sheets: summary, turbines, flight track, evidence | this tool, in the page |
+| Markdown `.md` | The report as text | |
+| CSV | Turbine table, flight track | |
+| JSON | Full results, or the scenario to reload later | |
+| PNG / SVG | The 3D view, PPI, section, wind rose, heat maps | |
+
+Word and Excel are written **without a library**. An Office file is a ZIP of
+XML, and the tool already reads `.xlsx` that way using the platform's own
+`DecompressionStream`; writing is the same trick in reverse with
+`CompressionStream`. That keeps the tool a static, offline, dependency-free
+drop.
+
+Numbers go into the spreadsheet as numbers rather than text, so they can be
+totalled and charted without converting anything.
+
+The output is validated against **independent readers**, openpyxl and
+python-docx, not against this tool's own reader. That is how a real defect was
+caught: the first `.docx` had no default `Normal` paragraph style, so any reader
+asking a paragraph what style it was got nothing back.
 
 ## Physics and provenance
 
@@ -337,7 +356,7 @@ but wrong assessment:
 cd windfarm-radar && npm test
 ```
 
-102 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
+111 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
 v = −0.78 cut-off, 13.1 dB required SNR for Pd = 0.9 / Pfa = 1e-6, the 4.12·√h
 horizon rule, and a cosecant-squared check that the pattern compensates R⁻⁴
 exactly for a constant-altitude target. The behavioural tests check that the
@@ -458,6 +477,7 @@ js/
   importers.js      xlsx, csv, ESRI ASCII grid, KML/KMZ, optional online lookup
   sweep.js          Two-parameter sweeps over the whole model
   heatmap.js        Heat map rendering, PNG and SVG export
+  officewriter.js   ZIP, .xlsx and .docx writers, no dependencies
   uksites.js        Real UK wind farm and civil radar positions (generated)
   references.js     The evidence register
 test/
@@ -467,6 +487,7 @@ test/
   uksites.test.mjs  The UK data is sane, and states its limits where users see them
   geometry.test.mjs Every drawn dimension exists in the model; one girth factor only
   siteimport.test.mjs Site lists import, and nothing is invented when columns are missing
+  office.test.mjs   The .docx and .xlsx writers produce valid Office files
   calibration.test.mjs  The control curve matches measured SCADA; diffraction
                     matches the ITU's own reference implementation
 data/
