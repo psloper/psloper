@@ -16,13 +16,14 @@ import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
 import {
   readTable, readElevationFile, parseTurbineRows, buildImportedTerrain,
   FREE_ELEVATION_SOURCES,
+  parseRadarSiteRows, parseFarmSiteRows,
 } from './importers.js';
 import {
   buildRail, updateNotes, renderMetrics, renderFindings, renderTurbineTable,
-  renderVerdict, renderReadout, renderLegend,
+  renderVerdict, renderReadout, renderLegend, setImportedSites,
 } from './ui.js';
 import {
-  METHOD_HTML, buildDelta, buildExport, downloadExport, downloadsAvailable,
+  METHOD_HTML, IMPORT_HTML, buildDelta, buildExport, downloadExport, downloadsAvailable,
 } from './report.js';
 
 // ------------------------------------------------------------------- state
@@ -137,7 +138,13 @@ function schedule() {
   fullTimer = setTimeout(() => run(false), 60);
 }
 
+// Imported site lists live alongside the built-in ones and are offered in the
+// same pickers. They are kept separate from the built-in data so that a user's
+// own survey positions are never confused with planning-database positions.
+export const importedSites = { radars: [], farms: [], source: {} };
+
 function rebuildRail() {
+  setImportedSites(importedSites);
   noteEls = buildRail(el.rail, activeTab, scenario, schedule, applyPreset);
   updateNotes(noteEls, result, { importedTerrain, roseResult });
   el.rail.querySelectorAll('[data-action]').forEach((btn) => {
@@ -189,6 +196,62 @@ async function importTurbines() {
   } catch (err) {
     importStatus(err.message, 'error');
   }
+}
+
+function siteImportReport(kind, file, res) {
+  const parts = [`${res.sites.length} ${kind} imported from ${file.name}.`];
+  if (res.skipped) parts.push(`${res.skipped} row(s) skipped for no name or no position.`);
+  if (res.headerRow > 0) parts.push(`Header found on row ${res.headerRow + 1}.`);
+  parts.push(...res.warnings);
+  return parts.join(' ');
+}
+
+async function importRadarSites() {
+  const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
+  if (!file) return;
+  importStatus(`Reading ${file.name}...`);
+  try {
+    const sheets = await readTable(file);
+    const res = parseRadarSiteRows(sheets[0].rows, {
+      originLat: scenario.site.originLat, originLon: scenario.site.originLon,
+      radarEasting: scenario.site.radarEasting, radarNorthing: scenario.site.radarNorthing,
+    });
+    if (!res.sites.length) { importStatus(res.warnings.join(' '), 'error'); return; }
+    importedSites.radars = res.sites;
+    importedSites.source.radars = file.name;
+    rebuildRail();
+    importStatus(siteImportReport('radar sites', file, res), res.warnings.length ? '' : 'ok');
+  } catch (err) {
+    importStatus(err.message, 'error');
+  }
+}
+
+async function importFarmSites() {
+  const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
+  if (!file) return;
+  importStatus(`Reading ${file.name}...`);
+  try {
+    const sheets = await readTable(file);
+    const res = parseFarmSiteRows(sheets[0].rows, {
+      originLat: scenario.site.originLat, originLon: scenario.site.originLon,
+      radarEasting: scenario.site.radarEasting, radarNorthing: scenario.site.radarNorthing,
+    });
+    if (!res.sites.length) { importStatus(res.warnings.join(' '), 'error'); return; }
+    importedSites.farms = res.sites;
+    importedSites.source.farms = file.name;
+    rebuildRail();
+    importStatus(siteImportReport('wind farm sites', file, res), res.warnings.length ? '' : 'ok');
+  } catch (err) {
+    importStatus(err.message, 'error');
+  }
+}
+
+function clearImportedSites() {
+  importedSites.radars = [];
+  importedSites.farms = [];
+  importedSites.source = {};
+  rebuildRail();
+  importStatus('Imported site lists cleared. The built-in UK data is unchanged.', 'ok');
 }
 
 async function importTerrain() {
@@ -261,6 +324,9 @@ async function runRoseSweep(btn) {
 
 function railAction(id, btn) {
   if (id === 'import-turbines') importTurbines();
+  else if (id === 'import-radar-sites') importRadarSites();
+  else if (id === 'import-farm-sites') importFarmSites();
+  else if (id === 'clear-site-imports') clearImportedSites();
   else if (id === 'import-terrain') importTerrain();
   else if (id === 'clear-imports') clearImports();
   else if (id === 'run-rose') runRoseSweep(btn);
@@ -407,6 +473,11 @@ el.profile.addEventListener('click', (e) => {
 el.profile.title = 'Click the left or right half to rotate the section bearing';
 
 // --------------------------------------------------------------- dialogs
+
+$('#btn-import-help').addEventListener('click', () => {
+  $('#import-help-body').innerHTML = IMPORT_HTML;
+  $('#dlg-import-help').showModal();
+});
 
 $('#btn-method').addEventListener('click', () => {
   $('#method-body').innerHTML = METHOD_HTML;

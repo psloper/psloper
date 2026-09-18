@@ -32,6 +32,7 @@
     <button class="btn" id="btn-baseline" title="Compare the current mitigation set against no mitigation">Mitigation delta</button>
     <button class="btn" id="btn-export">Export</button>
     <button class="btn" id="btn-evidence">Evidence</button>
+    <button class="btn" id="btn-import-help">Data in &amp; out</button>
     <button class="btn" id="btn-method">Method &amp; limits</button>
     <button class="btn ghost" id="btn-reset">Reset</button>
   </div>
@@ -140,6 +141,13 @@
 </main>
 
 <!-- ============================================================= dialogs -->
+<dialog id="dlg-import-help" class="dlg dlg-wide">
+  <form method="dialog">
+    <header><h2>Getting data in and out</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="import-help-body"></div>
+</dialog>
+
 <dialog id="dlg-method" class="dlg">
   <form method="dialog">
     <header><h2>Method, sources and limits</h2><button class="btn ghost" value="close">Close</button></header>

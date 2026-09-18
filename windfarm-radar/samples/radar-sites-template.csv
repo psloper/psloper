@@ -1,0 +1,5 @@
+name,latitude,longitude,role,antenna height,ground level,band,operator,notes
+Example En-route Site,53.45008,-0.30825,en-route,20,177,L-band,Example ANSP,Position from the site survey
+Example Airport,52.83100,-1.32806,aerodrome,12,94,S-band,Example Airport Ltd,Watchman-class primary
+Example Air Defence Site,57.61722,-7.44611,air defence,25,124,L-band,Example MOD,Coordinates NOT verified
+Example Weather Radar,51.68800,-2.59800,weather,30,197,C-band,Example Met Service,

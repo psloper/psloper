@@ -118,6 +118,35 @@ Nothing is uploaded. Every file is parsed in the page.
 | Elevation | `.kml`, `.kmz` | What Google Earth exports. |
 | Elevation | `.xlsx`, `.csv` | Point elevations as easting/northing/level or lat/lon/level. |
 
+### Importing your own sites
+
+Four separate imports, all on the **Site & data** tab, all parsed in the page
+with nothing uploaded. Step-by-step instructions are in the app under
+**Data in & out** in the top bar, and in
+[`docs/DATA-IN-AND-OUT.md`](docs/DATA-IN-AND-OUT.md).
+
+| What you have | Import | One row per | Minimum columns |
+| --- | --- | --- | --- |
+| A layout | Turbine schedule | machine | position |
+| A list of projects | Wind farm site list | project | `name` + position |
+| A list of radars | Radar site list | radar | `name` + position |
+| Ground heights | Elevation data | point | position + `elevation` |
+
+Position means either `latitude` and `longitude` in decimal degrees, or
+`easting` and `northing` in metres. Everything else is optional, and **every
+column you leave out is named back to you** rather than quietly defaulted: no
+status, no capacity, no antenna height and no onshore/offshore flag each
+produce their own message. Rows without a name or a usable position are skipped
+and counted, never guessed at.
+
+Templates to fill in: `samples/windfarm-sites-template.csv` and
+`samples/radar-sites-template.csv`.
+
+Imported sites appear in the **Real UK sites** picker as their own group above
+the built-in data, and are never merged with it. Placing an imported pairing
+says so and stops applying the ±1,100 m the planning database was measured to
+carry, because the tool has no idea how accurate your file is.
+
 ### Real UK sites, built in
 
 The Site tab has a **Real UK sites** picker holding the whole UK wind pipeline
@@ -308,7 +337,7 @@ but wrong assessment:
 cd windfarm-radar && npm test
 ```
 
-92 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
+102 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
 v = −0.78 cut-off, 13.1 dB required SNR for Pd = 0.9 / Pfa = 1e-6, the 4.12·√h
 horizon rule, and a cosecant-squared check that the pattern compensates R⁻⁴
 exactly for a constant-altitude target. The behavioural tests check that the
@@ -437,6 +466,7 @@ test/
   report.test.mjs   Exports carry their caveats and contain no formatting failures
   uksites.test.mjs  The UK data is sane, and states its limits where users see them
   geometry.test.mjs Every drawn dimension exists in the model; one girth factor only
+  siteimport.test.mjs Site lists import, and nothing is invented when columns are missing
   calibration.test.mjs  The control curve matches measured SCADA; diffraction
                     matches the ITU's own reference implementation
 data/
@@ -452,4 +482,8 @@ calibration/
 samples/
   turbines-example.xlsx / .csv / .kml
   terrain-example.asc / .csv
+  radar-sites-template.csv       fill-in template, one row per radar
+  windfarm-sites-template.csv    fill-in template, one row per project
+docs/
+  DATA-IN-AND-OUT.md   step-by-step import and export guide (also in the app)
 ```

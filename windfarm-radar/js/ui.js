@@ -15,7 +15,8 @@ import { SEVERITY_LABELS } from './findings.js';
 import { referencesFor, STATUS_LABELS } from './references.js';
 import { M_PER_FT } from './geo.js';
 import { UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, LIVE_STATUSES,
-  POSITION_UNCERTAINTY_M, STATED_PRECISION_M, pairingGeometry } from './uksites.js';
+  POSITION_UNCERTAINTY_M, STATED_PRECISION_M, pairingGeometry,
+  greatCircleM, initialBearingDeg, radarRecord, nearestRadar } from './uksites.js';
 
 export function getPath(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
@@ -279,8 +280,19 @@ export const TABS = {
     ] },
     { group: 'Import real data', fields: [
       { type: 'action', id: 'import-turbines', label: 'Turbine schedule', button: 'Choose .xlsx or .csv',
-        note: 'Reads ID, position, ground level, hub height, rotor diameter, tip height, rotor speed and '
-          + 'tower dimensions. Title blocks above the table are skipped automatically.' },
+        note: 'ONE ROW PER MACHINE. Reads ID, position, ground level, hub height, rotor diameter, tip '
+          + 'height, rotor speed and tower dimensions. Title blocks above the table are skipped '
+          + 'automatically. Use this when you have a layout.' },
+      { type: 'action', id: 'import-farm-sites', label: 'Wind farm site list', button: 'Choose .xlsx or .csv',
+        note: 'ONE ROW PER PROJECT. Needs a name and a position; capacity, status, offshore, reference, '
+          + 'turbine count and tip height are optional and each one you leave out is reported back to '
+          + 'you. Use this when you have a list of schemes rather than a layout. '
+          + 'Template: samples/windfarm-sites-template.csv' },
+      { type: 'action', id: 'import-radar-sites', label: 'Radar site list', button: 'Choose .xlsx or .csv',
+        note: 'ONE ROW PER RADAR. Needs a name and a position; role, antenna height, ground level, band '
+          + 'and operator are optional. Antenna height matters most, because it sets the horizon. '
+          + 'Template: samples/radar-sites-template.csv' },
+      { type: 'action', id: 'clear-site-imports', label: 'Imported site lists', button: 'Clear imported sites' },
       { type: 'action', id: 'import-terrain', label: 'Elevation data', button: 'Choose .xlsx or .csv',
         note: 'Point elevations as easting/northing/level or latitude/longitude/level. Replaces the '
           + 'synthetic surface entirely.' },
@@ -402,6 +414,13 @@ export const TABS = {
 };
 
 // ---------------------------------------------------------------- rail build
+
+// Site lists the user imported. buildRail is handed them so the picker can
+// offer them next to the built-in UK data, clearly labelled, without the two
+// ever being merged: an imported survey position and a planning-database
+// position are different kinds of number.
+let imported = { radars: [], farms: [], source: {} };
+export function setImportedSites(sites) { imported = sites || { radars: [], farms: [], source: {} }; }
 
 export function buildRail(container, tab, scenario, onChange, onPreset) {
   container.innerHTML = '';
@@ -542,10 +561,15 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
         .map((r, i) => ({ i, name: r[0], mw: r[3], status: r[4], off: r[5] === 1, keep: keep(r) }))
         .filter((r) => r.keep)
         .sort((a, b) => a.name.localeCompare(b.name));
-      farmSel.innerHTML = `<option value="">Choose one of ${rows.length} \u2026</option>`
+      const mine = imported.farms.map((f, i) => `<option value="imp:${i}">${f.name} \u2014 `
+        + `${f.mw} MW${f.offshore ? ', offshore' : ''} [${f.status}]</option>`).join('');
+      farmSel.innerHTML = `<option value="">Choose one of ${rows.length + imported.farms.length} \u2026</option>`
+        + (mine ? `<optgroup label="Imported from ${imported.source.farms || 'your file'}">${mine}</optgroup>` : '')
+        + `<optgroup label="UK planning database">`
         + rows.map((r) => `<option value="${r.i}">${r.name} \u2014 ${r.mw} MW`
           + `${r.off ? ', offshore' : ''}${scope === 'live' || scope === 'all' ? ` [${r.status}]` : ''}`
-          + '</option>').join('');
+          + '</option>').join('')
+        + '</optgroup>';
     };
     scopeSel.value = ukPickerState.scope;
     fillFarms();
@@ -558,12 +582,17 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
     const radarSel = document.createElement('select');
     radarSel.style.width = '100%';
     radarSel.style.marginTop = '6px';
+    const myRadars = imported.radars.map((r, i) => `<option value="imp:${i}">${r.name} \u2014 `
+      + `${r.role}</option>`).join('');
     radarSel.innerHTML = '<option value="">Nearest radar (automatic)</option>'
+      + (myRadars ? `<optgroup label="Imported from ${imported.source.radars || 'your file'}">${myRadars}</optgroup>` : '')
+      + '<optgroup label="UK civil radar sites">'
       + UK_RADAR_SITES
         .map((r, i) => [i, r[0], r[1]])
         .sort((a, b) => a[1].localeCompare(b[1]))
         .map(([i, name, role]) => `<option value="${i}">${name} \u2014 ${role}</option>`)
-        .join('');
+        .join('')
+      + '</optgroup>';
     wrap.append(radarSel);
 
     const note = document.createElement('p');
@@ -616,6 +645,14 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
         parts.push('Over 100 km the flat-plane geometry this tool draws in is no longer a fair picture '
           + 'of the real surface.');
       }
+      if (geom.uncertaintyM == null) {
+        parts.push('This pairing uses a position you imported, so the \u00b11,100 m the planning '
+          + 'database was measured to carry does NOT apply. Whatever accuracy your own survey has '
+          + 'is the accuracy of this geometry, and this tool does not know what that is.');
+        note.textContent = parts.join(' ');
+        btn.disabled = false;
+        return;
+      }
       // Precision and accuracy, side by side, because the five decimal places in
       // the table invite the reader to believe them.
       const pct = 100 * geom.uncertaintyFraction;
@@ -633,11 +670,62 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
       btn.disabled = false;
     };
 
+    // A selection is either an index into the built-in table or "imp:<n>" into
+    // the list the user imported. Imported sites carry their own uncertainty,
+    // which is unknown rather than the measured 1.1 km of the planning data, so
+    // they are never given that figure.
+    const pick = (sel, list) => {
+      if (sel.value === '') return null;
+      if (sel.value.startsWith('imp:')) return { imported: list[Number(sel.value.slice(4))] };
+      return { index: Number(sel.value) };
+    };
+
+    const geometryFor = (farmPick, radarPick) => {
+      if (farmPick.index !== undefined && !radarPick) return pairingGeometry(farmPick.index, null);
+      if (farmPick.index !== undefined && radarPick.index !== undefined) {
+        return pairingGeometry(farmPick.index, radarPick.index);
+      }
+      // At least one side is imported, so assemble the same shape by hand.
+      const f = farmPick.imported
+        ? { name: farmPick.imported.name, lat: farmPick.imported.lat, lon: farmPick.imported.lon,
+          mw: farmPick.imported.mw, status: farmPick.imported.status,
+          offshore: !!farmPick.imported.offshore, repdRef: farmPick.imported.reference || 'imported',
+          live: true, imported: true, uncertaintyM: null }
+        : { ...UK_WIND_FARMS[farmPick.index] } && pairingGeometry(farmPick.index, null).farm;
+      let rr;
+      if (!radarPick) {
+        rr = nearestRadar(f.lat, f.lon);
+      } else if (radarPick.index !== undefined) {
+        rr = radarRecord(radarPick.index);
+      } else {
+        const r = radarPick.imported;
+        rr = { name: r.name, role: r.role, lat: r.lat, lon: r.lon,
+          sources: ['imported'], disagreementM: 0, imported: true,
+          antennaHeightM: r.antennaHeightM };
+      }
+      const d = greatCircleM(rr.lat, rr.lon, f.lat, f.lon);
+      const br = initialBearingDeg(rr.lat, rr.lon, f.lat, f.lon);
+      const rad = br * Math.PI / 180;
+      const unc = f.imported || rr.imported ? null : POSITION_UNCERTAINTY_M;
+      return {
+        farm: f, radar: { ...rr, distanceM: d, bearingDeg: br },
+        rangeM: d, bearingDeg: br,
+        east: d * Math.sin(rad), north: d * Math.cos(rad),
+        tangentPlaneWarning: d > 100000,
+        uncertaintyM: unc,
+        uncertaintyFraction: unc == null ? null : unc / Math.max(d, 1),
+      };
+    };
+
     const recompute = () => {
-      const fi = farmSel.value === '' ? null : Number(farmSel.value);
-      if (fi == null) { geom = null; describe(); return; }
-      const ri = radarSel.value === '' ? null : Number(radarSel.value);
-      geom = pairingGeometry(fi, ri);
+      const fp = pick(farmSel, imported.farms);
+      if (!fp) { geom = null; describe(); return; }
+      const rp = pick(radarSel, imported.radars);
+      try {
+        geom = geometryFor(fp, rp);
+      } catch (err) {
+        geom = null;
+      }
       describe();
     };
     farmSel.addEventListener('change', () => { ukPickerState.farm = farmSel.value; recompute(); });

@@ -238,6 +238,40 @@ export const TERRAIN_FIELDS = {
   elevation: ['elevation', 'z', 'height', 'amsl', 'level', 'alt', 'altitude', 'dtm', 'dsm', 'ground'],
 };
 
+// Radar sites. The only columns that MUST be present are a name and a
+// position. Everything else has a stated default, and the importer reports
+// which defaults it applied rather than filling them in silently.
+export const RADAR_SITE_FIELDS = {
+  name:        ['name', 'site', 'site name', 'radar', 'radar name', 'id', 'identifier', 'ref'],
+  latitude:    TURBINE_FIELDS.latitude,
+  longitude:   TURBINE_FIELDS.longitude,
+  easting:     TURBINE_FIELDS.easting,
+  northing:    TURBINE_FIELDS.northing,
+  role:        ['role', 'type', 'category', 'class', 'kind', 'function'],
+  antennaHeight: ['antenna height', 'height', 'height agl', 'agl', 'mast height', 'tower height', 'aerial height'],
+  groundLevel: ['ground', 'ground level', 'elevation', 'amsl', 'site elevation', 'ground amsl'],
+  band:        ['band', 'frequency', 'freq', 'freq ghz', 'frequency ghz'],
+  operator:    ['operator', 'owner', 'authority', 'agency'],
+  notes:       ['notes', 'note', 'comment', 'comments', 'remarks', 'description'],
+};
+
+// Wind farm SITES, meaning one row per project. This is a different thing from
+// a turbine schedule, which is one row per machine: use the turbine schedule
+// when you have a layout and this when you have a list of projects.
+export const FARM_SITE_FIELDS = {
+  name:      ['name', 'site', 'site name', 'project', 'project name', 'wind farm', 'windfarm', 'scheme'],
+  latitude:  TURBINE_FIELDS.latitude,
+  longitude: TURBINE_FIELDS.longitude,
+  easting:   TURBINE_FIELDS.easting,
+  northing:  TURBINE_FIELDS.northing,
+  capacity:  ['capacity', 'capacity mw', 'mw', 'installed capacity', 'rated capacity', 'output'],
+  status:    ['status', 'development status', 'stage', 'planning status', 'state'],
+  offshore:  ['offshore', 'onshore offshore', 'location type', 'marine', 'sea'],
+  reference: ['reference', 'ref', 'repd', 'repd ref', 'repd reference', 'planning ref', 'application ref', 'id'],
+  turbines:  ['turbines', 'turbine count', 'number of turbines', 'no of turbines', 'machines'],
+  tipHeight: TURBINE_FIELDS.tipHeight,
+};
+
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 /**
@@ -267,6 +301,163 @@ export function mapColumns(rows, fields) {
     if (score > best.score) best = { score, index: r, map };
   }
   return best;
+}
+
+
+// ===========================================================================
+// Site lists: radar sites and wind farm sites
+// ===========================================================================
+
+const TRUTHY = new Set(['y', 'yes', 'true', '1', 'offshore', 'marine', 'sea', 'o']);
+
+function numberFrom(cell) {
+  if (cell == null || cell === '') return null;
+  const n = Number(String(cell).replace(/[^0-9eE+.\-]/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Shared front end for both site parsers: find the header, walk the rows, and
+ * pull a position out of either latitude/longitude or easting/northing.
+ *
+ * Returns { sites, warnings, skipped, headerRow, columns }. Nothing is invented:
+ * a row without a usable position is skipped and counted, and every default
+ * applied is named in `warnings` so the user can see what the file did not say.
+ */
+function parseSiteRows(rows, fields, opts, makeSite) {
+  const { originLat = null, originLon = null, radarEasting = 0, radarNorthing = 0 } = opts;
+  const found = mapColumns(rows, fields);
+  const warnings = [];
+  const sites = [];
+  let skipped = 0;
+
+  if (found.index < 0 || found.map.name === undefined) {
+    return { sites: [], warnings: ['No header row found. The sheet needs a column headed '
+      + '"name" (or "site", or "project") and either latitude and longitude, or easting and '
+      + 'northing.'], skipped: rows.length, headerRow: -1, columns: {} };
+  }
+
+  const hasLatLon = found.map.latitude !== undefined && found.map.longitude !== undefined;
+  const hasGrid = found.map.easting !== undefined && found.map.northing !== undefined;
+  if (!hasLatLon && !hasGrid) {
+    return { sites: [], warnings: ['Found a name column but no position. Add either '
+      + '"latitude" and "longitude", or "easting" and "northing".'],
+    skipped: rows.length, headerRow: found.index, columns: found.map };
+  }
+  if (hasGrid && !hasLatLon && (originLat == null || originLon == null)) {
+    warnings.push('The file is in eastings and northings, which are read relative to the radar '
+      + 'grid position on this tab. Check that grid position is right, or the sites will be in '
+      + 'the wrong place.');
+  }
+
+  for (let r = found.index + 1; r < rows.length; r += 1) {
+    const row = rows[r];
+    if (!row || row.every((c) => c === '' || c == null)) continue;
+    const get = (f) => (found.map[f] === undefined ? null : row[found.map[f]]);
+    const name = String(get('name') ?? '').trim();
+    if (!name) { skipped += 1; continue; }
+
+    let lat = null, lon = null, east = null, north = null;
+    if (hasLatLon) {
+      lat = numberFrom(get('latitude'));
+      lon = numberFrom(get('longitude'));
+      if (lat == null || lon == null || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+        skipped += 1; continue;
+      }
+    }
+    if (hasGrid) {
+      const e = numberFrom(get('easting'));
+      const n = numberFrom(get('northing'));
+      if (e != null && n != null) { east = e - radarEasting; north = n - radarNorthing; }
+    }
+    if (lat == null && east == null) { skipped += 1; continue; }
+
+    sites.push(makeSite({ name, lat, lon, east, north, get, warnings }));
+  }
+
+  if (!sites.length) warnings.push('No usable rows. Every row was missing a name or a position.');
+  return { sites, warnings, skipped, headerRow: found.index, columns: found.map };
+}
+
+const ROLE_WORDS = [
+  [/en.?route|nerl|area|long.?range/i, 'en-route'],
+  [/aerodrome|airport|terminal|approach|tma|psr|asr/i, 'aerodrome'],
+  [/air.?defen[cs]e|military|mod|raf|rrh/i, 'air-defence'],
+  [/weather|met|precip/i, 'weather'],
+  [/marine|vts|port|harbour|harbor/i, 'marine'],
+];
+
+/** One row per radar site. */
+export function parseRadarSiteRows(rows, opts = {}) {
+  let defaultedRole = 0;
+  let defaultedHeight = 0;
+  const out = parseSiteRows(rows, RADAR_SITE_FIELDS, opts, ({ name, lat, lon, east, north, get }) => {
+    const rawRole = String(get('role') ?? '').trim();
+    let role = 'unclassified';
+    if (rawRole) {
+      const hit = ROLE_WORDS.find(([re]) => re.test(rawRole));
+      role = hit ? hit[1] : 'unclassified';
+    } else {
+      defaultedRole += 1;
+    }
+    const h = numberFrom(get('antennaHeight'));
+    if (h == null) defaultedHeight += 1;
+    return {
+      name, lat, lon, east, north, role,
+      antennaHeightM: h,
+      groundLevelM: numberFrom(get('groundLevel')),
+      band: String(get('band') ?? '').trim() || null,
+      operator: String(get('operator') ?? '').trim() || null,
+      notes: String(get('notes') ?? '').trim() || null,
+      imported: true,
+    };
+  });
+  if (defaultedRole) {
+    out.warnings.push(`${defaultedRole} site(s) had no role column, so they are listed as `
+      + 'unclassified. Add a "role" column reading en-route, aerodrome, air defence, weather or '
+      + 'marine to label them.');
+  }
+  if (defaultedHeight) {
+    out.warnings.push(`${defaultedHeight} site(s) gave no antenna height. Placing one of those `
+      + 'uses the height on the Radar tab, which is a guess, and antenna height drives the '
+      + 'horizon directly.');
+  }
+  return out;
+}
+
+/** One row per wind farm PROJECT, not per turbine. */
+export function parseFarmSiteRows(rows, opts = {}) {
+  let noStatus = 0;
+  let noCapacity = 0;
+  const out = parseSiteRows(rows, FARM_SITE_FIELDS, opts, ({ name, lat, lon, east, north, get }) => {
+    const status = String(get('status') ?? '').trim();
+    if (!status) noStatus += 1;
+    const mw = numberFrom(get('capacity'));
+    if (mw == null) noCapacity += 1;
+    const offRaw = String(get('offshore') ?? '').trim().toLowerCase();
+    return {
+      name, lat, lon, east, north,
+      mw: mw ?? 0,
+      status: status || 'Not stated',
+      offshore: offRaw ? TRUTHY.has(offRaw) : null,
+      reference: String(get('reference') ?? '').trim() || null,
+      turbineCount: numberFrom(get('turbines')),
+      tipHeightM: numberFrom(get('tipHeight')),
+      imported: true,
+    };
+  });
+  if (noStatus) {
+    out.warnings.push(`${noStatus} site(s) had no status, so they are shown as "Not stated". `
+      + 'Two thirds of the UK planning database is projects that will never be built, so a status '
+      + 'column is worth having.');
+  }
+  if (noCapacity) out.warnings.push(`${noCapacity} site(s) had no capacity, recorded as 0 MW.`);
+  const noOffshore = out.sites.filter((x) => x.offshore === null).length;
+  if (noOffshore) {
+    out.warnings.push(`${noOffshore} site(s) did not say onshore or offshore, so the sea surface `
+      + 'is left as you set it. Add an "offshore" column reading yes or no to set it from the file.');
+  }
+  return out;
 }
 
 // ===========================================================================
