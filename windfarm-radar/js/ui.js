@@ -6,7 +6,8 @@
 
 import {
   RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS, REFRACTION_PRESETS,
-  TARGET_GROUPS,
+  TARGET_GROUPS, tipHeightOf, groundClearanceOf, setTipHeight,
+  BLADE_CONSTRUCTIONS, TOWER_MATERIALS,
 } from './model.js';
 import { WIND_ROSE_PRESETS, operatingState as windState } from './wind.js';
 import { cylinderRcsDbsm } from './rf.js';
@@ -85,8 +86,12 @@ export const TABS = {
   farm: [
     { group: 'Machine', fields: [
       { type: 'select', path: 'farm.preset', label: 'Turbine class', options: opts(TURBINE_PRESETS), preset: 'turbine' },
-      { type: 'range', path: 'farm.hubHeightM', label: 'Hub height', min: 20, max: 200, step: 1, fmt: (v) => `${v} m` },
-      { type: 'range', path: 'farm.rotorDiameterM', label: 'Rotor diameter', min: 20, max: 280, step: 2, fmt: (v) => `${v} m` },
+      { type: 'derived', id: 'tip-height', label: 'Tip height', min: 50, max: 300, step: 1,
+        fmt: (v) => `${v.toFixed(0)} m`,
+        read: (s) => tipHeightOf(s.farm),
+        write: (s, v) => setTipHeight(s.farm, v) },
+      { type: 'range', path: 'farm.hubHeightM', label: 'Hub height', min: 20, max: 280, step: 1, fmt: (v) => `${v} m` },
+      { type: 'range', path: 'farm.rotorDiameterM', label: 'Rotor diameter', min: 20, max: 300, step: 2, fmt: (v) => `${v} m` },
       { type: 'range', path: 'farm.rpm', label: 'Rated rotor speed', min: 2, max: 40, step: 0.5, fmt: (v) => `${v} rpm` },
       { type: 'note', id: 'tip-note' },
     ] },
@@ -99,6 +104,18 @@ export const TABS = {
       { type: 'hint', text: 'Tower diameter sets how much of the first Fresnel zone the tower blocks, so '
         + 'it changes the shadow a turbine casts. Blade chord and count set rotor solidity, which is how '
         + 'much of the swept disc is actually blade rather than air.' },
+    ] },
+    { group: 'Materials', fields: [
+      { type: 'select', path: 'farm.construction', label: 'Blade construction', options: opts(BLADE_CONSTRUCTIONS) },
+      { type: 'note', id: 'construction-note' },
+      { type: 'select', path: 'farm.towerMaterial', label: 'Tower', options: opts(TOWER_MATERIALS) },
+      { type: 'note', id: 'tower-material-note' },
+      { type: 'hint', text: 'A glass-fibre blade shell is largely transparent at microwave '
+        + 'frequencies: the radar sees through it. What returns the signal is the conductive structure '
+        + 'inside, mainly the carbon spar caps and the lightning protection system. The tower is '
+        + 'reported as the dominant scatterer at all aspects, which is why treating only the blades '
+        + 'does not solve the problem. These deltas are indicative and are applied on top of the RCS '
+        + 'values below, where you can see and override them.' },
     ] },
     { group: 'Radar cross-section (assumed)', fields: [
       { type: 'range', path: 'farm.towerRcsDbsm', label: 'Tower and nacelle', min: 5, max: 55, step: 1, fmt: (v) => `${v} dBsm` },
@@ -407,6 +424,39 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
     return p;
   }
 
+  if (f.type === 'derived') {
+    const label = document.createElement('label');
+    label.className = 'field';
+    const head = document.createElement('span');
+    head.className = 'field-label';
+    const name = document.createElement('span');
+    name.textContent = f.label;
+    const val = document.createElement('span');
+    val.className = 'val';
+    head.append(name, val);
+    label.append(head);
+
+    const inp = document.createElement('input');
+    inp.type = 'range';
+    inp.min = f.min; inp.max = f.max; inp.step = f.step;
+    const show = () => {
+      const actual = f.read(scenario);
+      inp.value = actual;
+      val.textContent = f.fmt(actual);
+    };
+    show();
+    inp.addEventListener('input', () => {
+      // write() returns what was actually achieved, which can differ from what
+      // was asked for when a physical constraint bites.
+      const achieved = f.write(scenario, Number(inp.value));
+      val.textContent = f.fmt(achieved);
+      if (Math.abs(achieved - Number(inp.value)) > 0.5) inp.value = achieved;
+      onChange();
+    });
+    label.append(inp);
+    return label;
+  }
+
   if (f.type === 'action') {
     const wrap = document.createElement('div');
     wrap.className = 'field action-field';
@@ -535,10 +585,15 @@ export function updateNotes(noteEls, result, extra = {}) {
     `Required single-pulse SNR ${r.requiredSnrDb.toFixed(1)} dB`
     + (r.albersheimValid ? '.' : '. WARNING: outside the validity range of the approximation used.'));
 
-  const tip = result.scenario.farm.hubHeightM + result.scenario.farm.rotorDiameterM / 2;
+  const farm = result.scenario.farm;
+  const tip = tipHeightOf(farm);
+  const clearance = groundClearanceOf(farm);
   const maxTip = result.turbineResults.reduce((a, t) => Math.max(a, t.vTipMs), 0);
-  set('tip-note', `Tip height ${tip.toFixed(0)} m AGL · tip speed ${maxTip.toFixed(0)} m/s `
-    + `(${(maxTip / 0.514444).toFixed(0)} kt) · peak blade Doppler ${result.summary.maxDopplerHz.toFixed(0)} Hz.`);
+  set('tip-note', `Tip ${tip.toFixed(0)} m, hub ${farm.hubHeightM.toFixed(0)} m, rotor `
+    + `${farm.rotorDiameterM.toFixed(0)} m, ground clearance ${clearance.toFixed(0)} m. `
+    + `Tip speed ${maxTip.toFixed(0)} m/s (${(maxTip / 0.514444).toFixed(0)} kt), peak blade Doppler `
+    + `${result.summary.maxDopplerHz.toFixed(0)} Hz.`
+    + (tip > 200 ? ' Above the ~200 m that is typical onshore today.' : ''));
 
   const aspects = result.turbineResults.map((t) => t.aspectDeg);
   set('aspect-note', aspects.length
@@ -589,6 +644,13 @@ export function updateNotes(noteEls, result, extra = {}) {
   set('rcs-ceiling-note', `Specular ceiling for this tower geometry at `
     + `${(r.freqHz / 1e9).toFixed(2)} GHz: ${cylinderRcsDbsm(sc.farm.towerBaseDiameterM / 2, sc.farm.hubHeightM, r.lambdaM).toFixed(0)} dBsm. `
     + 'Assumed values well below that are expected; above it is not physical.');
+
+  const bc = BLADE_CONSTRUCTIONS[sc.farm.construction];
+  set('construction-note', bc
+    ? `${bc.note} Applies ${bc.bladeDeltaDb >= 0 ? '+' : ''}${bc.bladeDeltaDb} dB to blade RCS.` : '');
+  const tm = TOWER_MATERIALS[sc.farm.towerMaterial];
+  set('tower-material-note', tm
+    ? `${tm.note} Applies ${tm.towerDeltaDb >= 0 ? '+' : ''}${tm.towerDeltaDb} dB to tower RCS.` : '');
 
   const refr = REFRACTION_PRESETS[sc.weather.refractionPreset];
   set('refraction-note', refr

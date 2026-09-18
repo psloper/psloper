@@ -29,7 +29,10 @@ import {
   farFieldDistance, apertureFromBeamwidth,
 } from './rf.js';
 
-import { buildTurbines, buildTrack, towerDiameterAt, normaliseScenario } from './model.js';
+import {
+  buildTurbines, buildTrack, towerDiameterAt, normaliseScenario,
+  BLADE_CONSTRUCTIONS, TOWER_MATERIALS,
+} from './model.js';
 import { seaState, rmsWaveHeight, multipathFactorDb, seaClutterRcsDbsm } from './sea.js';
 import { rotorRpm, roseSummary, sectorForDirection, operatingFractions } from './wind.js';
 import { deriveFindings } from './findings.js';
@@ -172,13 +175,19 @@ export function assessTurbine(turbine, radar, terrain, ae, mit) {
   // values the user supplies, weighted by sin^2 of the aspect angle. Leaving
   // both equal reproduces an aspect-independent RCS.
   const sin2 = Math.pow(Math.sin(aspectDeg * DEG), 2);
-  const bladeAspectDbsm = turbine.bladeRcsDbsm
+  // What returns the signal inside a largely transparent glass shell is the
+  // conductive structure: carbon spar caps and the lightning protection system.
+  const construction = BLADE_CONSTRUCTIONS[turbine.construction] || null;
+  const constructionDeltaDb = construction ? construction.bladeDeltaDb : 0;
+  const bladeAspectDbsm = turbine.bladeRcsDbsm + constructionDeltaDb
     + ((turbine.bladeRcsEdgeOnDbsm ?? turbine.bladeRcsDbsm) - turbine.bladeRcsDbsm) * sin2;
 
-  const towerEffDbsm = turbine.towerRcsDbsm - ramDb + staticRejectionDb;
+  const towerMat = TOWER_MATERIALS[turbine.towerMaterial] || null;
+  const towerDeltaDb = towerMat ? towerMat.towerDeltaDb : 0;
+  const towerEffDbsm = turbine.towerRcsDbsm + towerDeltaDb - ramDb + staticRejectionDb;
   const bladeEffDbsm = bladeAspectDbsm - ramDb + linToDb(Math.max(passFraction, 1e-9)) - dopplerGainDb;
   const effectiveRcsDbsm = linToDb(dbToLin(towerEffDbsm) + dbToLin(bladeEffDbsm));
-  const rawRcsDbsm = linToDb(dbToLin(turbine.towerRcsDbsm) + dbToLin(bladeAspectDbsm)) - ramDb;
+  const rawRcsDbsm = linToDb(dbToLin(turbine.towerRcsDbsm + towerDeltaDb) + dbToLin(bladeAspectDbsm)) - ramDb;
 
   // Return strength when the beam is pointed straight at the turbine.
   const gain = twoWayGain(radar, hub.elevationDeg, 0);
@@ -211,6 +220,8 @@ export function assessTurbine(turbine, radar, terrain, ae, mit) {
     terrainLossHubDb, terrainLossTipDb,
     aspectDeg,
     bladeAspectDbsm,
+    constructionDeltaDb,
+    towerDeltaDb,
     rpm,
     vTipMs,
     vRadMaxMs,

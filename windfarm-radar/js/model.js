@@ -104,6 +104,94 @@ export const TURBINE_PRESETS = {
   },
 };
 
+// Blade construction, and what actually does the scattering.
+//
+// A glass-fibre blade shell is largely TRANSPARENT at microwave frequencies:
+// radar illumination passes through the dielectric. What returns the signal is
+// the conductive structure inside it, principally the carbon-fibre spar caps
+// where they are used, and the lightning protection system, which is metallic
+// by definition and runs the length of the blade to its receptors.
+//
+// This matters for mitigation. Treating the blades does not address the tower,
+// which open work reports as the dominant scatterer at ALL aspect angles, and
+// radar-absorbent treatment has to coexist with a lightning protection system
+// whose whole job is to be the most conductive path available. Several patents
+// exist specifically to reconcile the two, which tells you it is a real
+// conflict rather than a detail.
+//
+// The deltas below are INDICATIVE and relative, not measurements. They are
+// applied to the blade RCS you set, remain visible, and can be overridden.
+export const BLADE_CONSTRUCTIONS = {
+  'glass-basic': {
+    label: 'All-glass, minimal lightning protection',
+    bladeDeltaDb: -6,
+    note: 'Glass-fibre shells and spar, with a down conductor and tip receptors only. The least '
+      + 'conductive material inside an already largely transparent shell. Typical of older and '
+      + 'smaller machines.',
+  },
+  'glass-lps': {
+    label: 'All-glass, full lightning protection',
+    bladeDeltaDb: -3,
+    note: 'Glass structure, but with a full lightning protection system: multiple receptors, '
+      + 'surface mesh or conductive strips down the blade. The protection system is the scatterer.',
+  },
+  'carbon-spar': {
+    label: 'Carbon spar caps, full lightning protection',
+    bladeDeltaDb: 0,
+    note: 'The current mainstream build for large machines. Carbon-fibre spar caps are conductive and '
+      + 'run most of the blade length, sitting inside a transparent shell alongside the lightning '
+      + 'protection system. This is the reference case for the blade RCS you set.',
+  },
+  'carbon-full': {
+    label: 'Extensive carbon, full lightning protection',
+    bladeDeltaDb: 3,
+    note: 'Carbon used beyond the spar caps, as on some very long offshore blades. More conductive '
+      + 'structure, more return.',
+  },
+  'ram-treated': {
+    label: 'Radar-absorbent treatment applied',
+    bladeDeltaDb: -10,
+    note: 'Indicative only. Absorbent treatment is narrowband and aspect-dependent, has to survive '
+      + 'blade erosion and a 25-year life, and has to coexist with a lightning protection system '
+      + 'designed to be the most conductive path available. Use the RAM mitigation on the Mitigation '
+      + 'tab to model a claimed reduction properly, and treat any figure as unproven until the '
+      + 'supplier demonstrates it at your frequency and aspect angles.',
+  },
+};
+
+// Tower construction. Open work reports the tower as the DOMINANT scatterer at
+// all aspect angles, which is why treating only the blades does not solve the
+// problem. Steel is a conductor; concrete is a lossy dielectric and returns
+// less at the same geometry, though the nacelle and any steel upper section
+// still contribute. Deltas are indicative and editable, as everywhere else.
+export const TOWER_MATERIALS = {
+  steel: {
+    label: 'Steel tube',
+    towerDeltaDb: 0,
+    note: 'The standard build and the reference case. A large conducting cylinder, and normally the '
+      + 'strongest single scatterer on the machine at every aspect.',
+  },
+  hybrid: {
+    label: 'Steel and concrete hybrid',
+    towerDeltaDb: -2,
+    note: 'Concrete lower section with a steel upper section, used to reach greater hub heights. The '
+      + 'concrete part returns less than steel would, but the steel section and nacelle remain.',
+  },
+  concrete: {
+    label: 'Concrete',
+    towerDeltaDb: -4,
+    note: 'A lossy dielectric rather than a conductor, so less return at the same geometry. Still a '
+      + 'very large structure, and the nacelle is unchanged.',
+  },
+  'ram-coated': {
+    label: 'Steel with sprayable absorbent coating',
+    towerDeltaDb: -8,
+    note: 'Indicative only. Absorbent coatings can be applied to static surfaces more readily than to '
+      + 'blades, since a tower does not erode at 90 m/s, but the figure is narrowband and '
+      + 'aspect-dependent and must be demonstrated at your frequency.',
+  },
+};
+
 // Atmospheric refraction conditions, expressed as the effective earth radius
 // factor they correspond to. A masking argument that holds under standard
 // refraction can fail under super-refraction or in a duct, and ducting is
@@ -250,6 +338,8 @@ export function defaultScenario() {
       preset: 'large-4500',
       ...TURBINE_PRESETS['large-4500'],
       bladeRcsEdgeOnDbsm: TURBINE_PRESETS['large-4500'].bladeRcsDbsm,
+      construction: 'carbon-spar',
+      towerMaterial: 'steel',
       layout: 'grid',
       count: 12,
       rows: 3,
@@ -410,6 +500,8 @@ function makeTurbine(index, east, north, f, terrain, wind, override = {}) {
     ratedRpm,
     towerBaseDiameterM,
     towerTopDiameterM,
+    construction: override.construction ?? f.construction ?? 'carbon-spar',
+    towerMaterial: override.towerMaterial ?? f.towerMaterial ?? 'steel',
     towerRcsDbsm: override.towerRcsDbsm ?? f.towerRcsDbsm,
     bladeRcsDbsm: override.bladeRcsDbsm ?? f.bladeRcsDbsm,
     bladeRcsEdgeOnDbsm: override.bladeRcsEdgeOnDbsm
@@ -430,6 +522,36 @@ function makeTurbine(index, east, north, f, terrain, wind, override = {}) {
     // Phase offset so the farm does not animate in lockstep.
     phase: (index * 2.399963) % (Math.PI * 2),
   };
+}
+
+// Blades must clear the ground. This is the hard physical floor; real machines
+// sit far above it, and the findings flag anything unusually tight.
+export const MIN_GROUND_CLEARANCE_M = 5;
+
+// Tip height is what aviation safeguarding, obstacle lighting and charting all
+// work in, so the tool treats it as a primary dimension rather than something
+// that falls out of hub height and rotor diameter.
+export function tipHeightOf(farm) {
+  return farm.hubHeightM + farm.rotorDiameterM / 2;
+}
+
+export function groundClearanceOf(farm) {
+  return farm.hubHeightM - farm.rotorDiameterM / 2;
+}
+
+/**
+ * Set tip height by moving the hub, holding the rotor.
+ *
+ * A tip height lower than the rotor can physically reach is refused rather than
+ * silently accepted: the hub is clamped so the blades still clear the ground,
+ * and the achieved tip height is returned so the caller can show what actually
+ * happened instead of what was asked for.
+ */
+export function setTipHeight(farm, tipM) {
+  const radius = farm.rotorDiameterM / 2;
+  const minHub = radius + MIN_GROUND_CLEARANCE_M;
+  farm.hubHeightM = Math.max(tipM - radius, minHub);
+  return tipHeightOf(farm);
 }
 
 // Tower diameter at a height above its base. Towers taper, so the width that

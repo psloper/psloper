@@ -116,6 +116,27 @@ J(v) = 6.9 + 20·log₁₀( √((v−0.1)² + 1) + v − 0.1 )   dB,  v > −0.7
       because the environment this tool was built in has no outbound network access.</li>
 </ul>
 
+<h3>Materials, and what actually scatters</h3>
+<ul>
+  <li>A glass-fibre blade shell is largely <strong>transparent</strong> at microwave frequencies: the
+      illumination passes through the dielectric. What returns the signal is the conductive structure
+      inside it, principally the <strong>carbon-fibre spar caps</strong> where they are used and the
+      <strong>lightning protection system</strong>, which is metallic by definition and runs the length
+      of the blade to its receptors.</li>
+  <li>Open work reports the <strong>tower as the dominant scatterer at all aspect angles</strong>. That
+      is why treating only the blades does not solve the problem, and why the tool reports the split
+      between tower and blade return explicitly.</li>
+  <li>The split that matters operationally is the one <em>after</em> clutter filtering. The tower is
+      stationary and a clutter filter can cancel it; the blades move and it largely cannot. So the
+      blades can dominate what survives even where the tower dominates what arrives.</li>
+  <li><strong>Absorbent treatment conflicts with lightning protection.</strong> A lightning protection
+      system exists to be the most conductive path available; absorbent treatment works by not
+      reflecting. Reconciling them is a real engineering problem, and treatment must also survive
+      leading-edge erosion at tip speeds near 90 m/s for a 25-year life.</li>
+  <li>The material deltas in this tool are <strong>indicative and relative</strong>, applied on top of
+      the RCS values you set, visible in the interface and overridable. They are not measurements.</li>
+</ul>
+
 <h3>Reference targets</h3>
 <p>Radar cross-section is given as a CLASS figure, never a platform figure. It varies by tens of
 decibels with aspect, frequency and polarisation, and real values for specific military platforms are
@@ -188,6 +209,13 @@ cut-off, 13.1 dB required SNR for P<sub>d</sub> = 0.9 / P<sub>fa</sub> = 1e-6, t
   <li>Reported turbine blade tip speeds of roughly 70 to 105 m/s for machines in
       current service, which is what puts blade Doppler inside a conventional clutter
       filter's pass band.</li>
+  <li>Blade and tower construction: that glass-fibre shells are largely radar-transparent, that
+      carbon spar caps and lightning protection systems are the conductive structure inside them, and
+      that the tower is reported as the dominant scatterer at all aspects. Also the QinetiQ and Vestas
+      stealth blade trial (a 44 m prototype blade on a V90 in Norfolk, 2009), reported as achieving
+      reductions in line with expectations, and a body of patent work on making absorbent layers
+      compatible with lightning protection. Search-summary level only; no figure from any of it is
+      used as a constant in this model.</li>
   <li>Mitigation practice described in the literature and by industry: blanking,
       non-automatic initiation zones, in-fill radar, post-detection range/azimuth
       gating, and advanced signal processing. CAA CAP 670 SUR 13 is cited by CAP 764 as

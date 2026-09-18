@@ -12,7 +12,10 @@
 import { M_PER_FT, M_PER_NM } from './geo.js';
 import { cylinderRcsDbsm, wavelength } from './rf.js';
 import { operatingState, tipSpeedRatioAtRated, operatingFractions } from './wind.js';
-import { REFRACTION_PRESETS, TARGET_PRESETS } from './model.js';
+import {
+  REFRACTION_PRESETS, TARGET_PRESETS, BLADE_CONSTRUCTIONS, TOWER_MATERIALS,
+  tipHeightOf, groundClearanceOf,
+} from './model.js';
 
 const SEV_ORDER = { critical: 0, major: 1, minor: 2, info: 3 };
 
@@ -33,6 +36,10 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
   const f = [];
   const add = (x) => f.push(x);
   const mit = scenario.mitigation;
+
+  // Height geometry, declared once because several findings turn on it.
+  const tipHeightM = tipHeightOf(scenario.farm);
+  const clearance = groundClearanceOf(scenario.farm);
 
   // ------------------------------------------------- line of sight to the farm
   if (summary.visibleCount > 0) {
@@ -394,18 +401,17 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
   }
 
   // ------------------------------------------- obstacle / physical safeguarding
-  const tipAgl = scenario.farm.hubHeightM + scenario.farm.rotorDiameterM / 2;
-  if (tipAgl >= 150) {
+  if (tipHeightM >= 150) {
     add({
       id: 'lighting',
       severity: 'check',
-      title: `Tip height is ${tipAgl.toFixed(0)} m above ground level`,
+      title: `Tip height is ${tipHeightM.toFixed(0)} m above ground level`,
       detail: 'Structures at or above 150 m AGL commonly trigger en-route obstacle lighting and charting '
         + 'requirements. This tool does NOT verify that against any jurisdiction: the applicable threshold, '
         + 'lighting specification and charting duty must be confirmed against the relevant national '
         + 'requirements and the CAA/ANSP for the site. Flagged here only so it is not missed.',
       basis: 'check',
-      metrics: { 'Tip height AGL': `${tipAgl.toFixed(0)} m`, 'Common trigger height': '150 m' },
+      metrics: { 'Tip height AGL': `${tipHeightM.toFixed(0)} m`, 'Common trigger height': '150 m' },
     });
   }
 
@@ -630,6 +636,103 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
         + 'an extrapolation and should not be relied on.',
       basis: 'check',
       metrics: { Pd: `${radar.pd}`, Pfa: radar.pfa.toExponential(0) },
+    });
+  }
+
+  // ------------------------------------------------------ structure and height
+  if (clearance < 15) {
+    add({
+      id: 'ground-clearance',
+      severity: clearance < 5.5 ? 'major' : 'check',
+      title: `Blade tips pass within ${clearance.toFixed(0)} m of the ground`,
+      detail: 'Hub height and rotor diameter imply a very small ground clearance. Real machines leave '
+        + 'far more, typically 20 to 40 m. Either the geometry is wrong, or the tip height you asked '
+        + 'for is lower than this rotor can physically reach: the tool holds the hub at the minimum '
+        + 'that keeps the blades clear rather than accepting an impossible machine. Reduce the rotor '
+        + 'diameter if you need a lower tip.',
+      basis: 'computed',
+      metrics: {
+        'Hub height': `${scenario.farm.hubHeightM.toFixed(0)} m`,
+        'Rotor radius': `${(scenario.farm.rotorDiameterM / 2).toFixed(0)} m`,
+        'Ground clearance': `${clearance.toFixed(0)} m`,
+        'Tip height': `${tipHeightM.toFixed(0)} m`,
+      },
+    });
+  }
+
+  if (tipHeightM > 200) {
+    add({
+      id: 'tip-height-large',
+      severity: 'info',
+      title: `Tip height of ${tipHeightM.toFixed(0)} m is above the ~200 m typical onshore today`,
+      detail: 'Larger machines reach further above the terrain that would otherwise screen them, so '
+        + 'line of sight, the lighting and charting threshold and the consultation footprint can all '
+        + 'change together. Offshore machines already exceed this routinely. Sweep tip height against '
+        + 'distance to see where the radio horizon boundary actually falls for this radar.',
+      basis: 'screening',
+      metrics: {
+        'Tip height': `${tipHeightM.toFixed(0)} m AGL`,
+        'Hub height': `${scenario.farm.hubHeightM.toFixed(0)} m`,
+        'Rotor diameter': `${scenario.farm.rotorDiameterM.toFixed(0)} m`,
+      },
+    });
+  }
+
+  // ------------------------------------------------------------- materials
+  const strongest = turbineResults
+    .filter((t) => t.visibility !== 'masked')
+    .sort((a, b) => b.snrEffDb - a.snrEffDb)[0];
+  if (strongest) {
+    const towerLin = Math.pow(10, strongest.towerEffDbsm / 10);
+    const bladeLin = Math.pow(10, strongest.bladeEffDbsm / 10);
+    const towerShare = towerLin / (towerLin + bladeLin);
+    const bc = BLADE_CONSTRUCTIONS[scenario.farm.construction];
+    const tm = TOWER_MATERIALS[scenario.farm.towerMaterial];
+    add({
+      id: 'scatterer-split',
+      severity: 'info',
+      title: towerShare > 0.5
+        ? `After clutter filtering, the tower contributes ${(towerShare * 100).toFixed(0)}% of the return`
+        : `After clutter filtering, the blades contribute ${((1 - towerShare) * 100).toFixed(0)}% of the return`,
+      detail: 'A glass-fibre blade shell is largely transparent at microwave frequencies. What returns '
+        + 'the signal is the conductive structure inside it: the carbon-fibre spar caps and the '
+        + 'lightning protection system. The tower is a large conducting cylinder and open work reports '
+        + 'it as the dominant scatterer at all aspect angles. The split here is after clutter '
+        + 'filtering, which is what matters operationally: the tower is stationary and a clutter filter '
+        + 'can cancel it, while the blades move and it largely cannot. That is why the blades can '
+        + 'dominate what survives even when the tower dominates what arrives.',
+      basis: 'computed',
+      metrics: {
+        'Blade construction': bc ? bc.label : 'custom',
+        'Tower': tm ? tm.label : 'custom',
+        'Tower after filtering': `${strongest.towerEffDbsm.toFixed(1)} dBsm`,
+        'Blades after filtering': `${strongest.bladeEffDbsm.toFixed(1)} dBsm`,
+      },
+    });
+  }
+
+  if (scenario.farm.construction === 'ram-treated' || mit.ram.enabled) {
+    add({
+      id: 'ram-lightning',
+      severity: 'check',
+      title: 'Radar-absorbent treatment has to coexist with the lightning protection system',
+      detail: 'A blade lightning protection system exists to be the most conductive path available, '
+        + 'from receptors at the tip down to the hub. Absorbent treatment works by not reflecting. The '
+        + 'two pull in opposite directions, and reconciling them is a real engineering problem rather '
+        + 'than a detail: there is a body of patent work specifically about making absorbent layers '
+        + 'compatible with lightning protection. Treatment also has to survive leading-edge erosion at '
+        + 'tip speeds approaching 90 m/s for a 25-year life. Ask the supplier for demonstrated '
+        + 'performance at your radar frequency and the relevant aspect angles, and for the erosion and '
+        + 'lightning certification alongside it.',
+      basis: 'check',
+      source: 'Open reporting of the QinetiQ and Vestas stealth blade trial (a 44 m prototype blade on '
+        + 'a V90 in Norfolk, 2009) describes absorbent materials integrated into blades, nacelle and '
+        + 'tower, with reductions reported as in line with expectations. Retrieved at search-summary '
+        + 'level only; no primary source was read, and no figure from it is used in this model.',
+      metrics: {
+        'Assumed reduction': mit.ram.enabled ? `${mit.ram.reductionDb} dB` : 'construction delta only',
+        'Verified here': 'No',
+      },
     });
   }
 

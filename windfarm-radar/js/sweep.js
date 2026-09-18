@@ -27,17 +27,20 @@ const set = (s, path, v) => {
  */
 export const SWEEP_PARAMS = {
   tipHeight: {
-    label: 'Tip height (rotor fixed)', unit: 'm', min: 60, max: 280, step: 5,
+    label: 'Tip height (rotor fixed)', unit: 'm', min: 50, max: 300, step: 5,
     read: (s) => s.farm.hubHeightM + s.farm.rotorDiameterM / 2,
-    apply: (s, v) => set(s, 'farm.hubHeightM', Math.max(v - s.farm.rotorDiameterM / 2, 10)),
+    // Held to the same ground-clearance floor the control uses, so a sweep and
+    // a slider cannot disagree about what is physically possible.
+    apply: (s, v) => set(s, 'farm.hubHeightM',
+      Math.max(v - s.farm.rotorDiameterM / 2, s.farm.rotorDiameterM / 2 + 5)),
   },
   hubHeight: {
-    label: 'Hub height', unit: 'm', min: 20, max: 220, step: 5,
+    label: 'Hub height', unit: 'm', min: 20, max: 280, step: 5,
     read: (s) => s.farm.hubHeightM,
     apply: (s, v) => set(s, 'farm.hubHeightM', v),
   },
   rotorDiameter: {
-    label: 'Rotor diameter', unit: 'm', min: 30, max: 280, step: 5,
+    label: 'Rotor diameter', unit: 'm', min: 20, max: 300, step: 5,
     read: (s) => s.farm.rotorDiameterM,
     apply: (s, v) => set(s, 'farm.rotorDiameterM', v),
   },
