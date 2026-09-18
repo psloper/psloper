@@ -438,7 +438,10 @@ export function buildReportMarkdown(result, delta) {
     P(`| Real pairing loaded | ${u.farm} to ${u.radar} (${u.role}) |`);
     P(`| True great-circle range | ${(u.trueRangeM / 1000).toFixed(1)} km`
       + `${u.clamped ? ', CLAMPED to the 60 km limit of this model' : ''} |`);
-    P(`| Position provenance | REPD facility centroid (not turbine positions); community radar site data |`);
+    P(`| Position provenance | REPD planning record (not turbine positions); community radar site data |`);
+    P(`| Position accuracy | \u00b1${u.uncertaintyM} m measured, `
+      + `${(100 * u.uncertaintyFraction).toFixed(0)}% of the range `
+      + `(coordinates are STATED to \u00b11 m; that is precision, not accuracy) |`);
   }
   P('');
   P(`| Wind farm | Value |`);

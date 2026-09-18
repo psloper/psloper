@@ -78,45 +78,117 @@ and makes including the rest a deliberate act.
 The snapshot is current enough to contain Hornsea 3 and 4, Dogger Bank A to D,
 Berwick Bank, Morgan and Mona.
 
-### The accuracy test
+### The accuracy test, at two sites
 
-Precision and accuracy are not the same thing and the difference here is large.
-The coordinates are written to five decimal places, about a metre. That is
-**precision**. Accuracy is what happens when you check them against something
-you know.
+Stated precision and measured accuracy are different quantities and the gap here
+is three orders of magnitude.
 
-There is exactly one UK site where this tool has ground truth: **Kelmarsh**,
-whose six turbine positions came out of the Zenodo static table recovered from
-a notebook on GitHub. The true centroid of the array is 52.401461, −0.943105,
-and the array extends 483 m from it.
-
-| Source | Recorded position | Error against the true centroid |
+| | Value | What it is |
 | --- | --- | --- |
-| REPD snapshot | 52.40280, −0.95980 | **1,141 m** |
-| WRI Global Power Plant Database | 52.4028, −0.9598 | **1,142 m** |
+| Stated precision | **±1.1 m** | five decimal places, as written in the table |
+| Measured accuracy | **±1,100 m** | what happens when you check against ground truth |
 
-**The recorded point is 2.4 times the whole array radius away from the array.**
-Both sources give the same wrong answer to within a metre, because both derive
-from the REPD. Agreement between sources is not accuracy when they share an
-ancestor, and that is the single most important caveat on this page.
+There are two UK sites where real turbine coordinates were obtainable.
 
-Why it is wrong is visible in the record's own name: *"Kelmarsh Wind Farm
-(Resubmission)"*. It is a planning application, and the coordinate is the grid
-reference on the application, recorded before the layout was fixed. **88 of the
-records carry planning-process wording in their names** — resubmission, revised
-application, extension, repowering, phase.
+**Kelmarsh**, all six turbine positions known, from the Zenodo static table
+recovered out of a notebook on GitHub.
 
-So: **n = 1**. One measurement is not an error distribution. It is consistent
-with the ±1 km the REPD is generally described as carrying, it is the only
-direct test available here, and it is quoted as a single measured case rather
-than as a bound.
+| Quantity | Value |
+| --- | --- |
+| True array centroid | 52.401461, −0.943105 |
+| Array radius | 483 m |
+| Longest span across the array | 935 m |
+| REPD record | 52.40280, −0.95980 |
+| **Error against the centroid** | **1,140 m = 2.4 × the array radius** |
+| Distance to the *nearest* turbine | 695 m |
+| Distance to the *furthest* turbine | 1,623 m |
 
-### What this means in practice
+The sharpest way to say it: **the whole array lies between 0.7 and 1.6 km from
+the recorded point.** Not one of the six machines is within half a kilometre of
+where the record puts the project.
 
-At 30 km from a radar, a 1.1 km position error moves the range by under 4 per
-cent and the bearing by about 2 degrees, which changes little. At 2 km from a
-radar it is more than half the range. **The closer the pairing, the less the
-position can be trusted, which is exactly backwards from what you want.**
+**Penmanshiel**, one turbine position known, published independently by two
+third parties who both took it from the same Zenodo static table.
+
+| Reference | Value | REPD error against it |
+| --- | --- | --- |
+| `NinaEffenberger/wind-variability` | 55.902502, −2.306389 | **1,121 m** |
+| `CSomers3/uq4wind` | 55.904000, −2.305000 | **1,289 m** |
+
+Those two differ from each other by 188 m, which is the rounding in the second.
+The same author gives Kelmarsh as 52.400604, −0.947133, which is *exactly*
+turbine Kelmarsh 1 in the static table, so these are single turbines rather than
+array centres. At Kelmarsh, turbine 1 sits 289 m from the centroid, so a few
+hundred metres of the Penmanshiel figure is that offset rather than REPD error.
+
+**Two unrelated sites, both out by about 1.1 km.** That is why the tool now
+carries `POSITION_UNCERTAINTY_M = 1100` as a measured quantity with its working
+attached, rather than repeating the "about a kilometre" the REPD is generally
+described as carrying.
+
+**n = 2.** Two measurements are not an error distribution either. They are
+enough to say the scale of the error is a kilometre and that it is not peculiar
+to one site. They are not enough to bound it.
+
+### Why it is wrong, which the record says itself
+
+The Kelmarsh record is named *"Kelmarsh Wind Farm (Resubmission)"*. It is a
+planning application, and the coordinate is the grid reference on the
+application, filed before the layout was fixed. **88 records carry
+planning-process wording in their names**: resubmission, revised application,
+extension, repowering, phase.
+
+### What it means in practice
+
+The error is roughly constant in metres, so what matters is the range it is
+compared against.
+
+| Range to radar | 1.1 km as a share of it | What that does |
+| --- | --- | --- |
+| 50 km | 2% | negligible |
+| 10 km | 11% | noticeable in the shadow geometry |
+| 2 km | 55% | the geometry is about a hypothetical site |
+| 0.9 km | **126%** | the error exceeds the whole range |
+
+**Six live projects sit where the position error exceeds a fifth of the range.**
+The worst is Rivox, 208 MW with an application submitted, 0.87 km from the
+Lowther Hill en-route radar, where the error is **126 per cent of the range**.
+The closer and more alarming the pairing, the less the position can be trusted,
+which is exactly backwards from what you want. The tool raises this as a major
+finding rather than leaving it in a footnote.
+
+### Independence, established before treating agreement as confirmation
+
+The previous version of this dataset was the WRI Global Power Plant Database.
+Comparing the two gives a median disagreement of about 3 m across 531 exact name
+matches. That looks like powerful corroboration. It is worth nothing.
+
+**The Global Power Plant Database records its own ancestry, per row.** Its
+`geolocation_source` column reads `UK Renewable Energy Planning Database` for
+**771 of its 780 UK wind rows**. That is documentary, not inferred. Comparing
+the two compares the REPD with itself.
+
+The agreement distribution shows the same thing without needing the metadata:
+
+| Disagreement | Records | Share |
+| --- | --- | --- |
+| 0–1 m | 36 | 6.8% |
+| 1–10 m | 477 | 89.8% |
+| **10–100 m** | **0** | **0.0%** |
+| 100–1,000 m | 6 | 1.1% |
+| over 1 km | 12 | 2.3% |
+
+**Nothing at all between 10 m and 100 m.** Two independent measurements of the
+same place produce a continuous spread. A gap like that is the fingerprint of
+one measurement copied twice; the 3.4 per cent tail is name collisions between
+different projects, not disagreement about the same one.
+
+No genuinely independent UK position source was reachable. Overpass,
+openstreetmap.org, the Geofabrik extracts, OpenInfraMap and Wikidata are all
+refused by this environment's network policy, and the OSM-derived and aviation
+obstacle datasets that are mirrored on GitHub cover Berlin, Slovakia and China
+rather than the UK. **Everything in this tool traces to the REPD, and the only
+check on it is the two ground-truth sites above.**
 
 ## Sources B and C: civil radar positions
 

@@ -15,7 +15,7 @@ import { SEVERITY_LABELS } from './findings.js';
 import { referencesFor, STATUS_LABELS } from './references.js';
 import { M_PER_FT } from './geo.js';
 import { UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, LIVE_STATUSES,
-  pairingGeometry, farmRecord as ukFarm } from './uksites.js';
+  POSITION_UNCERTAINTY_M, STATED_PRECISION_M, pairingGeometry } from './uksites.js';
 
 export function getPath(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
@@ -616,10 +616,19 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
         parts.push('Over 100 km the flat-plane geometry this tool draws in is no longer a fair picture '
           + 'of the real surface.');
       }
-      parts.push('The recorded point is the PLANNING POSITION for the whole project, not a surveyed '
-        + 'turbine position. Tested against the one array where this tool has real coordinates, '
-        + 'Kelmarsh, the recorded point is 1,141 m from the true centre, which is more than twice '
-        + 'the radius of the array itself.');
+      // Precision and accuracy, side by side, because the five decimal places in
+      // the table invite the reader to believe them.
+      const pct = 100 * geom.uncertaintyFraction;
+      parts.push(`Position: written to \u00b1${STATED_PRECISION_M} m of PRECISION, measured to about `
+        + `\u00b1${POSITION_UNCERTAINTY_M} m of ACCURACY. That is ${pct.toFixed(0)} per cent of this `
+        + 'range. The figure comes from the only two sites where this tool has real turbine '
+        + 'coordinates: Kelmarsh, where the record sits 1,140 m from the array centre and 695 m from '
+        + 'even the nearest machine, and Penmanshiel, 1,121 m from a known turbine.');
+      if (pct > 20) {
+        parts.push('AT THIS RANGE THE POSITION ERROR IS A LARGE FRACTION OF THE RANGE ITSELF. The '
+          + 'geometry below is an illustration of a plausible case, not an assessment of this site. '
+          + 'Get the surveyed turbine schedule before reading anything into it.');
+      }
       note.textContent = parts.join(' ');
       btn.disabled = false;
     };
@@ -652,6 +661,8 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
         farm: geom.farm.name, radar: geom.radar.name, role: geom.radar.role,
         status: geom.farm.status, offshore: geom.farm.offshore, repdRef: geom.farm.repdRef,
         trueRangeM: Math.round(geom.rangeM), clamped: geom.rangeM > MAX_RANGE_M,
+        uncertaintyM: geom.uncertaintyM,
+        uncertaintyFraction: geom.uncertaintyFraction,
       };
       onChange();
       // Deferred so this handler finishes before its own element is replaced.

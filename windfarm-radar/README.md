@@ -136,11 +136,16 @@ Four things you must know before using it:
 - **Two thirds of the wind records will not be built as recorded.** They are
   refused, withdrawn, abandoned, expired or superseded. The picker filters on
   status by default; opening it up is a deliberate act.
-- **The positions are planning records, not surveyed turbine positions.** At the
-  one site where this tool has ground truth, Kelmarsh, the recorded point is
-  **1,141 m** from the true centre of the array, which is 2.4 times the radius of
-  the array itself. Coordinates are written to five decimal places. That is
-  precision, not accuracy.
+- **The positions are planning records, not surveyed turbine positions.** Measured
+  at the two sites where real turbine coordinates were obtainable, the record is
+  out by **1,140 m** at Kelmarsh and **1,121 m** at Penmanshiel. At Kelmarsh that
+  is 2.4 times the array radius, and the whole array lies between 0.7 and 1.6 km
+  from the recorded point. Coordinates are written to five decimal places, so the
+  tool carries stated precision (±1.1 m) and measured accuracy (±1,100 m) as two
+  separate numbers and shows both.
+- **Agreement between sources was checked for independence before being believed.**
+  The previous dataset agreed with this one to a median of 3 m, and that is worth
+  nothing: it records per row that its coordinates came from the same database.
 - The two radar sources **disagree with each other** by a median of 1.4 km and by
   up to 5.9 km. Neither is official.
 - **No military radar is included.** MOD safeguarding of air defence radar is what
@@ -303,7 +308,7 @@ but wrong assessment:
 cd windfarm-radar && npm test
 ```
 
-85 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
+88 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
 v = −0.78 cut-off, 13.1 dB required SNR for Pd = 0.9 / Pfa = 1e-6, the 4.12·√h
 horizon rule, and a cosecant-squared check that the pattern compensates R⁻⁴
 exactly for a constant-altitude target. The behavioural tests check that the

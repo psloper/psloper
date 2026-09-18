@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, LIVE_STATUSES,
+  POSITION_UNCERTAINTY_M, STATED_PRECISION_M,
   greatCircleM, initialBearingDeg, nearestRadar, pairingGeometry, farmRecord, radarRecord,
   liveFarmIndices,
 } from '../js/uksites.js';
@@ -150,4 +151,50 @@ test('offshore records really are offshore, and vice versa', () => {
   assert.ok(offshore.length > 50 && offshore.length < 200, `${offshore.length} offshore records`);
   const biggest = [...UK_WIND_FARMS].sort((a, b) => b[3] - a[3]).slice(0, 20);
   assert.ok(biggest.every((r) => r[5] === 1), 'the twenty largest projects should all be offshore');
+});
+
+// ---------------------------------------------------------------------------
+// Precision is not accuracy. These tests exist so that a later change cannot
+// quietly present a position as better than it has been measured to be.
+// ---------------------------------------------------------------------------
+
+test('the measured position uncertainty is carried, and dwarfs the stated precision', () => {
+  // Measured at the only two sites with real turbine coordinates: 1,140 m at
+  // Kelmarsh (array radius 483 m) and 1,121 m at Penmanshiel.
+  assert.ok(POSITION_UNCERTAINTY_M >= 1000 && POSITION_UNCERTAINTY_M <= 1400,
+    `uncertainty ${POSITION_UNCERTAINTY_M} m is not what the two measurements support`);
+  assert.ok(POSITION_UNCERTAINTY_M > STATED_PRECISION_M * 100,
+    'the whole point is that accuracy is orders worse than precision');
+  for (let i = 0; i < 25; i += 1) {
+    assert.equal(farmRecord(i).uncertaintyM, POSITION_UNCERTAINTY_M);
+  }
+});
+
+test('a pairing reports the position error as a fraction of its own range', () => {
+  for (const i of liveFarmIndices().slice(0, 300)) {
+    const g = pairingGeometry(i);
+    assert.ok(Number.isFinite(g.uncertaintyFraction) && g.uncertaintyFraction > 0);
+    assert.ok(Math.abs(g.uncertaintyFraction - POSITION_UNCERTAINTY_M / g.rangeM) < 1e-9,
+      `${g.farm.name}: fraction does not match range`);
+  }
+  // At least one real pairing is close enough that the error exceeds the range.
+  // Rivox sits 0.9 km from the Lowther Hill en-route radar.
+  const worst = liveFarmIndices()
+    .map((i) => pairingGeometry(i))
+    .sort((a, b) => b.uncertaintyFraction - a.uncertaintyFraction)[0];
+  assert.ok(worst.uncertaintyFraction > 1,
+    'the closest pairing should have an error larger than its own range');
+});
+
+test('the module never claims a position is better than measured', () => {
+  const src = readFileSync(new URL('../js/uksites.js', import.meta.url), 'utf8');
+  const head = src.slice(0, src.indexOf('export const UK_WIND_FARMS'));
+  assert.ok(/PRECISION, NOT ACCURACY/.test(head),
+    'the header must distinguish precision from accuracy in those words');
+  // The uncertainty constant must show its working, not just assert a number.
+  const block = src.slice(src.indexOf('MEASURED POSITIONAL UNCERTAINTY'),
+    src.indexOf('export const POSITION_UNCERTAINTY_M'));
+  for (const phrase of ['Kelmarsh', 'Penmanshiel', 'n = 2']) {
+    assert.ok(block.includes(phrase), `the constant must cite ${phrase}`);
+  }
 });

@@ -2608,6 +2608,29 @@ export const UK_MILITARY_RADAR_NOTE = {
     + 'Consult the Defence Infrastructure Organisation for safeguarding positions.',
 };
 
+// MEASURED POSITIONAL UNCERTAINTY of a wind farm record, in metres.
+//
+// This is not a quoted figure. It is what two ground-truth comparisons give,
+// and they are the only two available:
+//
+//   Kelmarsh    the record sits 1,140 m from the true centroid of the six-turbine
+//               array, 695 m from the nearest turbine and 1,623 m from the
+//               furthest. The array radius is 483 m, so the error is 2.4 times
+//               the size of the thing being located.
+//   Penmanshiel the record sits 1,121 m from a known turbine position, or
+//               1,289 m against a second third-party value for the same turbine.
+//
+// Both are planning positions filed before the layout was fixed, which is why
+// they are out by roughly the same amount at two unrelated sites. n = 2. Treat
+// this as the scale of the error, not as a bound on it.
+export const POSITION_UNCERTAINTY_M = 1100;
+
+// The coordinates in the table above are written to five decimal places, which
+// is about a metre. THAT IS PRECISION. The number above is accuracy. Anything
+// that presents a wind farm position to the user must show both, or it invites
+// the reader to believe the five decimal places.
+export const STATED_PRECISION_M = 1.1;
+
 const R_EARTH = 6371008.8;
 
 // Great-circle distance in metres. The rest of the tool works in a local
@@ -2635,6 +2658,7 @@ export function farmRecord(i) {
     index: i, name: f[0], lat: f[1], lon: f[2], mw: f[3],
     status: f[4], offshore: f[5] === 1, repdRef: f[6],
     live: LIVE_STATUSES.includes(f[4]),
+    uncertaintyM: POSITION_UNCERTAINTY_M,
   };
 }
 
@@ -2698,5 +2722,9 @@ export function pairingGeometry(farmIndex, radarIndex = null) {
     // approximation the scene uses starts to matter, so say so rather than
     // hide it.
     tangentPlaneWarning: radar.distanceM > 100000,
+    // How much of this range is measurement error. Above about a fifth the
+    // geometry is no longer telling you anything useful about this site.
+    uncertaintyM: POSITION_UNCERTAINTY_M,
+    uncertaintyFraction: POSITION_UNCERTAINTY_M / Math.max(radar.distanceM, 1),
   };
 }

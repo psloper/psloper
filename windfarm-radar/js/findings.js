@@ -791,6 +791,44 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
     }
   }
 
+  // A loaded UK pairing carries a measured position error. Where that error is
+  // a large fraction of the range, the geometry is not about this site.
+  const pairing = scenario.farm.ukPairing;
+  if (pairing && pairing.uncertaintyFraction != null) {
+    const pct = 100 * pairing.uncertaintyFraction;
+    const big = pct > 20;
+    add({
+      id: 'position-uncertainty',
+      severity: big ? 'major' : 'info',
+      title: big
+        ? `The recorded farm position is uncertain by ${pct.toFixed(0)} per cent of the range to the radar`
+        : `Recorded farm position is good to about \u00b1${pairing.uncertaintyM} m, `
+          + `${pct.toFixed(0)} per cent of this range`,
+      detail: `${pairing.farm} is placed from its UK Renewable Energy Planning Database record `
+        + `(reference ${pairing.repdRef}), which is a PLANNING POSITION filed for the project, not a `
+        + 'surveyed turbine schedule. The coordinates are written to five decimal places, about a '
+        + `metre, but measured against the only two sites where real turbine coordinates were `
+        + 'available they are out by roughly a kilometre: 1,140 m at Kelmarsh, where the record also '
+        + 'sits 695 m from the nearest machine and 1,623 m from the furthest, and 1,121 m at '
+        + `Penmanshiel. Here that is ${pct.toFixed(0)} per cent of the ${(pairing.trueRangeM / 1000).toFixed(1)} km `
+        + 'range to the radar.'
+        + (big
+          ? ' AT THIS RANGE THAT DOMINATES THE GEOMETRY. Treat the result as an illustration of a '
+            + 'plausible case rather than an assessment of this site, and get the surveyed schedule '
+            + 'before drawing any conclusion.'
+          : ' At this range it moves the answer little, but it is still the reason no output here '
+            + 'can support a submission.'),
+      basis: 'computed',
+      metrics: {
+        'Stated precision': '\u00b11 m (five decimal places)',
+        'Measured accuracy': `\u00b1${pairing.uncertaintyM} m (n = 2 ground-truth sites)`,
+        'As a fraction of range': `${pct.toFixed(0)}%`,
+        'Record status': pairing.status,
+      },
+      source: 'repd-pipeline',
+    });
+  }
+
   // Real arrays mix hub heights. If this one does not, say so, because tip
   // height above sea level is exactly what decides which machines clear a
   // horizon or a terrain screen and which do not.
