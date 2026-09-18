@@ -237,3 +237,158 @@ export function sectorForDirection(rose, directionDeg) {
   }
   return best;
 }
+
+// ===========================================================================
+// Fleet state: wakes, yaw scatter, and machines that are not running
+// ===========================================================================
+//
+// A wind farm does not present one signature. Stand at a site and the turbines
+// are not all pointing the same way, not all turning at the same speed, and
+// some are not turning at all. Three separate causes:
+//
+//   WAKES. A turbine downstream of another sees slower air, so it runs slower
+//   and produces less blade Doppler. Deficits of 10 to 25 per cent in wind
+//   speed at three to five rotor diameters are ordinary.
+//
+//   YAW SCATTER. Yaw control uses a deadband: the machine only turns when the
+//   error exceeds a trigger, then stops inside it. So turbines sit scattered
+//   around the wind direction rather than on it, and they lag changes. Wake
+//   steering deliberately misaligns upstream machines on top of that.
+//
+//   MACHINES NOT RUNNING. Availability is high but not total, and turbines are
+//   also curtailed for noise, shadow flicker, bats, icing, grid constraints and
+//   maintenance. A parked rotor produces no blade Doppler at all, which makes
+//   it a fundamentally different radar target from a turning one.
+//
+// For radar this matters in both directions. Assuming every turbine is aligned
+// and at rated overstates how coherent the array is. Assuming a benign fleet
+// state understates the worst case. The point of modelling it is to see the
+// spread rather than pick one end of it.
+
+// Deterministic per-turbine pseudo-random value, so a fleet state is
+// reproducible and a report can be regenerated identically.
+function fleetRandom(index, seed, salt) {
+  let h = Math.imul(index + 1, 374761393) ^ Math.imul(seed + 1, 668265263) ^ Math.imul(salt, 2246822519);
+  h = (h ^ (h >>> 13)) >>> 0;
+  h = Math.imul(h, 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+}
+
+/**
+ * Jensen (Park) wake velocity deficit.
+ *
+ *   deficit = (1 - sqrt(1 - Ct)) / (1 + k*x/r0)^2
+ *
+ * The wake expands linearly at rate k downstream, and the deficit is taken as
+ * uniform across it. Wake decay is conventionally around 0.075 onshore and
+ * 0.04 offshore, the difference being surface roughness and therefore how fast
+ * the wake mixes out.
+ */
+export function jensenDeficit(downstreamM, rotorRadiusM, thrustCoefficient, wakeDecay) {
+  if (downstreamM <= 0) return 0;
+  const a = 1 - Math.sqrt(Math.max(1 - thrustCoefficient, 0));
+  const expansion = 1 + (wakeDecay * downstreamM) / Math.max(rotorRadiusM, 1);
+  return a / (expansion * expansion);
+}
+
+export function wakeRadius(downstreamM, rotorRadiusM, wakeDecay) {
+  return rotorRadiusM + wakeDecay * Math.max(downstreamM, 0);
+}
+
+/**
+ * Overlap area between a downstream rotor disc and an upstream wake circle,
+ * as a fraction of the rotor disc. Standard circle-circle intersection: a
+ * turbine clipped by the edge of a wake is only partly affected.
+ */
+export function wakeOverlapFraction(lateralOffsetM, wakeR, rotorR) {
+  const d = Math.abs(lateralOffsetM);
+  if (d >= wakeR + rotorR) return 0;
+  if (d <= Math.abs(wakeR - rotorR)) {
+    // One circle sits inside the other.
+    return wakeR >= rotorR ? 1 : (wakeR * wakeR) / (rotorR * rotorR);
+  }
+  const r1 = wakeR;
+  const r2 = rotorR;
+  const a1 = Math.acos(Math.min(Math.max((d * d + r1 * r1 - r2 * r2) / (2 * d * r1), -1), 1));
+  const a2 = Math.acos(Math.min(Math.max((d * d + r2 * r2 - r1 * r1) / (2 * d * r2), -1), 1));
+  const area = r1 * r1 * (a1 - Math.sin(2 * a1) / 2) + r2 * r2 * (a2 - Math.sin(2 * a2) / 2);
+  return Math.min(area / (Math.PI * r2 * r2), 1);
+}
+
+/**
+ * Inflow wind speed at every turbine, given the free-stream wind.
+ *
+ * Deficits from several upstream machines are combined by root sum of squares,
+ * which is the usual superposition for the Park model.
+ *
+ * @param {Array} turbines  [{east, north, rotorRadiusM}]
+ * @param {object} cfg {windDirectionDeg, freeStreamMs, thrustCoefficient, wakeDecay}
+ */
+export function fleetInflow(turbines, cfg) {
+  // Unit vector pointing DOWNWIND. Wind direction is the bearing it comes from.
+  const b = (cfg.windDirectionDeg + 180) * Math.PI / 180;
+  const ux = Math.sin(b);
+  const uz = Math.cos(b);
+
+  return turbines.map((t) => {
+    let sumSq = 0;
+    const sources = [];
+    for (const up of turbines) {
+      if (up === t) continue;
+      const dx = t.east - up.east;
+      const dz = t.north - up.north;
+      const downstream = dx * ux + dz * uz;          // positive = t is downwind of up
+      if (downstream <= 1) continue;
+      const lateral = Math.abs(-dx * uz + dz * ux);
+      const wr = wakeRadius(downstream, up.rotorRadiusM, cfg.wakeDecay);
+      const overlap = wakeOverlapFraction(lateral, wr, t.rotorRadiusM);
+      if (overlap <= 0) continue;
+      const d = jensenDeficit(downstream, up.rotorRadiusM, cfg.thrustCoefficient, cfg.wakeDecay)
+        * overlap;
+      sumSq += d * d;
+      sources.push({ from: up.id, downstreamM: downstream, lateralM: lateral, overlap, deficit: d });
+    }
+    const deficit = Math.min(Math.sqrt(sumSq), 0.95);
+    return {
+      inflowMs: cfg.freeStreamMs * (1 - deficit),
+      deficit,
+      waked: deficit > 0.01,
+      wakeSources: sources.sort((a, x) => x.deficit - a.deficit).slice(0, 3),
+    };
+  });
+}
+
+/**
+ * Per-turbine yaw offset from the nominal wind direction.
+ *
+ * Yaw control only acts when the error leaves a deadband, so at any moment the
+ * fleet sits scattered inside it. Modelled as a deterministic spread across the
+ * deadband rather than every machine sitting exactly on the wind.
+ */
+export function yawOffsetFor(index, seed, deadbandDeg) {
+  if (deadbandDeg <= 0) return 0;
+  return (fleetRandom(index, seed, 17) * 2 - 1) * deadbandDeg;
+}
+
+/**
+ * Which machines are not running.
+ *
+ * Availability and curtailment are given as fractions of the fleet. Selection
+ * is deterministic for a given seed so a scenario is reproducible, and the
+ * reason is carried through so the findings can say why a machine is stopped.
+ */
+export function fleetOperatingState(count, cfg) {
+  const out = [];
+  const stopped = Math.round(count * (1 - cfg.availability) + count * cfg.curtailed);
+  const ranked = Array.from({ length: count }, (_, i) => ({ i, r: fleetRandom(i, cfg.seed, 31) }))
+    .sort((a, b) => a.r - b.r);
+  const stoppedSet = new Map();
+  for (let k = 0; k < Math.min(stopped, count); k++) {
+    const unavailableCount = Math.round(count * (1 - cfg.availability));
+    stoppedSet.set(ranked[k].i, k < unavailableCount ? 'unavailable' : 'curtailed');
+  }
+  for (let i = 0; i < count; i++) {
+    out.push({ running: !stoppedSet.has(i), reason: stoppedSet.get(i) || null });
+  }
+  return out;
+}

@@ -151,6 +151,8 @@ export function assessTurbine(turbine, radar, terrain, ae, mit) {
   // Rotor kinematics as the radar sees them.
   const bearingToRadar = (hub.bearing + 180) % 360;
   const aspectDeg = rotorAspectDeg(turbine, bearingToRadar);
+  // The fleet model has already decided this machine's speed from the inflow
+  // it sees and whether it is running at all. Curtailment stops everything.
   const rpm = mit.curtail.enabled ? 0 : turbine.rpm;
   const vTipMs = tipSpeed(turbine.rotorRadiusM, rpm);
   const vRadMaxMs = vTipMs * Math.sin(aspectDeg * DEG);

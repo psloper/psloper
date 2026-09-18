@@ -15,7 +15,9 @@
 
 import { DEG, offsetByBearing, bearingOf, hypot2, clamp } from './geo.js';
 import { wavelength, tipSpeed, rotorSolidity } from './rf.js';
-import { rotorRpm, WIND_ROSE_PRESETS } from './wind.js';
+import {
+  rotorRpm, WIND_ROSE_PRESETS, fleetInflow, yawOffsetFor, fleetOperatingState,
+} from './wind.js';
 import { fullyDevelopedWaveHeight } from './sea.js';
 
 export const STORAGE_KEY = 'windfarm-radar-scenario-v1';
@@ -300,6 +302,18 @@ export function defaultScenario() {
       // holds constant to cut-out, and idles outside that band.
       cutInMs: 3.0, ratedMs: 12, cutOutMs: 25, idleFraction: 0.12,
       yawMisalignDeg: 0,
+      // A wind farm does not present one signature. Wakes slow the machines
+      // behind, yaw deadbands leave them scattered around the wind rather than
+      // on it, and some are simply not running.
+      fleet: {
+        wakes: true,
+        wakeDecay: 0,            // 0 = pick by environment: 0.075 onshore, 0.04 offshore
+        thrustCoefficient: 0.8,
+        yawDeadbandDeg: 8,
+        availabilityPct: 97,
+        curtailedPct: 0,
+        seed: 1,
+      },
       // The site's wind climate, for sweeping every direction rather than one.
       rosePreset: 'sw-temperate',
       weibullK: 2.0,
@@ -350,6 +364,11 @@ export function defaultScenario() {
       arrayBearingDeg: 135,
       windFromDeg: 315,       // legacy field, migrated into wind.directionDeg
       jitterM: 60,
+      // Placement follows the buildable ground rather than a drawing.
+      constrained: false,
+      maxSlopeDeg: 12,
+      minSpacingM: 300,
+      minGroundLevelM: 0,
       manual: null,            // array of {east, north} once a turbine is moved
     },
     target: {
@@ -405,7 +424,8 @@ export function buildTurbines(scenario, terrain) {
   const f = scenario.farm;
   const wind = scenario.wind;
   if (f.manual && f.manual.length) {
-    return f.manual.map((p, i) => makeTurbine(i, p.east, p.north, f, terrain, wind, p));
+    return finaliseFleet(
+      f.manual.map((p, i) => makeTurbine(i, p.east, p.north, f, terrain, wind, p)), scenario);
   }
 
   const centre = offsetByBearing(f.centreRangeM, f.centreBearingDeg);
@@ -458,12 +478,146 @@ export function buildTurbines(scenario, terrain) {
     }
   }
 
-  return out.map((p, i) => makeTurbine(
+  // Where the ground decides, let it.
+  let positions = out;
+  let placement = null;
+  if (f.constrained) {
+    placement = constrainPlacement(out, terrain, {
+      maxSlopeDeg: f.maxSlopeDeg,
+      minSpacingM: f.minSpacingM,
+      minGroundLevelM: f.minGroundLevelM,
+      spacingM: f.spacingM,
+    });
+    positions = placement.placed;
+  }
+
+  const built = finaliseFleet(positions.map((p, i) => makeTurbine(
     i,
     p.east + rnd() * 2 * f.jitterM,
     p.north + rnd() * 2 * f.jitterM,
     f, terrain, wind,
-  ));
+  )), scenario);
+  built.placement = placement;
+  return built;
+}
+
+/**
+ * Second pass over a placed fleet: work out what each machine is actually
+ * doing, rather than assuming they are all doing the same thing.
+ *
+ * Wakes need every turbine's position before any turbine's inflow can be
+ * known, which is why this cannot happen during placement.
+ */
+/**
+ * Constrained placement.
+ *
+ * Real layouts are not grids. Where a turbine can stand depends on what is
+ * under it: ground bearing capacity, peat depth, slope, watercourses, access
+ * track routing, archaeology, ownership boundaries, and setbacks from dwellings
+ * and roads. The result is an irregular layout that follows the buildable
+ * ground, and irregular layouts scatter differently from regular ones, so it
+ * matters to radar as well as to the civils.
+ *
+ * This models the geometry of that, not the consenting. Candidate positions are
+ * tested against terrain slope and a minimum-elevation rule standing in for
+ * wet ground, then displaced to the nearest buildable spot, with a minimum
+ * spacing enforced. What it cannot do is know the real constraints of a real
+ * site. For that, import the schedule.
+ */
+function slopeAt(terrain, east, north, step = 40) {
+  const dzdx = (terrain.heightAt(east + step, north) - terrain.heightAt(east - step, north)) / (2 * step);
+  const dzdy = (terrain.heightAt(east, north + step) - terrain.heightAt(east, north - step)) / (2 * step);
+  return Math.atan(Math.hypot(dzdx, dzdy)) * RAD_PER;
+}
+const RAD_PER = 180 / Math.PI;
+
+export function constrainPlacement(candidates, terrain, cfg) {
+  const placed = [];
+  const rejected = [];
+  const moved = [];
+  const maxSlope = cfg.maxSlopeDeg ?? 12;
+  const minSpacing = cfg.minSpacingM ?? 300;
+  const minGround = cfg.minGroundLevelM ?? -1e9;
+  const searchStep = cfg.spacingM ? cfg.spacingM / 6 : 120;
+
+  const buildable = (e, n) => slopeAt(terrain, e, n) <= maxSlope
+    && terrain.heightAt(e, n) >= minGround;
+  const clear = (e, n) => placed.every((p) => Math.hypot(p.east - e, p.north - n) >= minSpacing);
+
+  for (const c of candidates) {
+    if (buildable(c.east, c.north) && clear(c.east, c.north)) {
+      placed.push({ ...c });
+      continue;
+    }
+    // Spiral outwards for the nearest spot that works.
+    let found = null;
+    for (let ring = 1; ring <= 6 && !found; ring++) {
+      for (let a = 0; a < 12; a++) {
+        const th = (a / 12) * Math.PI * 2 + ring * 0.4;
+        const e = c.east + Math.cos(th) * searchStep * ring;
+        const n = c.north + Math.sin(th) * searchStep * ring;
+        if (buildable(e, n) && clear(e, n)) { found = { east: e, north: n }; break; }
+      }
+    }
+    if (found) {
+      placed.push(found);
+      moved.push({ fromEast: c.east, fromNorth: c.north, ...found,
+        distanceM: Math.hypot(found.east - c.east, found.north - c.north) });
+    } else {
+      rejected.push({ ...c, slopeDeg: slopeAt(terrain, c.east, c.north),
+        groundM: terrain.heightAt(c.east, c.north) });
+    }
+  }
+  return { placed, moved, rejected };
+}
+
+export function finaliseFleet(turbines, scenario) {
+  const wind = scenario.wind;
+  const fleet = wind.fleet || {};
+  const offshore = scenario.site && scenario.site.environment === 'offshore';
+  const wakeDecay = fleet.wakeDecay > 0 ? fleet.wakeDecay : (offshore ? 0.04 : 0.075);
+
+  const inflow = fleet.wakes
+    ? fleetInflow(turbines, {
+      windDirectionDeg: wind.directionDeg,
+      freeStreamMs: wind.speedMs,
+      thrustCoefficient: fleet.thrustCoefficient ?? 0.8,
+      wakeDecay,
+    })
+    : turbines.map(() => ({ inflowMs: wind.speedMs, deficit: 0, waked: false, wakeSources: [] }));
+
+  const states = fleetOperatingState(turbines.length, {
+    availability: clamp((fleet.availabilityPct ?? 100) / 100, 0, 1),
+    curtailed: clamp((fleet.curtailedPct ?? 0) / 100, 0, 1),
+    seed: fleet.seed ?? 1,
+  });
+
+  turbines.forEach((t, i) => {
+    t.inflowMs = inflow[i].inflowMs;
+    t.wakeDeficit = inflow[i].deficit;
+    t.waked = inflow[i].waked;
+    t.wakeSources = inflow[i].wakeSources;
+    t.wakeDecay = wakeDecay;
+
+    t.running = states[i].running;
+    t.stoppedReason = states[i].reason;
+
+    // Yaw sits scattered inside the control deadband rather than on the wind.
+    t.yawOffsetDeg = yawOffsetFor(i, fleet.seed ?? 1, fleet.yawDeadbandDeg ?? 0);
+    t.yawDeg = ((wind.directionDeg + (wind.yawMisalignDeg ?? 0) + t.yawOffsetDeg) % 360 + 360) % 360;
+
+    // Rotor speed follows the inflow this machine actually sees, not the
+    // free-stream wind, and a stopped machine is stopped.
+    t.rpm = t.running
+      ? rotorRpm(t.inflowMs, {
+        cutInMs: wind.cutInMs, ratedMs: wind.ratedMs, cutOutMs: wind.cutOutMs,
+        ratedRpm: t.ratedRpm, idleFraction: wind.idleFraction,
+      })
+      : 0;
+    t.tipSpeedMs = tipSpeed(t.rotorRadiusM, t.rpm);
+  });
+
+  return turbines;
 }
 
 function makeTurbine(index, east, north, f, terrain, wind, override = {}) {
