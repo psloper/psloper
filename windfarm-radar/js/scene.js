@@ -85,7 +85,7 @@ export function statusColor(status) {
 // Small purpose-built controller. Nothing is vendored beyond three.js itself,
 // so the tool stays a straight static-file drop with no build step.
 
-class Orbit {
+export class Orbit {
   constructor(camera, dom) {
     this.camera = camera;
     this.dom = dom;
@@ -132,9 +132,35 @@ class Orbit {
     d.addEventListener('wheel', (e) => {
       if (!this.enabled) return;
       e.preventDefault();
+      const before = this.radius;
       this.radius = clamp(this.radius * Math.exp(e.deltaY * 0.0012), this.minRadius, this.maxRadius);
+      // Zooming in draws the orbit target towards whatever is under the
+      // pointer. Without this the wheel always drives at the scene origin,
+      // which is the radar, so you cannot get close to anything else: the
+      // turbines stay small however far you zoom and the camera ends up in
+      // the ground at the mast.
+      if (this.radius < before) {
+        const hit = this.groundUnderPointer(e);
+        if (hit) this.target.lerp(hit, clamp((1 - this.radius / before) * 1.6, 0, 0.7));
+      }
       this.apply();
     }, { passive: false });
+  }
+
+  // Where the pointer ray meets the horizontal plane through the current
+  // target. Cheap, and close enough for steering a zoom.
+  groundUnderPointer(e) {
+    const rect = this.dom.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    const ray = new THREE.Vector3(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1,
+      0.5,
+    ).unproject(this.camera).sub(this.camera.position).normalize();
+    if (Math.abs(ray.y) < 1e-4) return null;
+    const t = (this.target.y - this.camera.position.y) / ray.y;
+    if (!Number.isFinite(t) || t <= 0) return null;
+    return this.camera.position.clone().addScaledVector(ray, t);
   }
 
   pan(dx, dy) {
@@ -155,11 +181,21 @@ class Orbit {
 
   apply() {
     const s = Math.sin(this.phi) * this.radius;
-    this.camera.position.set(
-      this.target.x + s * Math.sin(this.theta),
-      this.target.y + Math.cos(this.phi) * this.radius,
-      this.target.z + s * Math.cos(this.theta),
-    );
+    const x = this.target.x + s * Math.sin(this.theta);
+    const z = this.target.z + s * Math.cos(this.theta);
+    let y = this.target.y + Math.cos(this.phi) * this.radius;
+
+    // Never put the eye inside the ground. The polar angle can come within a
+    // fraction of a degree of horizontal, so at close range the camera used to
+    // sink into a hill and the view went blank, which is what happens if you
+    // try to zoom in on a turbine. The floor is set in scene units, so it
+    // already carries the vertical exaggeration the terrain is drawn with.
+    const floorAt = this.groundY ? this.groundY(x, z) : null;
+    if (Number.isFinite(floorAt)) {
+      y = Math.max(y, floorAt + Math.max(this.radius * 0.03, 15));
+    }
+
+    this.camera.position.set(x, y, z);
     this.camera.lookAt(this.target);
   }
 }
@@ -341,6 +377,15 @@ export class SceneView {
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 5, 400000);
     this.controls = new Orbit(this.camera, canvas);
+    // The camera asks the terrain how high the ground is under it. Null until
+    // a result is loaded, which leaves the clamp switched off rather than
+    // guessing a floor.
+    this.controls.groundY = (x, z) => {
+      const r = this.result;
+      if (!r || !r.terrain || typeof r.terrain.heightAt !== 'function') return null;
+      const east = x, north = -z;
+      return this.y(r.terrain.heightAt(east, north), this.rangeFromRadar(east, north));
+    };
 
     this.scene.add(new THREE.HemisphereLight(0x7f95a8, 0x1d241d, 1.15));
     const sun = new THREE.DirectionalLight(0xfff0dc, 1.35);
