@@ -232,11 +232,12 @@ cut-off, 13.1 dB required SNR for P<sub>d</sub> = 0.9 / P<sub>fa</sub> = 1e-6, t
       used as a constant in this model.</li>
   <li>Mitigation practice described in the literature and by industry: blanking,
       non-automatic initiation zones, in-fill radar, post-detection range/azimuth
-      gating, and advanced signal processing. CAA CAP 670 SUR 13 is cited by CAP 764 as
-      holding the detailed analysis; that document was not retrieved.</li>
+      gating, and advanced signal processing. CAA CAP 670 SUR 13, cited by CAP 764 as
+      holding the detailed analysis, has been read: it places duties on the service
+      provider rather than setting thresholds, so nothing here is gated on it.</li>
 </ul>
 <p><strong>Verify every one of these against the current edition before citing
-them.</strong> None of the documents in this list was read in full.</p>
+them.</strong> Of the documents in this list, only CAP 670 has been read in full.</p>
 `;
 
 // ------------------------------------------------------------------ helpers

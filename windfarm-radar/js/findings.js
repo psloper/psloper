@@ -12,7 +12,7 @@
 import { M_PER_FT, M_PER_NM } from './geo.js';
 import {
   PROVENANCE as CAP670_PROVENANCE, ZONES as CAP670_ZONES, NOT_IMPLEMENTED as CAP670_GAPS,
-  classifyByRotor, zonalCheck, routeToCI, gen01Check, CI_THRESHOLDS,
+  classifyTurbine, zonalCheck, hubElevationDeg, routeToCI, gen01Check, CI_THRESHOLDS,
 } from './cap670.js';
 
 // The observer height GEN 01 uses for the visual horizon rule.
@@ -849,9 +849,19 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
     const perTurbine = fleet.map((t) => {
       const d = Math.hypot(t.east - sx, t.north - sy);
       const cls = cap.turbineClass === 'auto'
-        ? classifyByRotor(t.rotorDiameterM)
-        : { key: cap.turbineClass, inferred: false, borderline: false };
-      const z = zonalCheck({ classKey: cls.key, distanceM: d, rotorDiameterM: t.rotorDiameterM });
+        ? classifyTurbine({
+          hubHeightM: t.hubHeightM,
+          rotorDiameterM: t.rotorDiameterM,
+          tipHeightM: t.hubHeightM + t.rotorRadiusM,
+        })
+        : { key: cap.turbineClass, drivers: [], beyondTable: false, note: 'Class chosen by hand.' };
+      // Appendix A measures the angular displacement of the turbine HUB with
+      // respect to the radio site BASE level, on a flat earth.
+      const z = zonalCheck({
+        classKey: cls.key,
+        distanceM: d,
+        angleDeg: hubElevationDeg(t.groundM + t.hubHeightM, cap.siteAmslM, d),
+      });
       return { t, d, cls, z };
     });
 
@@ -877,23 +887,25 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
       detail: `Against an ATC RADIO site ${(cap.rangeM / 1000).toFixed(1)} km away on `
         + `${cap.bearingDeg.toFixed(0)}\u00b0, the worst machine is ${worst.t.id} at `
         + `${(worst.d / 1000).toFixed(2)} km, class ${CAP670_ZONES[worst.cls.key].label}, `
-        + `subtending ${worst.z.angleDeg.toFixed(2)}\u00b0. Distance says `
-        + `${worst.z.byDistance}, angle says ${worst.z.byAngle}, combined by ${worst.z.cellBasis}. `
+        + `hub elevation ${worst.z.angleDeg.toFixed(2)}\u00b0 above the site base level. `
+        + `Distance says ${worst.z.byDistance}, angle says ${worst.z.byAngle}, and Table 3 `
+        + `combines them as ${worst.z.zone.toUpperCase()}: ${worst.z.rationale}. `
         + `Routing: ${route.outcome}`
         + (route.reasons.length ? ` because ${route.reasons.join(', and ')}.` : '.')
-        + ` ${cap.turbineClass === 'auto' ? 'The class was INFERRED from rotor diameter: Table 1 '
-          + 'of the source was not supplied, so it could not be implemented. ' : ''}`
-        + 'THIS IS NOT A RADAR CHECK. GEN 02 covers radio sites; the radar requirement is SUR 13 '
-        + 'and is not implemented anywhere in this tool. The figures behind this result were '
-        + 'transcribed from a summary and the document itself was never read.',
+        + ' THIS IS NOT A RADAR CHECK. GEN 02 covers radio sites. The radar requirement is '
+        + 'SUR 13, which sets duties on an operator rather than thresholds a tool can compute, '
+        + 'so nothing here is a radar compliance result.',
       basis: 'check',
       metrics: {
         'Worst zone': worst.z.zone.toUpperCase(),
         'Turbine class': CAP670_ZONES[worst.cls.key].label
-          + (worst.cls.inferred ? ' (inferred)' : '')
-          + (worst.cls.borderline ? ', borderline, took the larger' : ''),
+          + (worst.cls.drivers && worst.cls.drivers.length
+            ? ` (Table 1, on ${worst.cls.drivers.length} of 3 dimensions)` : '')
+          + (worst.cls.beyondTable ? ', ABOVE the top of Table 1' : ''),
         'Distance / thresholds': `${(worst.d / 1000).toFixed(2)} km vs red `
-          + `${worst.z.thresholds.redKm} km, green ${worst.z.thresholds.greenKm} km`,
+          + `${worst.z.thresholds.redKm} km, green `
+          + (worst.z.thresholds.greenKm === null
+            ? 'not published for this class' : `${worst.z.thresholds.greenKm} km`),
         'Angle / thresholds': `${worst.z.angleDeg.toFixed(2)}\u00b0 vs red `
           + `${worst.z.thresholds.redDeg}\u00b0, green ${worst.z.thresholds.greenDeg}\u00b0`,
         'Tallest tip': `${tallest.toFixed(0)} m (C/I trigger above 110 m)`,
@@ -912,7 +924,7 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
         title: 'CAP 670 check: a rule that could not be applied cleanly',
         detail: w,
         basis: 'check',
-        metrics: { Reference: 'CAP 670 GEN 02 Appendix A, Table 3 (as transcribed)' },
+        metrics: { Reference: 'CAP 670 GEN 02 Appendix A, Tables 2 and 3' },
         source: 'cap670',
       });
     }

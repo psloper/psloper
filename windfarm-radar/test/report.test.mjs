@@ -217,6 +217,12 @@ test('anything marked analysed records what it changed in the model', () => {
   }
 });
 
+test('reference ids are unique, so a finding cannot pick up two entries by one name', () => {
+  const ids = REFERENCES.map((r) => r.id);
+  const dupes = ids.filter((x, i) => ids.indexOf(x) !== i);
+  assert.deepEqual(dupes, [], `duplicate reference ids: ${dupes.join(', ')}`);
+});
+
 test('every reference has a title, a valid status and something it supports', () => {
   const valid = new Set(['analysed', 'cross-checked', 'read', 'search-summary', 'recalled', 'blocked']);
   for (const r of REFERENCES) {

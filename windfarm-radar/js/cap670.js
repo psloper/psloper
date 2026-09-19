@@ -2,264 +2,405 @@
 // the wind turbine check for ATC RADIO sites.
 //
 // ---------------------------------------------------------------------------
-// PROVENANCE. READ THIS BEFORE USING ANY NUMBER IN THIS FILE.
+// PROVENANCE.
 //
-// THE DOCUMENT WAS NOT READ. Every figure here was transcribed from a written
-// summary supplied by a third party who says they verified it against the PDF.
-// This tool has never had that PDF, and caa.co.uk, publicapps.caa.co.uk and
-// regulatorylibrary.caa.co.uk are all refused by this environment's network
-// policy, so the transcription could not be checked against the source.
+// THE DOCUMENT HAS NOW BEEN READ. A .docx copy of CAP 670, Third Issue,
+// Amendment 1/2019, effective 1 August 2019, was supplied on 2026-09-19. The
+// relevant sections are stored verbatim at
+//   docs/evidence/cap670-partB-s4-gen01-gen02-2019.txt   (GEN 01, GEN 02, App A)
+//   docs/evidence/cap670-partC-s3-sur13-2019.txt         (SUR 13, the radar one)
+// and every figure below is checked against that text by test/cap670.test.mjs.
 //
-// That is a weaker footing than anything else in this tool. Treat every output
-// as indicative, cite the table reference beside it, and check the figures
-// against your own copy of CAP 670 before relying on one.
-// ---------------------------------------------------------------------------
+// This file previously carried figures transcribed from a third-party summary.
+// Reading the document corrected four of them, listed in CORRECTIONS below.
+//
+// WHAT IS STILL NOT VERIFIED. Figure 3 (the RAG diagram) and the process flow
+// chart at the end of Appendix A are IMAGES. Text extraction cannot read them,
+// so the flowchart discrepancy recorded below is still open.
 //
 // WHAT THIS IS NOT. GEN 02 covers ATC RADIO sites: communications and
 // navigation aids. It is NOT the radar case. The radar requirement is SUR 13,
-// which has not been read either and is not implemented anywhere in this tool.
-// The rest of this tool models primary surveillance radar, so this module sits
-// alongside it rather than feeding it.
+// which has now been read and is summarised at the bottom of this file. SUR 13
+// sets duties on an air navigation service provider; it contains no thresholds
+// a tool can compute against, so nothing here gates on it.
+// ---------------------------------------------------------------------------
 
 export const PROVENANCE = {
   document: 'CAP 670, Part B, Section 4 (GEN 01, GEN 02 and Appendix A to GEN 02)',
   publisher: 'UK Civil Aviation Authority',
-  read: false,
-  basis: 'transcribed from a third-party summary; the document itself was never retrieved',
-  blockedHosts: ['www.caa.co.uk', 'publicapps.caa.co.uk', 'regulatorylibrary.caa.co.uk'],
+  edition: 'Third Issue, Amendment 1/2019, 1 June 2019, effective 1 August 2019',
+  read: true,
+  basis: 'read in full from a .docx copy supplied by the user on 2026-09-19',
+  evidence: 'docs/evidence/cap670-partB-s4-gen01-gen02-2019.txt',
   covers: 'ATC radio sites (communications and navigation aids)',
-  doesNotCover: 'radar, which is SUR 13 and is not implemented',
-  editionChecked: false,
-  note: 'Appendix A paragraphs are unnumbered in the source, so references here are '
-    + 'to tables and to the summary that supplied them, not to paragraph numbers.',
-  confirmWith: 'CAP670editor@caa.co.uk',
+  doesNotCover: 'radar detection performance; SUR 13 is the radar requirement and sets '
+    + 'duties rather than computable thresholds',
+  unreadParts: ['Figure 3, the RAG diagram', 'the Appendix A process flow chart'],
+  unreadReason: 'both are images, and only the text layer was extracted',
+  note: 'Appendix A paragraphs are unnumbered in the source, so references here are to '
+    + 'its tables. GEN 01 and GEN 02 paragraphs are numbered and are cited as such.',
 };
 
+// What reading the document changed. Each entry is a figure this tool used to
+// print that the source does not support.
+export const CORRECTIONS = [
+  {
+    item: 'Green distance thresholds for Small, Medium, Large and Reference',
+    was: '1.8, 3.5, 5.8 and 10.5 km',
+    now: 'not published',
+    detail: 'Table 2 gives a Green (km) figure for Large Industrial only, 17.2 km. The '
+      + 'other four cells are EMPTY in the document, and not merged with anything. The four '
+      + 'numbers this tool printed came from the third-party summary and are not in CAP 670. '
+      + 'A distance can therefore only be Red or Amber for those four classes.',
+  },
+  {
+    item: 'What the angle column measures',
+    was: 'inferred to be the angular subtense of the turbine seen from the site',
+    now: 'the elevation angle of the turbine HUB above the radio site BASE level',
+    detail: 'Appendix A states the two zonal parameters plainly: "Minimum separation between '
+      + 'turbine and infrastructure site assuming a flat earth" and "Angular displacement of '
+      + 'turbine hub with respect to infrastructure site base level." A subtense grows as the '
+      + 'turbine gets closer and is blind to height; an elevation angle is the opposite. This '
+      + 'was the largest unknown in the module and it is now settled.',
+  },
+  {
+    item: 'Table 3',
+    was: 'one cell known, the other eight inferred by taking the worse of the two',
+    now: 'all nine cells read from the document',
+    detail: 'The inference was wrong in four of the eight: Red distance with an Amber angle '
+      + 'is AMBER not Red, Amber distance with a Green angle is GREEN not Amber, Green '
+      + 'distance with a Red angle is AMBER not Red, and Green distance with an Amber angle '
+      + 'is GREEN not Amber. The tool was systematically harsher than the document.',
+  },
+  {
+    item: 'Table 1',
+    was: 'not implemented; a rotor-only band inferred from arithmetic',
+    now: 'read, with hub height, rotor diameter and tip height bands for all five classes',
+    detail: 'Classification uses all three dimensions and takes the largest class any one of '
+      + 'them implies, which is what the worked example in the document does.',
+  },
+];
+
 // ---------------------------------------------------------------------------
-// Table 2 and Table 3: zonal thresholds, per turbine class.
+// Table 1: turbine classes.
 //
-// Distances are from the radio site. The ANGLE is taken here to be the angular
-// subtense of the turbine as seen from the site. THAT INTERPRETATION IS AN
-// INFERENCE, not something read from the document: see ANGLE_BASIS below.
+// Quoted from the document:
+//   Small             < 20 m hub    < 15 m rotor    < 27.5 m tip
+//   Medium         20 - 40 m hub   15 - 35 m rotor  27.5 - 57.5 m tip
+//   Large          40 - 60 m hub   35 - 60 m rotor  57.5 - 90 m tip
+//   Reference           80 m hub       90 m rotor        125 m tip
+//   Large Industrial 60 - 95 m hub  60 - 126 m rotor   90 - 158 m tip
+//
+// "Where a chosen turbine type is a borderline match for two classes and the
+// appropriate classification may be ambiguous, then the larger turbine
+// classification should be utilised for impact assessment."
+//
+// The worked example in the document: hub 20 m, rotor 18 m, tip 29 m is Medium,
+// "due to the rotor diameter exceeding 15 metres". So each dimension is scored
+// on its own and the largest class wins.
+//
+// Reference is a single machine, not a band, so it is not a bucket anything
+// falls into by measurement. It sits between Large and Large Industrial in
+// severity and is selected explicitly.
 // ---------------------------------------------------------------------------
 
-export const ZONES = {
-  'large-industrial': { label: 'Large Industrial', redKm: 2.1, greenKm: 17.2, redDeg: 2.6, greenDeg: 0.4 },
-  reference: { label: 'Reference', redKm: 1.3, greenKm: 10.5, redDeg: 3.5, greenDeg: 0.5 },
-  large: { label: 'Large', redKm: 0.8, greenKm: 5.8, redDeg: 3.6, greenDeg: 0.6 },
-  medium: { label: 'Medium', redKm: 0.5, greenKm: 3.5, redDeg: 4.6, greenDeg: 0.7 },
-  small: { label: 'Small', redKm: 0.25, greenKm: 1.8, redDeg: 4.6, greenDeg: 0.7 },
+export const TABLE_1 = {
+  implemented: true,
+  rule: 'Each dimension is classified on its own and the LARGEST resulting class is used.',
+  ref: 'CAP 670 GEN 02 Appendix A, Table 1',
+  bands: {
+    small: { label: 'Small', hubM: [0, 20], rotorM: [0, 15], tipM: [0, 27.5] },
+    medium: { label: 'Medium', hubM: [20, 40], rotorM: [15, 35], tipM: [27.5, 57.5] },
+    large: { label: 'Large', hubM: [40, 60], rotorM: [35, 60], tipM: [57.5, 90] },
+    'large-industrial': { label: 'Large Industrial', hubM: [60, 95], rotorM: [60, 126], tipM: [90, 158] },
+  },
+  reference: { label: 'Reference', hubM: 80, rotorM: 90, tipM: 125,
+    note: 'A single reference machine, not a band. Selected explicitly, never by measurement.' },
 };
 
 export const CLASS_ORDER = ['small', 'medium', 'large', 'reference', 'large-industrial'];
 
-// An arithmetic check this tool CAN do, and did, on the figures above.
-//
-// If the angle is an angular subtense, then distance and angle together imply a
-// width, and that width should look like a rotor diameter for the class. The
-// GREEN pairs give 120, 92, 61, 43 and 22 m, which are recognisable machine
-// sizes. The RED pairs give 95, 79, 50, 40 and 20 m, systematically 79 to 94
-// per cent of the green-implied widths.
-//
-// So the subtense reading is supported but not exact. The residual is either
-// rounding in the printed table or the angle meaning something slightly
-// different in the two columns, and this tool cannot tell which.
-//
-// Note for the Large-class question raised against the RCS formula: the GREEN
-// pair for Large implies 61 m, which supports 60 m rather than 55 m. The RED
-// pair implies 50 m. The two columns disagree, so the printed table values are
-// used as given and no rotor diameter is derived from them.
-export const ANGLE_BASIS = {
-  interpretation: 'angular subtense of the turbine as seen from the radio site',
-  verified: false,
-  impliedWidthFromGreenM: { 'large-industrial': 120, reference: 92, large: 61, medium: 43, small: 22 },
-  impliedWidthFromRedM: { 'large-industrial': 95, reference: 79, large: 50, medium: 40, small: 20 },
-};
+// The order a measured dimension can land in. Reference is skipped because it
+// is one machine rather than a range.
+const MEASURED_ORDER = ['small', 'medium', 'large', 'large-industrial'];
 
-// ---------------------------------------------------------------------------
-// Table 1: classification by hub, rotor and tip height.
-//
-// NOT IMPLEMENTED. The class names are known; the height bands that define them
-// were not supplied and the document was not read, so there is nothing to
-// implement. classifyByRotor below is an INFERENCE from the angle and distance
-// arithmetic above and must not be mistaken for Table 1.
-// ---------------------------------------------------------------------------
-
-export const TABLE_1 = {
-  implemented: false,
-  reason: 'The height bands that define each class were not supplied, and the document '
-    + 'was not read. Select the class by hand, or use the inferred rotor bands and accept '
-    + 'that they are inferred.',
-  rule: 'A borderline turbine takes the LARGER class.',
-};
+function classFromDimension(value, field) {
+  if (!Number.isFinite(value) || value <= 0) return null;
+  let key = MEASURED_ORDER[0];
+  for (const k of MEASURED_ORDER) {
+    const [, top] = TABLE_1.bands[k][field];
+    key = k;
+    if (value < top) break;
+  }
+  return key;
+}
 
 /**
- * Class from rotor diameter, INFERRED from the green-column arithmetic. This is
- * not Table 1. It exists so the tool can offer a starting point rather than
- * nothing, and every result built on it says it was inferred.
+ * Table 1 classification from the dimensions of a machine.
+ *
+ * Give whichever of hub height, rotor diameter and tip height you have, in
+ * metres. Each is classified on its own; the largest class wins, which is the
+ * document's own rule and what its worked example does.
  */
-export function classifyByRotor(rotorDiameterM, { borderlineTolerance = 0.1 } = {}) {
-  const w = ANGLE_BASIS.impliedWidthFromGreenM;
-  const bands = [['large-industrial', w['large-industrial']], ['reference', w.reference],
-    ['large', w.large], ['medium', w.medium], ['small', 0]];
-
-  let key = 'small';
-  for (const [k, lower] of bands) {
-    if (rotorDiameterM >= lower) { key = k; break; }
+export function classifyTurbine({ hubHeightM, rotorDiameterM, tipHeightM } = {}) {
+  const per = {
+    hubHeightM: classFromDimension(hubHeightM, 'hubM'),
+    rotorDiameterM: classFromDimension(rotorDiameterM, 'rotorM'),
+    tipHeightM: classFromDimension(tipHeightM, 'tipM'),
+  };
+  const given = Object.entries(per).filter(([, v]) => v);
+  if (!given.length) {
+    throw new Error('classifyTurbine needs at least one of hubHeightM, rotorDiameterM, tipHeightM');
   }
 
-  // "A borderline turbine takes the LARGER class." The bands here are inferred
-  // from arithmetic, so a rotor sitting just under a boundary is exactly the
-  // case where the inference is least trustworthy: a 60 m rotor falls a metre
-  // below the inferred 61 m Large boundary, which is the very boundary the
-  // supplied summary flagged as doubtful. The rule is applied rather than the
-  // boundary trusted.
-  const i = CLASS_ORDER.indexOf(key);
-  const nextUp = CLASS_ORDER[i + 1];
-  let borderline = false;
-  if (nextUp) {
-    const boundary = w[nextUp];
-    if (rotorDiameterM >= boundary * (1 - borderlineTolerance)) {
-      key = nextUp;
-      borderline = true;
-    }
+  let key = MEASURED_ORDER[0];
+  for (const [, k] of given) {
+    if (MEASURED_ORDER.indexOf(k) > MEASURED_ORDER.indexOf(key)) key = k;
   }
+  // Several dimensions can reach the winning class at once. All of them are
+  // reported, rather than picking one and calling it the reason.
+  const drivers = given.filter(([, k]) => k === key).map(([field]) => field);
+
+  // Above the top of the Large Industrial bands the document simply stops. It
+  // is said. Nothing is extrapolated.
+  const top = TABLE_1.bands['large-industrial'];
+  const beyondTable = (Number.isFinite(hubHeightM) && hubHeightM > top.hubM[1])
+    || (Number.isFinite(rotorDiameterM) && rotorDiameterM > top.rotorM[1])
+    || (Number.isFinite(tipHeightM) && tipHeightM > top.tipM[1]);
 
   return {
-    key, inferred: true, borderline,
-    rotorDiameterM,
-    note: borderline
-      ? `A ${rotorDiameterM} m rotor sits within ${borderlineTolerance * 100}% of the boundary, `
-        + 'so it takes the larger class, as the source rule requires. The boundary itself is '
-        + 'INFERRED, not Table 1.'
-      : 'Class INFERRED from rotor diameter, not read from Table 1.',
-    ref: 'inference from Tables 2 and 3 arithmetic; Table 1 was not supplied',
+    key,
+    label: TABLE_1.bands[key].label,
+    perDimension: per,
+    drivers,
+    beyondTable,
+    note: beyondTable
+      ? 'At least one dimension is above the top of Table 1, which stops at 95 m hub, '
+        + '126 m rotor and 158 m tip. Large Industrial is used because there is nothing '
+        + 'larger in the table, NOT because the machine fits it.'
+      : `Classified ${TABLE_1.bands[key].label} on ${drivers.join(' and ')}, the largest `
+        + 'class any single dimension implies.',
+    ref: TABLE_1.ref,
   };
 }
 
 // ---------------------------------------------------------------------------
-// Tables 2 and 3: the zonal result.
+// Table 2: RAG zonal thresholds.
+//
+// Verbatim from the document, including the four empty cells:
+//
+//                    Distance             Angle
+//                    Red (km)  Green (km) Degrees Red  Degrees Green
+//   Large Industrial   2.1       17.2        2.6°         0.4°
+//   Reference          1.3       (empty)     3.5°         0.5°
+//   Large              0.8       (empty)     3.6°         0.6°
+//   Medium             0.5       (empty)     4.6°         0.7°
+//   Small              0.25      (empty)     4.6°         0.7°
+//
+// greenKm is null where the document leaves the cell empty. It is not filled
+// in, because there is nothing to fill it in from.
 // ---------------------------------------------------------------------------
 
-/** Angular subtense in degrees of a body of width w at range d, both metres. */
-export function subtenseDeg(widthM, rangeM) {
-  if (!(rangeM > 0)) return 180;
-  return 2 * Math.atan(widthM / (2 * rangeM)) * 180 / Math.PI;
-}
+export const ZONES = {
+  'large-industrial': { label: 'Large Industrial', redKm: 2.1, greenKm: 17.2, redDeg: 2.6, greenDeg: 0.4 },
+  reference: { label: 'Reference', redKm: 1.3, greenKm: null, redDeg: 3.5, greenDeg: 0.5 },
+  large: { label: 'Large', redKm: 0.8, greenKm: null, redDeg: 3.6, greenDeg: 0.6 },
+  medium: { label: 'Medium', redKm: 0.5, greenKm: null, redDeg: 4.6, greenDeg: 0.7 },
+  small: { label: 'Small', redKm: 0.25, greenKm: null, redDeg: 4.6, greenDeg: 0.7 },
+};
+
+// The two zonal parameters, quoted:
+//   "Minimum separation between turbine and infrastructure site assuming a
+//    flat earth"
+//   "Angular displacement of turbine hub with respect to infrastructure site
+//    base level"
+export const ANGLE_BASIS = {
+  interpretation: 'elevation angle of the turbine hub above the radio site base level',
+  verified: true,
+  quote: 'Angular displacement of turbine hub with respect to infrastructure site base level',
+  flatEarth: true,
+  flatEarthQuote: 'Minimum separation between turbine and infrastructure site assuming a flat earth',
+  ref: 'CAP 670 GEN 02 Appendix A, Method 1 - Zonal Assessment',
+};
 
 /**
- * Zonal result for one turbine.
+ * Elevation angle in degrees of a hub above the radio site base level, on a
+ * flat earth, which is what Appendix A specifies.
  *
- * Distance and angle are each classified Red, Amber or Green against the class
- * thresholds, then combined.
- *
- * A CONTRADICTION IS IMPLEMENTED AS PRINTED. Table 3 allows a Red distance with
- * a Green angle to come out Green, while the Red definition says Red is an
- * automatic objection. The printed combination is used and the contradiction is
- * reported in `warnings` rather than resolved silently, because resolving it
- * either way would be this tool deciding what the regulator meant.
+ * hubAmslM   height of the turbine hub above mean sea level
+ * siteBaseAmslM  ground level at the radio site, NOT the aerial height
+ * distanceM  horizontal separation
  */
-export function zonalCheck({ classKey, distanceM, rotorDiameterM, angleDeg }, opts = {}) {
+export function hubElevationDeg(hubAmslM, siteBaseAmslM, distanceM) {
+  if (!(distanceM > 0)) return 90;
+  return Math.atan((hubAmslM - siteBaseAmslM) / distanceM) * 180 / Math.PI;
+}
+
+// ---------------------------------------------------------------------------
+// Table 3: combining the distance verdict with the angle verdict.
+//
+// All nine rows, verbatim. Columns are DISTANCE, ANGLE, OVERALL, RATIONALE.
+//
+//   RED    RED    RED    Excessive impact
+//   RED    AMBER  AMBER  Terrain sloping downwards
+//   RED    GREEN  GREEN  Terrain sloping downwards
+//   AMBER  RED    RED    Excessive impact
+//   AMBER  AMBER  AMBER  Indeterminate impact
+//   AMBER  GREEN  GREEN  Terrain sloping downwards
+//   GREEN  RED    AMBER  Terrain sloping upwards
+//   GREEN  AMBER  GREEN  Marginal impact
+//   GREEN  GREEN  GREEN  Acceptable impact
+//
+// Read as a rule: the ANGLE decides, except that a Green distance softens a Red
+// angle to Amber. Nothing here is inferred.
+// ---------------------------------------------------------------------------
+
+export const TABLE_3 = {
+  implemented: true,
+  ref: 'CAP 670 GEN 02 Appendix A, Table 3',
+  cells: {
+    'red|red': { overall: 'red', rationale: 'Excessive impact' },
+    'red|amber': { overall: 'amber', rationale: 'Terrain sloping downwards' },
+    'red|green': { overall: 'green', rationale: 'Terrain sloping downwards' },
+    'amber|red': { overall: 'red', rationale: 'Excessive impact' },
+    'amber|amber': { overall: 'amber', rationale: 'Indeterminate impact' },
+    'amber|green': { overall: 'green', rationale: 'Terrain sloping downwards' },
+    'green|red': { overall: 'amber', rationale: 'Terrain sloping upwards' },
+    'green|amber': { overall: 'green', rationale: 'Marginal impact' },
+    'green|green': { overall: 'green', rationale: 'Acceptable impact' },
+  },
+};
+
+// A contradiction that is genuinely in the document, not an artefact of reading
+// it. The Red zone is defined as "Violation of this parameter will result in
+// automatic rejection of the development proposal", yet Table 3 turns a Red
+// distance with a Green angle into an overall GREEN. Both are printed. The
+// table is applied as printed and the contradiction is reported, because
+// resolving it either way would be this tool deciding what the regulator meant.
+export const TABLE_3_CONTRADICTION = {
+  redDefinition: 'Violation of this parameter will result in automatic rejection of the '
+    + 'development proposal.',
+  tableSays: 'A Red distance with a Green angle gives an overall GREEN.',
+  implemented: 'the table as printed, with a warning on any result that hits it',
+  status: 'unresolved in the source; a question for the CAA, not for this tool',
+};
+
+/**
+ * Zonal result for one turbine. Method 1.
+ *
+ * Give the class, the horizontal separation, and the hub elevation angle in
+ * degrees. If you pass hubAmslM and siteBaseAmslM instead, the angle is worked
+ * out for you on a flat earth, as Appendix A specifies.
+ */
+export function zonalCheck({ classKey, distanceM, angleDeg, hubAmslM, siteBaseAmslM }) {
   const z = ZONES[classKey];
   if (!z) throw new Error(`unknown turbine class: ${classKey}`);
   const km = distanceM / 1000;
-  const angle = Number.isFinite(angleDeg) ? angleDeg : subtenseDeg(rotorDiameterM, distanceM);
   const warnings = [];
 
-  const byDistance = km <= z.redKm ? 'red' : km >= z.greenKm ? 'green' : 'amber';
+  let angle = angleDeg;
+  if (!Number.isFinite(angle)) {
+    if (!Number.isFinite(hubAmslM) || !Number.isFinite(siteBaseAmslM)) {
+      throw new Error('zonalCheck needs angleDeg, or hubAmslM and siteBaseAmslM to derive it');
+    }
+    angle = hubElevationDeg(hubAmslM, siteBaseAmslM, distanceM);
+  }
+
+  // Distance. With no published green threshold, a distance cannot be green.
+  let byDistance;
+  if (km <= z.redKm) byDistance = 'red';
+  else if (z.greenKm !== null && km >= z.greenKm) byDistance = 'green';
+  else byDistance = 'amber';
+
+  if (z.greenKm === null) {
+    warnings.push(`Table 2 publishes no Green distance for the ${z.label} class, so this `
+      + 'distance can only be Red or Amber however far away it is. That is what the document '
+      + 'says, not a limitation of this tool.');
+  }
+
   const byAngle = angle >= z.redDeg ? 'red' : angle <= z.greenDeg ? 'green' : 'amber';
 
-  // Table 3. ONLY ONE CELL OF IT IS KNOWN.
-  //
-  // What was supplied is that a Red distance with a Green angle comes out
-  // GREEN. The rest of the matrix was not supplied and the document was not
-  // read, so the remaining cells follow a stated rule rather than the table:
-  // agreement wins, and otherwise the more favourable of the two is taken,
-  // which is the behaviour the one known cell shows. Every result says which
-  // of the two it was.
-  const KNOWN_CELL = { distance: 'red', angle: 'green', result: 'green' };
-  const rank = { red: 0, amber: 1, green: 2 };
-  let zone;
-  let cellBasis;
-  if (byDistance === byAngle) {
-    zone = byDistance;
-    cellBasis = 'both agree';
-  } else if (byDistance === KNOWN_CELL.distance && byAngle === KNOWN_CELL.angle) {
-    zone = KNOWN_CELL.result;
-    cellBasis = 'the one cell of Table 3 that was supplied';
-  } else {
-    // The other seven disagreeing cells were never supplied, so this is a
-    // CHOICE, not a transcription. It takes the WORSE of the two.
-    //
-    // That choice was made by measurement. The largest unknown in this module
-    // is what the angle column is measured across: if it is tower width rather
-    // than rotor diameter, every angle reads far greener than the tool assumes.
-    // Extrapolating Table 3 permissively let that error drag 68 per cent of
-    // zones to a more permissive verdict; taking the worse of the two holds it
-    // to 23 per cent. Two unknowns that compound are worse than either alone,
-    // and a false "no objection" is the expensive direction to be wrong in.
-    //
-    // Set unsuppliedCellsFavourable if you have the real Table 3 and it says
-    // otherwise. The one cell that WAS supplied is permissive and is honoured
-    // above regardless, because that one is not a guess.
-    const favourable = opts.unsuppliedCellsFavourable === true;
-    zone = favourable
-      ? (rank[byDistance] > rank[byAngle] ? byDistance : byAngle)
-      : (rank[byDistance] < rank[byAngle] ? byDistance : byAngle);
-    cellBasis = `INFERRED: Table 3 does not supply this combination, so the `
-      + `${favourable ? 'more favourable' : 'worse'} of the two was taken`;
-    warnings.push(`Distance says ${byDistance} and angle says ${byAngle}. Table 3 as supplied `
-      + `does not cover that combination, so the ${favourable ? 'more favourable' : 'WORSE'} of `
-      + 'the two was used. Check the real Table 3 before relying on it.');
-  }
+  const cell = TABLE_3.cells[`${byDistance}|${byAngle}`];
+  const zone = cell.overall;
 
   if (byDistance === 'red' && byAngle === 'green') {
-    warnings.push('Table 3 as printed makes this GREEN because the angle is green, while the '
-      + 'Red definition says a Red distance is an automatic objection. The printed combination '
-      + 'has been used. Resolve this against your own copy of CAP 670 before relying on it.');
-  }
-  if (byAngle === 'red' && byDistance === 'green') {
-    warnings.push('Red by angle but green by distance, which Table 3 as printed resolves to '
-      + 'GREEN. Same caveat as above.');
-  }
-  if (!Number.isFinite(angleDeg)) {
-    warnings.push('The angle was computed as an angular subtense of the rotor, which is an '
-      + 'INFERENCE about what the angle column means. It was not read from the document.');
+    warnings.push('Table 3 makes this GREEN because the angle is green, while the Red zone '
+      + 'definition says a Red distance is an automatic rejection. Both are printed in CAP 670. '
+      + 'The table has been applied as printed.');
   }
 
   return {
-    zone, byDistance, byAngle, cellBasis,
+    zone, byDistance, byAngle,
+    rationale: cell.rationale,
     distanceKm: km, angleDeg: angle,
     thresholds: z,
     warnings,
-    ref: 'CAP 670 GEN 02 Appendix A, Tables 2 and 3 (as transcribed; document not read)',
+    ref: 'CAP 670 GEN 02 Appendix A, Tables 2 and 3',
   };
 }
 
 // ---------------------------------------------------------------------------
-// The flowchart: when the zonal check is not the end of it.
+// When Method 1 does not apply at all, and when a proposal is out of scope.
 // ---------------------------------------------------------------------------
 
-export const CI_TRIGGERS = {
-  tipHeightM: 110,
-  turbineCount: 10,
-  amberZone: true,
-  ref: 'CAP 670 GEN 02 Appendix A flowchart (as transcribed)',
+export const SCOPE = {
+  methodOneMaxTurbines: 10,
+  methodOneQuote: 'This method has been developed to enable rapid and non technical GO/NOGO '
+    + 'assessments to be made for simple development proposals only - i.e. between 1 and 10 turbines.',
+  ciTipHeightM: 110,
+  ciQuote: 'Large developments i.e. turbine tip height greater than 110 metres AGL , and / or  '
+    + 'more than 10 turbines will require detailed assessment using the C/I prediction method',
+  notVisibleQuote: 'If no part of a turbine installation is visible to the radio site, then '
+    + 'regardless of physical separation or size / quantity of turbine(s), that development '
+    + 'proposal will be acceptable.',
+  hubBelowSiteQuote: 'For single turbine developments, if the hub height falls below radio '
+    + 'station base height (AMSL) then the red zone physical separation criteria can be used '
+    + 'without any further analysis.',
+  ref: 'CAP 670 GEN 02 Appendix A, Out of Scope Proposals',
 };
 
 /**
+ * The two get-out clauses Appendix A gives before any zonal work is needed.
+ */
+export function outOfScopeCheck({ visibleFromSite, turbineCount, hubAmslM, siteBaseAmslM, distanceM, classKey }) {
+  if (visibleFromSite === false) {
+    return {
+      acceptable: true,
+      reason: 'No part of the installation is visible from the radio site.',
+      quote: SCOPE.notVisibleQuote,
+      ref: SCOPE.ref,
+    };
+  }
+  const single = turbineCount === 1;
+  const hubBelowSite = Number.isFinite(hubAmslM) && Number.isFinite(siteBaseAmslM)
+    && hubAmslM < siteBaseAmslM;
+  if (single && hubBelowSite) {
+    const z = ZONES[classKey];
+    const clears = z ? distanceM / 1000 > z.redKm : null;
+    return {
+      acceptable: clears === true,
+      reason: clears === true
+        ? 'Single turbine with its hub below the radio station base level, clear of the red '
+          + 'zone separation, so no further analysis is required.'
+        : 'Single turbine with its hub below the radio station base level, but it does not '
+          + 'clear the red zone separation.',
+      quote: SCOPE.hubBelowSiteQuote,
+      ref: SCOPE.ref,
+    };
+  }
+  return { acceptable: null, reason: 'No out-of-scope clause applies.', ref: SCOPE.ref };
+}
+
+/**
  * Does this go to the full carrier-to-interference method?
- *
- * Red is an objection and Green is no objection. Anything else, or a tip above
- * 110 m, or more than 10 turbines, goes to C/I.
  */
 export function routeToCI({ zone, tipHeightM, turbineCount }) {
   const reasons = [];
-  if (tipHeightM > CI_TRIGGERS.tipHeightM) {
-    reasons.push(`tip height ${tipHeightM.toFixed(0)} m is above ${CI_TRIGGERS.tipHeightM} m`);
+  if (tipHeightM > SCOPE.ciTipHeightM) {
+    reasons.push(`tip height ${tipHeightM.toFixed(0)} m is above ${SCOPE.ciTipHeightM} m AGL`);
   }
-  if (turbineCount > CI_TRIGGERS.turbineCount) {
-    reasons.push(`${turbineCount} turbines is more than ${CI_TRIGGERS.turbineCount}`);
+  if (turbineCount > SCOPE.methodOneMaxTurbines) {
+    reasons.push(`${turbineCount} turbines is more than ${SCOPE.methodOneMaxTurbines}`);
   }
   if (zone === 'amber') reasons.push('the zonal result is Amber');
 
@@ -269,31 +410,33 @@ export function routeToCI({ zone, tipHeightM, turbineCount }) {
   else if (zone === 'red') outcome = 'objection';
   else outcome = 'no objection';
 
-  return { required, outcome, reasons, ref: CI_TRIGGERS.ref };
+  return { required, outcome, reasons, ref: SCOPE.ref };
 }
 
-// The last decision box is reported to read "Operational impact identified?"
-// with YES giving no objection, which is inverted against the surrounding text.
-// This tool takes the text reading, because that is the conservative one: an
-// operational impact leads to an objection. The disagreement is surfaced rather
-// than buried, and it is a question for the CAA, not for this tool.
+// The last decision box of the Appendix A process flow chart is reported to
+// read "Operational impact identified?" with YES giving no objection, which is
+// inverted against the surrounding text. The chart is an IMAGE, so extracting
+// the document's text did not settle it. This tool takes the text reading,
+// because that is the conservative one.
 export const FLOWCHART_DISCREPANCY = {
   printed: 'Operational impact identified? YES -> no objection',
   textSays: 'operational impact decides, so YES -> objection',
   implemented: 'the text reading, because it is the conservative one',
-  status: 'unresolved; confirm with CAP670editor@caa.co.uk',
+  status: 'STILL UNRESOLVED. The flow chart is an image and was not read even though the '
+    + 'rest of the document was. Confirm with CAP670editor@caa.co.uk or read the chart.',
 };
 
 export function operationalImpactOutcome(impactIdentified) {
   return {
     outcome: impactIdentified ? 'objection' : 'no objection',
-    warning: 'The flowchart as printed reads the other way round. ' + FLOWCHART_DISCREPANCY.status,
-    ref: 'CAP 670 GEN 02 Appendix A flowchart, last decision (disputed)',
+    warning: 'The flow chart is reported to read the other way round, and it is an image so '
+      + 'reading the document did not settle it. ' + FLOWCHART_DISCREPANCY.status,
+    ref: 'CAP 670 GEN 02 Appendix A process flow chart (disputed, not read)',
   };
 }
 
 // ---------------------------------------------------------------------------
-// Method 2: carrier-to-interference thresholds.
+// Method 2: carrier-to-interference prediction.
 // ---------------------------------------------------------------------------
 
 export const CI_THRESHOLDS = {
@@ -302,16 +445,112 @@ export const CI_THRESHOLDS = {
   aggregateDb: 14,
   fieldStrengthVhfDbuVm: 26,
   fieldStrengthUhfDbuVm: 35,
-  ref: 'CAP 670 GEN 02 Appendix A, Method 2 (as transcribed)',
-  caution: 'The source states that carrier-to-interference work must be done by a qualified '
-    + 'consultancy. Any C/I number this tool prints is INDICATIVE ONLY and is not that work.',
+  altitudes: ['1000 ft AGL', '2000 ft AGL', '5000 ft ASL', '10000 ft ASL', '20000 ft ASL'],
+  propagationModel: 'ITU-R 525/526/Delta Bullington, k factor 4/3',
+  ref: 'CAP 670 GEN 02 Appendix A, Method 2',
+  caution: 'The source states that C/I prediction "must be performed by following the defined '
+    + 'methodology and undertaken by a suitably qualified consultancy practice or '
+    + 'organisation". Any C/I number this tool prints is INDICATIVE ONLY and is not that work.',
+};
+
+// Baseline data Appendix A specifies for the prediction. Recorded so a C/I run
+// done elsewhere can be checked against the assumptions the document sets.
+export const METHOD_2_BASELINE = {
+  radioStation: {
+    coordinateAccuracyM: 10,
+    antennaHeightM: 10,
+    vhfHz: 127e6,
+    uhfHz: 368e6,
+    aerialPattern: 'omnidirectional',
+    aerialGainDbi: 2.1,
+    aerialSystemLossDb: 3,
+    txPowerVhfW: 50,
+    txPowerUhfW: 100,
+  },
+  turbine: {
+    coordinateAccuracyM: 10,
+    aerialHeight: 'hub height AGL',
+    aerialGainDbi: 0,
+    aerialSystemLossDb: 0,
+    txPower: 'calculated per turbine from the RCS and the received field at the hub',
+  },
+  ref: 'CAP 670 GEN 02 Appendix A, Method 2, Radio Station and Turbine(s)',
+};
+
+// Tables 4 and 5: radar cross section per class, in dBsm.
+// Bistatic is the forward scatter region, monostatic the general scatter
+// region, and the document states the bistatic peak is 10 dB above monostatic.
+export const RCS_DBSM = {
+  vhf: {
+    frequencyHz: 127e6,
+    monostatic: { 'large-industrial': 41.0, reference: 38.1, large: 33.8, medium: 29.9, small: 22.5 },
+    bistatic: { 'large-industrial': 51.0, reference: 48.1, large: 43.8, medium: 39.9, small: 32.5 },
+    ref: 'CAP 670 GEN 02 Appendix A, Table 4',
+  },
+  uhf: {
+    frequencyHz: 368e6,
+    monostatic: { 'large-industrial': 45.6, reference: 42.7, large: 38.4, medium: 34.5, small: 27.1 },
+    bistatic: { 'large-industrial': 55.6, reference: 52.7, large: 48.4, medium: 44.5, small: 37.1 },
+    ref: 'CAP 670 GEN 02 Appendix A, Table 5',
+  },
+  bistaticOverMonostaticDb: 10,
+};
+
+export const RCS_SCALING = {
+  formula: 'Monostatic RCS value = 10 Log (23281 * (Rotor Diameter / 90)2 * Frequency / 461)  in dBm2',
+  referenceRcsM2: 23281,
+  referenceRotorM: 90,
+  referenceFrequencyMHz: 461,
+  ref: 'CAP 670 GEN 02 Appendix A, below Table 5',
+};
+
+/** Monostatic RCS in dBsm from the document's own scaling formula. */
+export function scaledMonostaticRcsDbsm(rotorDiameterM, frequencyMHz) {
+  const r = RCS_SCALING;
+  return 10 * Math.log10(r.referenceRcsM2
+    * (rotorDiameterM / r.referenceRotorM) ** 2
+    * frequencyMHz / r.referenceFrequencyMHz);
+}
+
+/** Rotor diameter implied by a published RCS figure, by inverting the formula. */
+export function rotorFromRcsM(dbsm, frequencyMHz) {
+  const r = RCS_SCALING;
+  return r.referenceRotorM * Math.sqrt(
+    10 ** (dbsm / 10) / (r.referenceRcsM2 * frequencyMHz / r.referenceFrequencyMHz));
+}
+
+// A real internal inconsistency in the document, found by running its own
+// scaling formula back against its own tables.
+//
+// Four of the five classes scale exactly from the TOP of their Table 1 rotor
+// band: Small from 15 m, Medium from 35 m, Large Industrial from 126 m, and
+// Reference from its stated 90 m. The Large class does not. Its published
+// figures correspond to a 55 m rotor, while Table 1 gives the Large band as
+// 35 to 60 m. The gap is 0.75 dB in VHF and 0.77 dB in UHF, the same in both
+// bands, so it is one wrong input diameter rather than rounding.
+//
+// Consequence: using the published Large RCS understates a 60 m Large-class
+// machine by about three quarters of a decibel. That is small, and it is in the
+// permissive direction, so it is recorded rather than corrected. Correcting it
+// would mean this tool printing a number CAP 670 does not contain.
+export const TABLE_4_5_INCONSISTENCY = {
+  affects: 'the Large class only',
+  publishedMonostaticVhfDbsm: 33.8,
+  impliedRotorM: 55.0,
+  table1RotorTopM: 60,
+  scaledFromTopOfBandDbsm: 34.55,
+  gapDb: 0.75,
+  sameInBothBands: true,
+  direction: 'permissive: the published value is the lower one',
+  implemented: 'the published table values are used as printed; nothing is corrected',
+  status: 'confirm with the CAA. This is arithmetic on the document, not a reading of it.',
 };
 
 /**
  * Compare computed carrier-to-interference ratios against the thresholds.
- * Pass the per-turbine ratios in dB. Nothing here computes a C/I ratio: this
- * tool has no validated propagation model for an ATC radio site, and pretending
- * otherwise is exactly what the source warns against.
+ * Nothing here computes a C/I ratio: this tool has no validated propagation
+ * model for an ATC radio site, and the source says the work must be done by a
+ * qualified consultancy.
  */
 export function checkCarrierToInterference(ratiosDb, { aggregateDb } = {}) {
   if (!Array.isArray(ratiosDb) || !ratiosDb.length) return null;
@@ -338,9 +577,26 @@ export const GEN01 = {
   consultationRadiusKm: 20,
   ilsApproachRadiusKm: 34,
   observerHeightM: 25,
-  ref: 'CAP 670 GEN 01.4, .5 and .13 (as transcribed)',
-  horizonRule: 'Blade tips below the visual horizon, seen from 25 m above the site, may be '
-    + 'acceptable. "May be" is the source wording: it is not a pass.',
+  ref: 'CAP 670 GEN 01.4, GEN 01.5 and the note to GEN 01.13',
+  horizonRule: 'Blade tips below the visual horizon, seen from 25 m above the site, "may be '
+    + 'acceptable to an ANSP". "May be" is the source wording: it is not a pass.',
+  quote: 'A wind farm whose blade tips, at their maximum height, are below the visual horizon '
+    + 'when viewed from a point situated 25 m above an aeronautical radio station site may be '
+    + 'acceptable to an ANSP.',
+};
+
+// GEN 02 also gives an example safeguarding frame for the VHF and UHF radio
+// sites this appendix is about. Recorded because it is the physical frame the
+// zonal check sits alongside.
+export const GEN02_VHF_UHF_FRAME = {
+  groundCircleRadiusM: 91,
+  slopeFromElevationM: 9,
+  slopeGradient: 0.02,
+  slopeToRadiusM: 610,
+  ref: 'CAP 670 GEN 02.25',
+  quote: 'Ground level safeguarding of circle radius 91 m centred on the base of the main '
+    + 'aerial tower (or equivalent structure). Additionally, from an elevation of 9 m on this '
+    + 'circle a 2% (1:50) slope out to a radius of 610 m.',
 };
 
 /**
@@ -352,8 +608,6 @@ export function gen01Check({ distanceM, tipHeightAmslM, siteAmslM, ilsApproach =
   const radiusKm = ilsApproach ? GEN01.ilsApproachRadiusKm : GEN01.consultationRadiusKm;
   const withinConsultation = distanceM / 1000 <= radiusKm;
 
-  // Distance to the visual horizon from an observer 25 m above the site, and
-  // the height a body at `distanceM` must exceed to break that horizon.
   const ae = (4 / 3) * 6371008.8;
   const eye = siteAmslM + GEN01.observerHeightM;
   const dHorizon = Math.sqrt(2 * ae * Math.max(eye, 0.1));
@@ -372,54 +626,52 @@ export function gen01Check({ distanceM, tipHeightAmslM, siteAmslM, ilsApproach =
 }
 
 // ---------------------------------------------------------------------------
-// What this module does NOT do.
+// SUR 13: the radar requirement. Read, and deliberately not implemented.
 // ---------------------------------------------------------------------------
 
-// What was measured about the unknowns, rather than asserted. 18,240 synthetic
-// geometries, rotor 22 to 236 m, 0.15 to 30 km, 1 to 30 turbines, with one
-// assumption perturbed at a time and the verdicts compared.
+// SUR 13 is "Requirements for Implementation of Wind Turbine Interference
+// Mitigation Techniques". It has now been read in full and is stored at
+// docs/evidence/cap670-partC-s3-sur13-2019.txt.
 //
-//   what the angle is measured ACROSS (tower width, not rotor)  65% of verdicts
-//   Table 1 class one step too small                            19%, all permissive
-//   angle read as a radius rather than a diameter               18%, all permissive
-//   Table 1 class one step too large                             7%, none permissive
-//   green distance threshold out by 20 per cent                  3%
-//   red distance threshold out by 20 per cent                    2%
-//   either angle threshold out by 20 per cent                   <1%
-//   field strength limits, single-turbine C/I, GEN 01 radius      0%
-//
-// The last line is the useful one: those three change no verdict this tool
-// produces, because it computes no field strength, no C/I ratio, and does not
-// gate anything on the consultation radius. Getting them wrong costs nothing
-// today. Getting the angle basis wrong costs almost everything.
-export const SENSITIVITY = {
-  measuredOn: 18240,
-  worstUnknown: 'what the angle column is measured across',
-  worstUnknownImpact: '65 per cent of verdicts, all of them more permissive',
-  zeroImpact: ['fieldStrengthVhfDbuVm', 'fieldStrengthUhfDbuVm', 'singleTurbineDb',
-    'worstOfSeveralDb', 'consultationRadiusKm', 'ilsApproachRadiusKm'],
-  note: 'Zero impact means zero impact ON A ZONAL VERDICT. The consultation radius still '
-    + 'changes what the tool reports, and the C/I thresholds still apply to a ratio computed '
-    + 'elsewhere. They are simply not on the path that decides Red, Amber or Green.',
+// It sets duties on an air navigation service provider: notify the CAA
+// inspector, carry out a line of sight analysis where there is reasonable
+// doubt, justify the mitigation by local safety assessment, comply with the
+// listed interoperability and ICAO provisions. It contains no radar
+// performance thresholds, no RCS figures and no acceptance criteria that a
+// tool can compute against. So nothing in this module gates on it, and the
+// radar modelling elsewhere in this tool remains physics rather than a CAP 670
+// compliance check.
+export const SUR13 = {
+  read: true,
+  evidence: 'docs/evidence/cap670-partC-s3-sur13-2019.txt',
+  title: 'Requirements for Implementation of Wind Turbine Interference Mitigation Techniques',
+  computableThresholds: false,
+  lineOfSightDuty: 'Where an ANSP has reasonable doubt that wind turbine interference is '
+    + 'likely to affect their radars from existing or planned wind farm installations, a Line '
+    + 'Of Sight Analysis shall be conducted.',
+  lineOfSightRef: 'CAP 670 SUR 13.5',
+  note: 'The line of sight analysis this tool performs is the kind SUR 13.5 requires, but '
+    + 'SUR 13 sets no pass or fail criterion for it, so the tool reports geometry rather than '
+    + 'compliance.',
 };
 
+// ---------------------------------------------------------------------------
+// What this module still does NOT do.
+// ---------------------------------------------------------------------------
+
 export const NOT_IMPLEMENTED = [
-  { item: 'Table 3 in full',
-    why: 'Only one cell was supplied: Red distance with a Green angle gives Green. The other '
-      + 'disagreeing combinations take the more favourable of the two, extrapolated from that '
-      + 'cell, and every result says when it did so.' },
-  { item: 'Table 1 classification by hub, rotor and tip height',
-    why: 'The height bands were not supplied and the document was not read. Choose the class '
-      + 'by hand, or accept the inferred rotor bands.' },
-  { item: 'SUR 13, the radar requirement',
-    why: 'Not read. GEN 02 is radio sites only. The radar modelling in the rest of this tool '
-      + 'is physics, not a CAP 670 check, and nothing here changes that.' },
+  { item: 'The Appendix A process flow chart, and Figure 3',
+    why: 'Both are images. The document text was extracted and read; the pictures were not. '
+      + 'The flow chart discrepancy over the last decision box is therefore still open.' },
+  { item: 'A Green distance verdict for Small, Medium, Large and Reference',
+    why: 'Table 2 leaves those four cells empty. There is no threshold to apply.' },
   { item: 'Computing a carrier-to-interference ratio',
     why: 'This tool has no validated propagation model for an ATC radio site, and the source '
-      + 'says the work must be done by a qualified consultancy. Thresholds are provided so a '
-      + 'ratio from elsewhere can be checked; the ratio itself is not computed.' },
-  { item: 'Whether a Supplementary Amendment has changed GEN 02',
-    why: 'Not checked. The CAA is unreachable from this environment.' },
-  { item: 'Paragraph-level references inside Appendix A',
-    why: 'Its paragraphs are unnumbered in the source, so references are by table.' },
+      + 'requires the work be done by a suitably qualified consultancy. Thresholds and the '
+      + 'baseline assumptions are provided so a prediction from elsewhere can be checked.' },
+  { item: 'SUR 13 as a compliance check',
+    why: 'Read in full. It sets duties, not computable thresholds. See SUR13 above.' },
+  { item: 'Whether a Supplementary Amendment has superseded this edition',
+    why: 'The copy read is Third Issue, Amendment 1/2019, effective 1 August 2019. Whether '
+      + 'anything later exists was not checked; the CAA is unreachable from this environment.' },
 ];

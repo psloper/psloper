@@ -80,15 +80,32 @@ export const REFERENCES = [
     caution: 'Edition not confirmed. Confirm the current edition and the figures before citing them.',
   },
   {
-    id: 'cap670',
-    title: 'CAP 670 (including SUR 13): Air Traffic Services Safety Requirements',
+    id: 'cap670-sur13',
+    title: 'CAP 670 Part C Section 3: SUR 13, Requirements for Implementation of Wind Turbine '
+      + 'Interference Mitigation Techniques',
     org: 'UK Civil Aviation Authority',
+    year: 2019,
     type: 'Regulatory requirement',
-    status: 'recalled',
-    supports: ['Mitigation approaches generally'],
-    reports: 'Cited by CAP 764 as holding the detailed explanation and analysis of radar mitigation '
-      + 'techniques.',
-    caution: 'Not retrieved. Named only because CAP 764 points to it.',
+    status: 'read',
+    supports: ['Mitigation approaches generally', 'line of sight analysis'],
+    reports: 'The RADAR requirement, which CAP 764 points to. It places duties on an air '
+      + 'navigation service provider rather than setting numbers: inform the CAA Regional '
+      + 'Inspector of known wind turbine effects, conduct a Line Of Sight Analysis where there '
+      + 'is reasonable doubt that turbines are likely to affect the radars, justify the chosen '
+      + 'mitigation by local safety assessment, and comply with the listed interoperability, '
+      + 'ICAO and CAP 670 provisions for any in-fill radar or co-operative sensor used as '
+      + 'mitigation. Where clutter is tolerated, the assessment must cover its nature and '
+      + 'extent, the operational significance of the area, controller ability to work in known '
+      + 'clutter, and the consequences of delayed target recognition.',
+    validation: 'Read in full from the same .docx copy of CAP 670 as the GEN 01 and GEN 02 '
+      + 'extract. The text is stored at docs/evidence/cap670-partC-s3-sur13-2019.txt and the '
+      + 'quoted line of sight duty is checked against that file by the test suite.',
+    caution: 'SUR 13 contains NO radar performance thresholds, no RCS figures and no acceptance '
+      + 'criteria a tool can compute against, so nothing in this tool is gated on it. The line '
+      + 'of sight analysis this tool performs is the kind SUR 13.5 requires, but SUR 13 sets no '
+      + 'pass or fail criterion for it, so what the tool reports is geometry, not compliance. '
+      + 'Its schematics are images and were not read. Whether a later amendment supersedes the '
+      + '1 August 2019 edition was not checked.',
   },
   {
     id: 'eurdoc015',
@@ -366,38 +383,46 @@ export const REFERENCES = [
     id: 'cap670',
     title: 'CAP 670 Part B Section 4: GEN 01, GEN 02 and Appendix A to GEN 02',
     org: 'UK Civil Aviation Authority',
+    year: 2019,
     type: 'Regulatory requirement',
-    status: 'recalled',
+    status: 'read',
     supports: ['CAP 670 GEN 02 zonal check for ATC radio sites'],
-    reports: 'A wind turbine assessment for ATC RADIO sites. Turbine classification by hub, rotor '
-      + 'and tip height (Table 1), zonal thresholds by distance and angle (Tables 2 and 3), a '
-      + 'flowchart routing to a carrier-to-interference method when the tip exceeds 110 m, there '
-      + 'are more than 10 turbines, or the zone is Amber. C/I thresholds of 20 dB for a single '
-      + 'turbine, 23 dB for the worst of several and 14 dB aggregate, with field strength limits '
-      + 'of 26 dBuV/m VHF and 35 dBuV/m UHF. GEN 01 gives a 20 km consultation radius, 34 km for '
-      + 'ILS approaches, and a visual horizon allowance from 25 m above the site.',
-    validation: 'THE DOCUMENT WAS NOT READ AND NO FIGURE HERE WAS VERIFIED AGAINST IT. Everything '
-      + 'was transcribed from a written summary supplied by a third party who states they checked '
-      + 'it against the PDF. This tool never had that PDF. What this tool COULD check is internal '
-      + 'consistency, and did: reading the angle column as an angular subtense, the green distance '
-      + 'and angle pairs imply widths of 120, 92, 61, 43 and 22 m, which are recognisable rotor '
-      + 'diameters, and the thresholds order correctly with class size. The red pairs imply 79 to '
-      + '94 per cent of those widths, so the subtense reading is supported but not exact. On the '
-      + 'disputed Large class: the green pair implies 61 m, supporting 60 m, while the red pair '
-      + 'implies 50 m, so the two columns disagree and the printed values are used as given.',
-    caution: 'GEN 02 COVERS ATC RADIO SITES, NOT RADAR. The radar requirement is SUR 13, which was '
-      + 'not read and is not implemented. Three things could not be implemented at all: Table 1, '
-      + 'because its height bands were not supplied, so the class is inferred from rotor diameter '
-      + 'or set by hand; Table 3 in full, because only one cell was supplied, so other disagreeing '
-      + 'combinations take the more favourable of the two and say so; and any C/I ratio, because '
-      + 'the source says that work must be done by a qualified consultancy and this tool has no '
-      + 'validated propagation model for a radio site. Two contradictions in the source are '
-      + 'implemented rather than resolved: Table 3 lets a Red distance with a Green angle come out '
-      + 'Green although Red is defined as an automatic objection, and the last flowchart box reads '
-      + 'inverted against the surrounding text. The conservative reading is taken for the '
-      + 'flowchart and both are reported. Whether a Supplementary Amendment has changed GEN 02 was '
-      + 'not checked. caa.co.uk, publicapps.caa.co.uk and regulatorylibrary.caa.co.uk are all '
-      + 'refused by this environment. Confirm with CAP670editor@caa.co.uk.',
+    reports: 'A wind turbine assessment for ATC RADIO sites. Turbine classification by hub '
+      + 'height, rotor diameter and tip height (Table 1), zonal thresholds by distance and by '
+      + 'the elevation angle of the hub above the site base level (Table 2), and a nine-cell '
+      + 'matrix combining the two (Table 3). A process flow routes to a carrier-to-interference '
+      + 'method when the tip exceeds 110 m AGL, there are more than 10 turbines, or the zone is '
+      + 'Amber. C/I thresholds of 20 dB for a single turbine, 23 dB for the worst of several and '
+      + '14 dB aggregate, with coverage plot field strength limits of 26 dBuV/m VHF and '
+      + '35 dBuV/m UHF at 127 and 368 MHz. Radar cross sections per class in Tables 4 and 5, '
+      + 'with a scaling formula from a 23281 m2 reference turbine at 90 m rotor and 461 MHz. '
+      + 'GEN 01 gives a 20 km consultation radius, 34 km for ILS approaches, and a visual '
+      + 'horizon allowance from 25 m above the site.',
+    validation: 'Read in full from a .docx copy of CAP 670, Third Issue, Amendment 1/2019, '
+      + 'effective 1 August 2019, supplied on 2026-09-19. The text is stored at '
+      + 'docs/evidence/cap670-partB-s4-gen01-gen02-2019.txt and every figure and quote in '
+      + 'js/cap670.js is checked against that file by the test suite. Reading it corrected four '
+      + 'things this tool previously printed: the green distance thresholds for Small, Medium, '
+      + 'Large and Reference, which are EMPTY cells in Table 2 and were not figures at all; the '
+      + 'angle, which is the elevation of the turbine hub above the radio site base level, not '
+      + 'the angular subtense this tool had inferred; Table 3, where four of eight inferred '
+      + 'cells were harsher than the document; and Table 1, which is now implemented from the '
+      + 'published bands instead of inferred from rotor diameter.',
+    caution: 'GEN 02 COVERS ATC RADIO SITES, NOT RADAR. The radar requirement is SUR 13, listed '
+      + 'separately. Figure 3 and the Appendix A process flow chart are IMAGES and were not '
+      + 'read, so the reported inversion of the last flow chart decision box is still '
+      + 'unresolved; the conservative reading is implemented. Two further things are not '
+      + 'implemented: a Green distance verdict for four of the five classes, because Table 2 '
+      + 'leaves those cells empty, and any C/I ratio, because the source requires that work be '
+      + 'done by a suitably qualified consultancy and this tool has no validated propagation '
+      + 'model for a radio site. One contradiction is implemented as printed rather than '
+      + 'resolved: Table 3 turns a Red distance with a Green angle into an overall Green, while '
+      + 'the Red zone is defined as an automatic rejection. One internal inconsistency was found '
+      + 'by running the document\'s own scaling formula against its own tables: four of five '
+      + 'classes scale exactly from the top of their Table 1 rotor band, but the Large class '
+      + 'figures correspond to a 55 m rotor against a published band top of 60 m, a gap of '
+      + '0.75 dB identical in both bands. The published values are used as printed. Whether a '
+      + 'Supplementary Amendment supersedes this edition was not checked.',
   },
 
   // ------------------------------------------------- real UK site positions

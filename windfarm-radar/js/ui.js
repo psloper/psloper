@@ -305,7 +305,8 @@ export const TABS = {
     { group: 'CAP 670 GEN 02: ATC radio site', fields: [
       { type: 'check', path: 'cap670.enabled', label: 'Run the CAP 670 GEN 02 zonal check',
         note: 'A DIFFERENT assessment from the radar modelling on the other tabs. GEN 02 covers '
-          + 'ATC radio sites; the radar requirement is SUR 13 and is not implemented here.' },
+          + 'ATC radio sites. The radar requirement is SUR 13, which sets duties on an operator '
+          + 'rather than numbers, so it is not a check this tool can run.' },
       { type: 'range', path: 'cap670.rangeM', label: 'Radio site distance', min: 200, max: 40000, step: 100,
         fmt: (v) => `${(v / 1000).toFixed(1)} km` },
       { type: 'range', path: 'cap670.bearingDeg', label: 'Radio site bearing', min: 0, max: 359, step: 1,
@@ -313,7 +314,7 @@ export const TABS = {
       { type: 'range', path: 'cap670.siteAmslM', label: 'Radio site ground level', min: 0, max: 600, step: 5,
         fmt: (v) => `${v} m AMSL` },
       { type: 'select', path: 'cap670.turbineClass', label: 'Turbine class (Table 1)', options: [
-        { value: 'auto', label: 'Infer from rotor diameter (NOT Table 1)' },
+        { value: 'auto', label: 'From Table 1 (hub, rotor and tip)' },
         { value: 'small', label: 'Small' },
         { value: 'medium', label: 'Medium' },
         { value: 'large', label: 'Large' },
@@ -322,11 +323,13 @@ export const TABS = {
       ] },
       { type: 'check', path: 'cap670.ilsApproach', label: 'ILS approach',
         note: 'Widens the GEN 01 consultation radius from 20 km to 34 km.' },
-      { type: 'hint', text: 'THE DOCUMENT WAS NOT READ. Every figure behind this check was '
-        + 'transcribed from a written summary; caa.co.uk is unreachable from here, so the '
-        + 'transcription could not be checked against CAP 670 itself. Table 1 was not supplied, '
-        + 'so the class is inferred unless you set it. Only one cell of Table 3 was supplied. '
-        + 'Treat every output as indicative and check it against your own copy.' },
+      { type: 'hint', text: 'Read from CAP 670, Third Issue, Amendment 1/2019, effective '
+        + '1 August 2019. Tables 1, 2 and 3 are implemented as published and every figure is '
+        + 'checked against the stored text of the document. Two things are NOT settled: Table 2 '
+        + 'publishes a Green distance for the Large Industrial class only, so the other four '
+        + 'classes can never be green on distance; and the Appendix A flow chart is an image, so '
+        + 'the reported inversion of its last decision box is still open. Check any result '
+        + 'against your own copy before relying on it.' },
     ] },
     { group: 'Sea surface', fields: [
       { type: 'check', path: 'site.waveFromWind', label: 'Derive wave height from wind speed',

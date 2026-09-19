@@ -1,232 +1,410 @@
-// CAP 670 GEN 02 Appendix A: the ATC radio site wind turbine check.
-//
-// EVERY NUMBER HERE CAME FROM A SUMMARY, NOT FROM THE DOCUMENT. These tests
-// hold the transcription and the stated handling of its known contradictions.
-// They do NOT establish that the figures are right, and no test in this file
-// should ever be read as doing so.
+// CAP 670 was read from a copy of the document. These tests check the figures
+// in js/cap670.js against the stored text of that document, so a number cannot
+// be edited into the module unless CAP 670 actually contains it.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
 import {
-  PROVENANCE, ZONES, CLASS_ORDER, TABLE_1, ANGLE_BASIS, NOT_IMPLEMENTED, SENSITIVITY,
-  CI_THRESHOLDS, CI_TRIGGERS, GEN01, FLOWCHART_DISCREPANCY,
-  classifyByRotor, subtenseDeg, zonalCheck, routeToCI, checkCarrierToInterference,
-  gen01Check, operationalImpactOutcome,
+  PROVENANCE, CORRECTIONS, TABLE_1, CLASS_ORDER, ZONES, ANGLE_BASIS, TABLE_3,
+  TABLE_3_CONTRADICTION, SCOPE, CI_THRESHOLDS, METHOD_2_BASELINE, RCS_DBSM,
+  RCS_SCALING, TABLE_4_5_INCONSISTENCY, GEN01, GEN02_VHF_UHF_FRAME, SUR13,
+  NOT_IMPLEMENTED, FLOWCHART_DISCREPANCY,
+  classifyTurbine, hubElevationDeg, zonalCheck, outOfScopeCheck, routeToCI,
+  checkCarrierToInterference, gen01Check, operationalImpactOutcome,
+  scaledMonostaticRcsDbsm, rotorFromRcsM,
 } from '../js/cap670.js';
 
-test('the module states that the document was never read', () => {
-  assert.equal(PROVENANCE.read, false);
-  assert.match(PROVENANCE.basis, /transcribed|never retrieved/i);
-  assert.ok(PROVENANCE.blockedHosts.includes('www.caa.co.uk'));
-  // And that it is radio sites, not radar, which is the commonest way this
-  // would be misread given what the rest of the tool does.
-  assert.match(PROVENANCE.covers, /radio/i);
-  assert.match(PROVENANCE.doesNotCover, /radar|SUR 13/i);
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// The document uses typographic dashes and quotes; normalise both sides so a
+// quote can be written in plain ASCII and still be checked verbatim.
+const squash = (s) => s.replace(/\s+/g, ' ').replace(/[\u2019\u2018]/g, "'")
+  .replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, '-').trim();
+const doc = squash(readFileSync(resolve(root, PROVENANCE.evidence), 'utf8'));
+const sur = squash(readFileSync(resolve(root, SUR13.evidence), 'utf8'));
+
+const inDoc = (text) => doc.includes(squash(text));
+
+// --------------------------------------------------------------- the source
+
+test('the stored extract is the edition the module claims', () => {
+  assert.match(doc, /CAP 670/);
+  assert.match(doc, /Amendment 1\/2019/);
+  assert.equal(PROVENANCE.read, true);
+  assert.match(PROVENANCE.edition, /Third Issue, Amendment 1\/2019/);
+  assert.ok(doc.includes('GEN 01: Wind Turbines'));
+  assert.ok(doc.includes('Appendix A to GEN 02'));
 });
 
-test('the transcribed thresholds are exactly as supplied', () => {
-  const expected = {
-    'large-industrial': [2.1, 17.2, 2.6, 0.4],
-    reference: [1.3, 10.5, 3.5, 0.5],
-    large: [0.8, 5.8, 3.6, 0.6],
-    medium: [0.5, 3.5, 4.6, 0.7],
-    small: [0.25, 1.8, 4.6, 0.7],
-  };
-  for (const [k, [redKm, greenKm, redDeg, greenDeg]] of Object.entries(expected)) {
-    assert.equal(ZONES[k].redKm, redKm, `${k} red km`);
-    assert.equal(ZONES[k].greenKm, greenKm, `${k} green km`);
-    assert.equal(ZONES[k].redDeg, redDeg, `${k} red deg`);
-    assert.equal(ZONES[k].greenDeg, greenDeg, `${k} green deg`);
+test('every quote the module carries is verbatim in the document', () => {
+  const quotes = [
+    ANGLE_BASIS.quote,
+    ANGLE_BASIS.flatEarthQuote,
+    SCOPE.methodOneQuote,
+    SCOPE.ciQuote,
+    SCOPE.notVisibleQuote,
+    SCOPE.hubBelowSiteQuote,
+    GEN01.quote,
+    GEN02_VHF_UHF_FRAME.quote,
+    TABLE_3_CONTRADICTION.redDefinition,
+    RCS_SCALING.formula,
+  ].filter(Boolean);
+  for (const q of quotes) {
+    assert.ok(inDoc(q), `not verbatim in CAP 670: "${q.slice(0, 80)}..."`);
   }
+  assert.ok(inDoc(SUR13.lineOfSightDuty) || sur.includes(squash(SUR13.lineOfSightDuty)),
+    'the SUR 13 line-of-sight duty is not verbatim in the SUR 13 extract');
+});
+
+// ------------------------------------------------------------------ Table 1
+
+test('Table 1 bands match the document', () => {
+  // Quoted rows, as the table prints them.
+  assert.ok(inDoc('Small | < 20 metres | < 15 metres | < 27.5 metres'));
+  assert.ok(inDoc('Medium | 20 - 40 metres | 15 - 35 metres | 27.5 - 57.5 metres'));
+  assert.ok(inDoc('Large | 40 - 60 metres | 35 - 60 metres | 57.5 - 90 metres'));
+  assert.ok(inDoc('Large Industrial | 60 - 95 metres | 60 - 126 metres | 90 - 158 metres'));
+  assert.ok(inDoc('Reference | 80 metres | 90 metres | 125 metres'));
+
+  const b = TABLE_1.bands;
+  assert.deepEqual(b.small.hubM, [0, 20]);
+  assert.deepEqual(b.small.rotorM, [0, 15]);
+  assert.deepEqual(b.small.tipM, [0, 27.5]);
+  assert.deepEqual(b.medium.rotorM, [15, 35]);
+  assert.deepEqual(b.large.rotorM, [35, 60]);
+  assert.deepEqual(b['large-industrial'].rotorM, [60, 126]);
+  assert.deepEqual(b['large-industrial'].tipM, [90, 158]);
+  assert.equal(TABLE_1.reference.rotorM, 90);
+});
+
+test('the worked example in the document classifies the way the document says', () => {
+  // "A turbine with hub height 20 metres, rotor diameter 18 metres, tip height
+  // 29 metres is classified as Medium Class due to the rotor diameter
+  // exceeding 15 metres."
+  const r = classifyTurbine({ hubHeightM: 20, rotorDiameterM: 18, tipHeightM: 29 });
+  assert.equal(r.key, 'medium');
+  assert.ok(r.drivers.includes('rotorDiameterM'));
+  assert.ok(inDoc('is classified as Medium Class due to the rotor diameter exceeding 15 metres'));
+});
+
+test('the largest class any one dimension implies is the one used', () => {
+  // A short tower carrying a very large rotor is not a Small machine.
+  const r = classifyTurbine({ hubHeightM: 18, rotorDiameterM: 70, tipHeightM: 53 });
+  assert.equal(r.key, 'large-industrial');
+  assert.deepEqual(r.drivers, ['rotorDiameterM']);
+  assert.equal(r.perDimension.hubHeightM, 'small');
+});
+
+test('a machine bigger than Table 1 says so rather than pretending to fit', () => {
+  const r = classifyTurbine({ hubHeightM: 120, rotorDiameterM: 170, tipHeightM: 205 });
+  assert.equal(r.key, 'large-industrial');
+  assert.equal(r.beyondTable, true);
+  assert.match(r.note, /above the top of Table 1/);
+});
+
+test('classification needs at least one dimension', () => {
+  assert.throws(() => classifyTurbine({}), /at least one of/);
+});
+
+// ------------------------------------------------------------------ Table 2
+
+test('Table 2 values match the document, empty cells included', () => {
+  assert.ok(inDoc('Large Industrial | 2.1 | 17.2 | 2.6° | 0.4°'));
+  assert.ok(inDoc('Reference | 1.3 |  | 3.5° | 0.5°'));
+  assert.ok(inDoc('Small | 0.25 |  | 4.6° | 0.7°'));
+
+  assert.equal(ZONES['large-industrial'].greenKm, 17.2);
+  for (const k of ['reference', 'large', 'medium', 'small']) {
+    assert.equal(ZONES[k].greenKm, null,
+      `${k} has a Green distance, but Table 2 leaves that cell empty`);
+  }
+  assert.deepEqual(CLASS_ORDER.map((k) => ZONES[k].redKm), [0.25, 0.5, 0.8, 1.3, 2.1]);
+  assert.deepEqual(CLASS_ORDER.map((k) => ZONES[k].redDeg), [4.6, 4.6, 3.6, 3.5, 2.6]);
+  assert.deepEqual(CLASS_ORDER.map((k) => ZONES[k].greenDeg), [0.7, 0.7, 0.6, 0.5, 0.4]);
+});
+
+test('a class with no published Green distance can never be green on distance', () => {
+  // 500 km away, which is off the island, and it is still Amber on distance.
+  const r = zonalCheck({ classKey: 'medium', distanceM: 500_000, angleDeg: 2 });
+  assert.equal(r.byDistance, 'amber');
+  assert.ok(r.warnings.some((w) => /publishes no Green distance/.test(w)));
+});
+
+// ----------------------------------------------------------- what the angle is
+
+test('the angle is a hub elevation angle, not a subtense', () => {
+  assert.equal(ANGLE_BASIS.verified, true);
+  assert.match(ANGLE_BASIS.interpretation, /elevation angle of the turbine hub/);
+
+  // 80 m hub, site base at 0, 2 km away: atan(80/2000) = 2.29 degrees.
+  assert.ok(Math.abs(hubElevationDeg(80, 0, 2000) - 2.2906) < 1e-3);
+  // A hub below the site reads negative, which is what "sloping downwards" means.
+  assert.ok(hubElevationDeg(10, 60, 2000) < 0);
+  // Moving further away shrinks the angle. A subtense would do the same, but a
+  // subtense would not care about height, and this one does.
+  assert.ok(hubElevationDeg(80, 0, 4000) < hubElevationDeg(80, 0, 2000));
+  assert.ok(hubElevationDeg(120, 0, 2000) > hubElevationDeg(80, 0, 2000));
+});
+
+// ------------------------------------------------------------------ Table 3
+
+test('all nine Table 3 cells match the document', () => {
+  const rows = [
+    ['red', 'red', 'red', 'Excessive impact'],
+    ['red', 'amber', 'amber', 'Terrain sloping downwards'],
+    ['red', 'green', 'green', 'Terrain sloping downwards'],
+    ['amber', 'red', 'red', 'Excessive impact'],
+    ['amber', 'amber', 'amber', 'Indeterminate impact'],
+    ['amber', 'green', 'green', 'Terrain sloping downwards'],
+    ['green', 'red', 'amber', 'Terrain sloping upwards'],
+    ['green', 'amber', 'green', 'Marginal impact'],
+    ['green', 'green', 'green', 'Acceptable impact'],
+  ];
+  assert.equal(Object.keys(TABLE_3.cells).length, 9);
+  for (const [d, a, overall, rationale] of rows) {
+    const cell = TABLE_3.cells[`${d}|${a}`];
+    assert.ok(cell, `Table 3 has no cell for ${d} distance and ${a} angle`);
+    assert.equal(cell.overall, overall, `${d}|${a} should be ${overall}`);
+    assert.equal(cell.rationale, rationale);
+    // and the row is in the document, in its printed order and wording
+    const printed = `${d.toUpperCase()} | ${a.toUpperCase()} | ${overall.toUpperCase()} | ${rationale}`;
+    assert.ok(inDoc(printed), `Table 3 row not found in the document: ${printed}`);
+  }
+  assert.equal(TABLE_3.implemented, true);
+});
+
+test('the four cells the old inference got wrong now follow the table', () => {
+  // Each of these was harsher than CAP 670 before the document was read.
+  const cases = [
+    { d: 'red', a: 'amber', was: 'red', now: 'amber' },
+    { d: 'amber', a: 'green', was: 'amber', now: 'green' },
+    { d: 'green', a: 'red', was: 'red', now: 'amber' },
+    { d: 'green', a: 'amber', was: 'amber', now: 'green' },
+  ];
+  for (const c of cases) {
+    assert.equal(TABLE_3.cells[`${c.d}|${c.a}`].overall, c.now);
+    assert.notEqual(c.was, c.now);
+  }
+});
+
+test('the Red-distance-Green-angle contradiction is applied as printed and reported', () => {
+  // Large Industrial: inside 2.1 km is Red on distance. A hub at or below the
+  // site base gives a zero or negative angle, which is Green.
+  const r = zonalCheck({ classKey: 'large-industrial', distanceM: 1500, angleDeg: 0.1 });
+  assert.equal(r.byDistance, 'red');
+  assert.equal(r.byAngle, 'green');
+  assert.equal(r.zone, 'green');
+  assert.ok(r.warnings.some((w) => /automatic rejection/.test(w)));
+  assert.ok(inDoc(TABLE_3_CONTRADICTION.redDefinition));
+});
+
+test('a zonal check can be driven from heights instead of an angle', () => {
+  const byAngle = zonalCheck({ classKey: 'large', distanceM: 3000, angleDeg: hubElevationDeg(100, 20, 3000) });
+  const byHeights = zonalCheck({ classKey: 'large', distanceM: 3000, hubAmslM: 100, siteBaseAmslM: 20 });
+  assert.equal(byHeights.zone, byAngle.zone);
+  assert.ok(Math.abs(byHeights.angleDeg - byAngle.angleDeg) < 1e-9);
+  assert.throws(() => zonalCheck({ classKey: 'large', distanceM: 3000 }), /needs angleDeg/);
+});
+
+// ------------------------------------------------------------------- scope
+
+test('the out-of-scope clauses match the document', () => {
+  const hidden = outOfScopeCheck({ visibleFromSite: false, turbineCount: 40 });
+  assert.equal(hidden.acceptable, true);
+
+  // Single turbine, hub below the radio station base level, clear of the red zone.
+  const below = outOfScopeCheck({
+    visibleFromSite: true, turbineCount: 1, hubAmslM: 40, siteBaseAmslM: 120,
+    distanceM: 2000, classKey: 'large',
+  });
+  assert.equal(below.acceptable, true);
+
+  // Same but inside the red zone separation.
+  const tooClose = outOfScopeCheck({
+    visibleFromSite: true, turbineCount: 1, hubAmslM: 40, siteBaseAmslM: 120,
+    distanceM: 500, classKey: 'large',
+  });
+  assert.equal(tooClose.acceptable, false);
+
+  // Nothing applies.
+  const none = outOfScopeCheck({ visibleFromSite: true, turbineCount: 5, hubAmslM: 90, siteBaseAmslM: 10 });
+  assert.equal(none.acceptable, null);
+});
+
+test('the C/I routing triggers are the ones the document gives', () => {
+  assert.equal(SCOPE.ciTipHeightM, 110);
+  assert.equal(SCOPE.methodOneMaxTurbines, 10);
+  assert.equal(routeToCI({ zone: 'green', tipHeightM: 111, turbineCount: 3 }).required, true);
+  assert.equal(routeToCI({ zone: 'green', tipHeightM: 90, turbineCount: 11 }).required, true);
+  assert.equal(routeToCI({ zone: 'amber', tipHeightM: 90, turbineCount: 3 }).required, true);
+  assert.equal(routeToCI({ zone: 'green', tipHeightM: 90, turbineCount: 3 }).outcome, 'no objection');
+  assert.equal(routeToCI({ zone: 'red', tipHeightM: 90, turbineCount: 3 }).outcome, 'objection');
+});
+
+// ----------------------------------------------------------------- Method 2
+
+test('the carrier-to-interference thresholds match the document', () => {
   assert.equal(CI_THRESHOLDS.singleTurbineDb, 20);
   assert.equal(CI_THRESHOLDS.worstOfSeveralDb, 23);
   assert.equal(CI_THRESHOLDS.aggregateDb, 14);
   assert.equal(CI_THRESHOLDS.fieldStrengthVhfDbuVm, 26);
   assert.equal(CI_THRESHOLDS.fieldStrengthUhfDbuVm, 35);
+  assert.ok(inDoc('Acceptance criteria = > 20dB C/I ratio in the volume of interest'));
+  assert.ok(inDoc('Acceptance criteria = > 23dB C/I ratio in the volume of interest'));
+  assert.ok(inDoc('Acceptance criteria = > 14dB C/I ratio in the volume of interest'));
+  assert.ok(inDoc('field strength limit of 26 dBuV/m'));
+  assert.ok(inDoc('field strength limit of 35 dBuV/m'));
+  assert.match(CI_THRESHOLDS.caution, /suitably qualified consultancy/);
+  assert.ok(inDoc('undertaken by a suitably qualified consultancy practice or organisation'));
+});
+
+test('the Method 2 baseline matches the document', () => {
+  const s = METHOD_2_BASELINE.radioStation;
+  assert.equal(s.antennaHeightM, 10);
+  assert.equal(s.aerialGainDbi, 2.1);
+  assert.equal(s.aerialSystemLossDb, 3);
+  assert.equal(s.txPowerVhfW, 50);
+  assert.equal(s.txPowerUhfW, 100);
+  assert.equal(s.vhfHz, 127e6);
+  assert.equal(s.uhfHz, 368e6);
+  assert.ok(inDoc('Antenna height - 10 metres'));
+  assert.ok(inDoc('Aerial Gain : 2.1 dBi'));
+  assert.ok(inDoc('Aerial system losses : 3dB'));
+  assert.equal(METHOD_2_BASELINE.turbine.aerialGainDbi, 0);
+});
+
+test('the C/I check compares against the right threshold for one or several turbines', () => {
+  assert.equal(checkCarrierToInterference([21]).pass, true);
+  assert.equal(checkCarrierToInterference([19]).pass, false);
+  assert.equal(checkCarrierToInterference([24, 30]).pass, true);
+  assert.equal(checkCarrierToInterference([22, 30]).pass, false);
+  assert.equal(checkCarrierToInterference([24, 30], { aggregateDb: 13 }).pass, false);
+  assert.equal(checkCarrierToInterference([]), null);
+});
+
+// ------------------------------------------------------------- Tables 4 and 5
+
+test('the RCS tables match the document', () => {
+  assert.ok(inDoc('Large Industrial | 51.0 |  | 41.0 |'));
+  assert.ok(inDoc('Small | 32.5 | 1782 | 22.5 | 178'));
+  assert.ok(inDoc('Large Industrial | 55.6 | 364254 | 45.6 | 36425'));
+  assert.equal(RCS_DBSM.vhf.monostatic.reference, 38.1);
+  assert.equal(RCS_DBSM.uhf.bistatic.small, 37.1);
+  assert.equal(RCS_DBSM.vhf.frequencyHz, 127e6);
+  assert.equal(RCS_DBSM.uhf.frequencyHz, 368e6);
+});
+
+test('bistatic is exactly 10 dB above monostatic in both tables, as the document states', () => {
+  assert.ok(inDoc('Peak Bistatic RCS value is 10dB higher'));
+  for (const band of ['vhf', 'uhf']) {
+    for (const k of CLASS_ORDER) {
+      const gap = RCS_DBSM[band].bistatic[k] - RCS_DBSM[band].monostatic[k];
+      assert.ok(Math.abs(gap - 10) < 1e-9, `${band} ${k}: bistatic is ${gap.toFixed(2)} dB above monostatic`);
+    }
+  }
+});
+
+test("the document's own scaling formula reproduces four of its five classes", () => {
+  // Small, Medium and Large Industrial scale from the TOP of their Table 1
+  // rotor band. Reference scales from its stated 90 m.
+  const fromTop = { small: 15, medium: 35, 'large-industrial': 126, reference: 90 };
+  for (const [k, d] of Object.entries(fromTop)) {
+    for (const [band, f] of [['vhf', 127], ['uhf', 368]]) {
+      const calc = scaledMonostaticRcsDbsm(d, f);
+      const published = RCS_DBSM[band].monostatic[k];
+      assert.ok(Math.abs(calc - published) < 0.06,
+        `${band} ${k}: formula gives ${calc.toFixed(2)}, table says ${published}`);
+    }
+  }
+});
+
+test('the Large class does NOT reproduce, and the gap is recorded rather than silently fixed', () => {
+  const t = TABLE_4_5_INCONSISTENCY;
+  const fromTopVhf = scaledMonostaticRcsDbsm(60, 127);
+  assert.ok(Math.abs(fromTopVhf - t.scaledFromTopOfBandDbsm) < 0.02);
+  assert.ok(Math.abs((fromTopVhf - RCS_DBSM.vhf.monostatic.large) - t.gapDb) < 0.02);
+
+  // Inverting the formula on the published value gives the diameter it was
+  // built from, and it is the same in both bands.
+  const dv = rotorFromRcsM(RCS_DBSM.vhf.monostatic.large, 127);
+  const du = rotorFromRcsM(RCS_DBSM.uhf.monostatic.large, 368);
+  assert.ok(Math.abs(dv - t.impliedRotorM) < 0.2, `VHF implies ${dv.toFixed(1)} m`);
+  assert.ok(Math.abs(du - t.impliedRotorM) < 0.3, `UHF implies ${du.toFixed(1)} m`);
+  assert.ok(Math.abs(dv - du) < 0.3, 'the two bands imply different diameters, so it is not one error');
+
+  // The published figure stays published.
+  assert.equal(RCS_DBSM.vhf.monostatic.large, t.publishedMonostaticVhfDbsm);
+  assert.match(t.implemented, /used as printed/);
+});
+
+// ------------------------------------------------------------------- GEN 01
+
+test('GEN 01 figures match the document', () => {
   assert.equal(GEN01.consultationRadiusKm, 20);
   assert.equal(GEN01.ilsApproachRadiusKm, 34);
   assert.equal(GEN01.observerHeightM, 25);
-  assert.equal(CI_TRIGGERS.tipHeightM, 110);
-  assert.equal(CI_TRIGGERS.turbineCount, 10);
+  assert.ok(inDoc('within a minimum radius of 20 km from their Aerodrome or Radio Site'));
+  assert.ok(inDoc('may extend to 34 km for ILS approaches'));
+  assert.ok(inDoc(GEN01.quote));
+  assert.match(GEN01.horizonRule, /"May be" is the source wording/);
 });
 
-test('the thresholds get more restrictive as the class gets larger', () => {
-  // A sanity check on the transcription itself: a bigger machine must be
-  // flagged further out and at a smaller subtended angle.
-  for (let i = 1; i < CLASS_ORDER.length; i += 1) {
-    const small = ZONES[CLASS_ORDER[i - 1]];
-    const big = ZONES[CLASS_ORDER[i]];
-    assert.ok(big.redKm >= small.redKm, `${big.label} red distance`);
-    assert.ok(big.greenKm >= small.greenKm, `${big.label} green distance`);
-    assert.ok(big.redDeg <= small.redDeg, `${big.label} red angle`);
-    assert.ok(big.greenDeg <= small.greenDeg, `${big.label} green angle`);
-  }
+test('GEN 02.25 example frame for a VHF or UHF radio site matches the document', () => {
+  assert.equal(GEN02_VHF_UHF_FRAME.groundCircleRadiusM, 91);
+  assert.equal(GEN02_VHF_UHF_FRAME.slopeFromElevationM, 9);
+  assert.equal(GEN02_VHF_UHF_FRAME.slopeToRadiusM, 610);
+  assert.ok(inDoc(GEN02_VHF_UHF_FRAME.quote));
 });
 
-test('Table 1 is declared not implemented, with the reason', () => {
-  assert.equal(TABLE_1.implemented, false);
-  assert.match(TABLE_1.reason, /not supplied|not read/i);
-  assert.match(TABLE_1.rule, /larger class/i);
-  assert.ok(NOT_IMPLEMENTED.some((n) => /Table 1/.test(n.item)));
-  assert.ok(NOT_IMPLEMENTED.some((n) => /SUR 13/.test(n.item)));
-  assert.ok(NOT_IMPLEMENTED.some((n) => /Table 3/.test(n.item)));
+test('the visual horizon check behaves geometrically', () => {
+  const near = gen01Check({ distanceM: 5000, tipHeightAmslM: 150, siteAmslM: 50 });
+  assert.equal(near.withinConsultation, true);
+  assert.equal(near.belowVisualHorizon, false);
+
+  const far = gen01Check({ distanceM: 90_000, tipHeightAmslM: 60, siteAmslM: 50 });
+  assert.equal(far.withinConsultation, false);
+  assert.equal(far.belowVisualHorizon, true);
+  assert.match(far.note, /may be acceptable/);
+
+  assert.equal(gen01Check({ distanceM: 30_000, tipHeightAmslM: 200, siteAmslM: 0, ilsApproach: true })
+    .withinConsultation, true);
 });
 
-test('every class the classifier can return is inferred, and says so', () => {
-  for (const d of [10, 22, 43, 61, 92, 120, 236]) {
-    const c = classifyByRotor(d);
-    assert.equal(c.inferred, true, `${d} m must be flagged inferred`);
-    assert.ok(CLASS_ORDER.includes(c.key));
-    assert.match(c.note, /INFERRED/);
-  }
-});
+// -------------------------------------------------------- what is still open
 
-test('a borderline turbine takes the LARGER class, as the rule requires', () => {
-  // 60 m sits one metre under the inferred 61 m Large boundary, which is the
-  // very boundary the supplied summary flagged as doubtful.
-  const sixty = classifyByRotor(60);
-  assert.equal(sixty.key, 'large');
-  assert.equal(sixty.borderline, true);
-  // Well inside a band, it is not borderline.
-  assert.equal(classifyByRotor(80).borderline, false);
-  assert.equal(classifyByRotor(80).key, 'large');
-});
-
-test('angular subtense is geometry, and is the stated inference', () => {
-  // A 100 m rotor at 1 km subtends 2 atan(50/1000).
-  const expected = 2 * Math.atan(50 / 1000) * 180 / Math.PI;
-  assert.ok(Math.abs(subtenseDeg(100, 1000) - expected) < 1e-9);
-  assert.equal(subtenseDeg(100, 0), 180, 'zero range must not produce a NaN');
-  assert.equal(ANGLE_BASIS.verified, false);
-  assert.match(ANGLE_BASIS.interpretation, /subtense/i);
-});
-
-test('agreement between distance and angle decides, and says so', () => {
-  const near = zonalCheck({ classKey: 'large-industrial', distanceM: 500, rotorDiameterM: 120 });
-  assert.equal(near.zone, 'red');
-  assert.equal(near.cellBasis, 'both agree');
-  const far = zonalCheck({ classKey: 'large-industrial', distanceM: 20000, rotorDiameterM: 120 });
-  assert.equal(far.zone, 'green');
-  assert.equal(far.cellBasis, 'both agree');
-});
-
-test('THE KNOWN CONTRADICTION: a red distance with a green angle comes out green, and warns', () => {
-  // Forced by passing the angle directly, which is the only way to get this
-  // pairing: at a red distance a real rotor subtends a red angle.
-  const r = zonalCheck({ classKey: 'large', distanceM: 500, rotorDiameterM: 60, angleDeg: 0.3 });
-  assert.equal(r.byDistance, 'red');
-  assert.equal(r.byAngle, 'green');
-  assert.equal(r.zone, 'green', 'Table 3 as printed must be implemented as printed');
-  assert.equal(r.cellBasis, 'the one cell of Table 3 that was supplied');
-  assert.ok(r.warnings.some((w) => /automatic objection/i.test(w)),
-    'the contradiction with the Red definition must be reported, not resolved silently');
-});
-
-test('combinations that were NOT supplied take the WORSE of the two, and say so', () => {
-  // Amber distance with a red angle is not a cell anyone gave us. The default
-  // is the conservative reading: it was chosen by measuring that a permissive
-  // extrapolation triples the damage from the angle-basis unknown.
-  const r = zonalCheck({ classKey: 'medium', distanceM: 700, rotorDiameterM: 60 });
-  assert.equal(r.byDistance, 'amber');
-  assert.equal(r.byAngle, 'red');
-  assert.equal(r.zone, 'red', 'the worse of amber and red is red');
-  assert.match(r.cellBasis, /INFERRED/);
-  assert.ok(r.warnings.some((w) => /WORSE/.test(w)));
-
-  // The permissive reading is available for anyone who has the real table.
-  const loose = zonalCheck({ classKey: 'medium', distanceM: 700, rotorDiameterM: 60 },
-    { unsuppliedCellsFavourable: true });
-  assert.equal(loose.zone, 'amber');
-  assert.match(loose.cellBasis, /more favourable/);
-});
-
-test('the one SUPPLIED cell stays permissive whichever extrapolation is chosen', () => {
-  // Red distance with a green angle is not a guess, so the conservative
-  // default must not override it.
-  for (const opts of [{}, { unsuppliedCellsFavourable: true }]) {
-    const r = zonalCheck({ classKey: 'large', distanceM: 500, rotorDiameterM: 60, angleDeg: 0.3 }, opts);
-    assert.equal(r.zone, 'green');
-    assert.equal(r.cellBasis, 'the one cell of Table 3 that was supplied');
-  }
-});
-
-test('an unknown class is refused rather than guessed', () => {
-  assert.throws(() => zonalCheck({ classKey: 'enormous', distanceM: 1000, rotorDiameterM: 60 }),
-    /unknown turbine class/);
-});
-
-test('routing to the C/I method fires on tip height, count or amber', () => {
-  assert.equal(routeToCI({ zone: 'green', tipHeightM: 90, turbineCount: 3 }).outcome, 'no objection');
-  assert.equal(routeToCI({ zone: 'red', tipHeightM: 90, turbineCount: 3 }).outcome, 'objection');
-  const tall = routeToCI({ zone: 'green', tipHeightM: 111, turbineCount: 3 });
-  assert.equal(tall.required, true);
-  assert.match(tall.reasons[0], /111 m is above 110 m/);
-  const many = routeToCI({ zone: 'green', tipHeightM: 90, turbineCount: 11 });
-  assert.equal(many.required, true);
-  const amber = routeToCI({ zone: 'amber', tipHeightM: 90, turbineCount: 3 });
-  assert.equal(amber.required, true);
-  // Exactly at a trigger is NOT over it.
-  assert.equal(routeToCI({ zone: 'green', tipHeightM: 110, turbineCount: 10 }).required, false);
-});
-
-test('the disputed flowchart box takes the conservative reading and says so', () => {
-  const hit = operationalImpactOutcome(true);
-  assert.equal(hit.outcome, 'objection');
-  assert.match(hit.warning, /prints the other way round|other way/i);
+test('the flow chart is still marked unread, because it is a picture', () => {
+  assert.match(FLOWCHART_DISCREPANCY.status, /STILL UNRESOLVED/);
+  assert.ok(PROVENANCE.unreadParts.some((p) => /flow chart/i.test(p)));
+  assert.ok(PROVENANCE.unreadParts.some((p) => /Figure 3/.test(p)));
+  // The conservative reading is the one implemented.
+  assert.equal(operationalImpactOutcome(true).outcome, 'objection');
   assert.equal(operationalImpactOutcome(false).outcome, 'no objection');
-  assert.match(FLOWCHART_DISCREPANCY.status, /unresolved/i);
-  assert.match(FLOWCHART_DISCREPANCY.implemented, /conservative/i);
 });
 
-test('C/I ratios are checked against the thresholds but never computed', () => {
-  assert.equal(checkCarrierToInterference([]), null);
-  const single = checkCarrierToInterference([21]);
-  assert.equal(single.pass, true);
-  assert.equal(single.checks[0].limit, 20);
-  assert.equal(checkCarrierToInterference([19]).pass, false);
-  const several = checkCarrierToInterference([30, 24, 26], { aggregateDb: 15 });
-  assert.equal(several.checks[0].limit, 23, 'several turbines take the 23 dB limit');
-  assert.equal(several.checks[0].value, 24, 'the WORST ratio is the one tested');
-  assert.equal(several.pass, true);
-  assert.equal(checkCarrierToInterference([30, 24], { aggregateDb: 13 }).pass, false);
-  assert.match(several.caution, /INDICATIVE ONLY/);
-  assert.match(several.caution, /qualified consultancy/i);
+test('SUR 13 is read and deliberately not turned into a pass or fail', () => {
+  assert.equal(SUR13.read, true);
+  assert.equal(SUR13.computableThresholds, false);
+  assert.ok(sur.includes(squash(SUR13.lineOfSightDuty)));
+  assert.ok(NOT_IMPLEMENTED.some((n) => /SUR 13/.test(n.item)));
 });
 
-test('GEN 01 consultation radius, and 34 km for an ILS approach', () => {
-  const a = gen01Check({ distanceM: 25000, tipHeightAmslM: 200, siteAmslM: 50 });
-  assert.equal(a.withinConsultation, false);
-  assert.equal(a.radiusKm, 20);
-  const b = gen01Check({ distanceM: 25000, tipHeightAmslM: 200, siteAmslM: 50, ilsApproach: true });
-  assert.equal(b.withinConsultation, true);
-  assert.equal(b.radiusKm, 34);
-});
-
-test('the visual horizon rule is geometry, and "may be acceptable" is kept as the wording', () => {
-  // An observer 25 m up sees about 20.6 km at 4/3 earth radius.
-  const near = gen01Check({ distanceM: 5000, tipHeightAmslM: 150, siteAmslM: 0 });
-  assert.ok(near.horizonDistanceM > 20000 && near.horizonDistanceM < 21500,
-    `horizon ${near.horizonDistanceM.toFixed(0)} m`);
-  assert.equal(near.belowVisualHorizon, false, 'inside the horizon nothing is hidden');
-  // Beyond the horizon there is a height a body must exceed to be seen. Test
-  // that threshold rather than a lucky pair of numbers: at 60 km it is about
-  // 91 m, so a 100 m tip is still VISIBLE and only something lower is hidden.
-  const probe = gen01Check({ distanceM: 60000, tipHeightAmslM: 0, siteAmslM: 0 });
-  const cut = probe.tipHiddenBelowAmslM;
-  assert.ok(cut > 80 && cut < 105, `threshold ${cut.toFixed(0)} m at 60 km`);
-  assert.equal(gen01Check({ distanceM: 60000, tipHeightAmslM: cut + 1, siteAmslM: 0 })
-    .belowVisualHorizon, false, 'a tip above the threshold is visible');
-  const far = gen01Check({ distanceM: 60000, tipHeightAmslM: cut - 1, siteAmslM: 0 });
-  assert.equal(far.belowVisualHorizon, true, 'a tip below the threshold is hidden');
-  assert.match(far.note, /may be/i, 'the source wording is "may be", not a pass');
-});
-
-test('the sensitivity measurement is recorded, including what costs nothing', () => {
-  assert.ok(SENSITIVITY.measuredOn > 10000);
-  assert.match(SENSITIVITY.worstUnknown, /angle/i);
-  // These are on no verdict path. If that ever stops being true, this must fail.
-  for (const k of ['fieldStrengthVhfDbuVm', 'singleTurbineDb', 'consultationRadiusKm']) {
-    assert.ok(SENSITIVITY.zeroImpact.includes(k), `${k} should be recorded as zero-impact`);
+test('every correction names what the module used to print and what the document says', () => {
+  assert.ok(CORRECTIONS.length >= 4);
+  for (const c of CORRECTIONS) {
+    assert.ok(c.item && c.was && c.now && c.detail, `incomplete correction: ${JSON.stringify(c)}`);
+    assert.notEqual(c.was, c.now);
+    assert.ok(c.detail.length > 80, `${c.item}: the detail does not explain the change`);
   }
-  assert.match(SENSITIVITY.note, /zonal verdict/i);
+});
+
+test('nothing still claims to be inferred that the document settles', () => {
+  const src = readFileSync(resolve(root, 'js/cap670.js'), 'utf8');
+  // The old module described Table 1 and Table 3 as not implemented.
+  assert.equal(TABLE_1.implemented, true);
+  assert.equal(TABLE_3.implemented, true);
+  assert.ok(!/impliedWidthFromGreenM/.test(src), 'the subtense inference is still in the source');
+  assert.ok(!/classifyByRotor/.test(src), 'the inferred rotor classifier is still in the source');
 });
