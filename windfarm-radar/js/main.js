@@ -501,7 +501,7 @@ $('#btn-evidence').addEventListener('click', () => {
     .map(([k, v]) => `${v} ${STATUS_LABELS[k].toLowerCase()}`).join(', ');
   $('#evidence-body').innerHTML = `
     <div class="warn-box">
-      <strong>${counts.read || 0} of ${REFERENCES.length} entries were read in full.</strong>
+      <strong>${counts.read || 0} of ${REFERENCES.length} entries ${(counts.read || 0) === 1 ? 'was' : 'were'} read in full.</strong>
       Of the rest: ${esc(summary)}. The environment this tool was built in had no general outbound
       network access. Where a formula came from a standard reference, it was validated against values
       that are independently known instead, which is a different kind of confidence and is recorded on

@@ -6,6 +6,7 @@
 
 import {
   RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS, REFRACTION_PRESETS,
+  radarPresetProvenanceNote,
   TARGET_GROUPS, tipHeightOf, groundClearanceOf, setTipHeight,
   BLADE_CONSTRUCTIONS, TOWER_MATERIALS, DRIVETRAINS,
 } from './model.js';
@@ -915,9 +916,7 @@ export function updateNotes(noteEls, result, extra = {}) {
   const r = result.radar;
   const set = (id, text) => { if (noteEls[id]) noteEls[id].textContent = text; };
 
-  set('radar-note', RADAR_PRESETS[r.preset]
-    ? `${RADAR_PRESETS[r.preset].note} Values are representative, not from a datasheet.`
-    : 'Custom parameters.');
+  set('radar-note', radarPresetProvenanceNote(r.preset));
 
   set('waveform-note',
     `Range resolution ${r.rangeResolutionM.toFixed(0)} m · unambiguous range `

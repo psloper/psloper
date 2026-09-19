@@ -254,6 +254,36 @@ export const REFERENCES = [
       + 'the work, and NO figure from it is used as a constant in the model.',
   },
 
+  // ------------------------------------------------------ radar equipment
+  {
+    id: 'thales-star-ng-2023',
+    title: 'STAR NG / RSM NG, Military Air Traffic Management datasheet',
+    org: 'THALES LAS France, Limours Cedex',
+    year: 2023,
+    type: 'Manufacturer datasheet',
+    status: 'read',
+    supports: ['star-ng radar preset', 'What to ask a radar operator for'],
+    reports: 'Scan rate from 10 to 15 RPM. Range up to 120 NM with PSR in S Band, and up to 256 NM '
+      + 'with MSSR. Military Mode 1, 2, 3 and civil Mode A/C, S. ADS-B extended squitter detection '
+      + 'over 360 degrees. 2000 tracks per scan. 3D detection, ECCM with frequency agility, least '
+      + 'jammed frequency and jamming strobe detection. MTBCF 66000 h, availability better than '
+      + '99.999 per cent, 24/7 unmanned operation. States that "STAR NG has a dedicated, and field '
+      + 'proven, processing to mitigate windfarm impact", and that it can be operated under adverse '
+      + 'conditions using frequency agility, a 4G/5G filter or an interference map. Compliance '
+      + 'claimed against EUROCONTROL specifications and ICAO standard recommendations, with '
+      + 'cybersecurity based on the NIST framework.',
+    validation: 'Read in full from a saved copy of the manufacturer viewer page supplied by the user. '
+      + 'The text is stored verbatim at docs/evidence/thales-star-ng-datasheet-2023-06-15.txt and '
+      + 'every quoted figure in the star-ng preset is checked against that file by the test suite.',
+    caution: 'A sales datasheet, not a specification. It gives NONE of the six parameters that the '
+      + 'sensitivity run showed dominate the result: antenna height, azimuth beamwidth, elevation '
+      + 'beamwidth, beam tilt, exact frequency and antenna gain. It gives scan rate and maximum '
+      + 'range, which that run showed change the answer by 1.1 dB and 0.0 dB. The wind farm '
+      + 'mitigation processing is claimed without any figure, so the preset credits it with nothing '
+      + 'and the tool\'s output for this radar is an upper bound on the problem, not a prediction. '
+      + 'Two pages, dated 15 June 2023; a later edition may differ.',
+  },
+
   // ----------------------------------------------------------- materials
   {
     id: 'qinetiq-vestas',

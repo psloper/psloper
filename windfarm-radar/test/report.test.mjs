@@ -8,6 +8,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 import { analyse } from '../js/analysis.js';
 import {
@@ -184,13 +187,23 @@ test('the method text itself names every formula the tool relies on', () => {
 
 // --------------------------------------------------------- evidence register
 
-test('no reference claims to have been read in full', () => {
+test('anything claiming to have been read in full has the text stored to prove it', () => {
   // The environment this tool was built in had no general network access to
-  // document repositories. If a future change marks something "read", it must
-  // be because someone actually read it, not because the status looked untidy.
+  // document repositories, so "read" was an empty set for a long time. A
+  // document may now be marked read only if the text it was read from is in
+  // the repository, where anyone can check the quotes against it. The status
+  // must never be set because it looked untidy as "search-summary".
   const read = REFERENCES.filter((r) => r.status === 'read');
-  assert.equal(read.length, 0,
-    `these claim to be read in full: ${read.map((r) => r.id).join(', ')}`);
+  for (const r of read) {
+    assert.ok(r.validation, `${r.id} claims to be read in full but shows no working`);
+    const m = r.validation.match(/docs\/evidence\/[\w.-]+/);
+    assert.ok(m, `${r.id} claims to be read in full but names no stored copy of the text`);
+    const file = resolve(dirname(fileURLToPath(import.meta.url)), '..', m[0]);
+    assert.ok(existsSync(file), `${r.id} names ${m[0]}, which does not exist`);
+    assert.ok(readFileSync(file, 'utf8').length > 500,
+      `${r.id} names ${m[0]}, but it holds almost nothing`);
+    assert.ok(r.caution, `${r.id} was read in full, which is not the same as being complete or right`);
+  }
 });
 
 test('anything marked analysed records what it changed in the model', () => {
@@ -237,8 +250,10 @@ test('a cross-checked entry names what it was checked against and what that miss
 test('the report reproduces the whole register with its statuses', () => {
   const md = buildReportMarkdown(analyse(defaultScenario(), { skipCoverage: true }));
   assert.ok(md.includes('## Evidence register'), 'report has no evidence register');
-  assert.ok(/\*\*0 were read in full\.\*\*/.test(md),
-    'the report must state how many references were read in full');
+  const readCount = REFERENCES.filter((r) => r.status === 'read').length;
+  const verb = readCount === 1 ? 'was' : 'were';
+  assert.ok(md.includes(`**${readCount} ${verb} read in full.**`),
+    'the report must state how many references were read in full, and get the count right');
   for (const r of REFERENCES) {
     assert.ok(md.includes(r.title), `register entry missing from the report: ${r.id}`);
     assert.ok(md.includes(STATUS_LABELS[r.status]), `status label missing for ${r.id}`);

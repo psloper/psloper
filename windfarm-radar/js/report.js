@@ -236,7 +236,7 @@ cut-off, 13.1 dB required SNR for P<sub>d</sub> = 0.9 / P<sub>fa</sub> = 1e-6, t
       holding the detailed analysis; that document was not retrieved.</li>
 </ul>
 <p><strong>Verify every one of these against the current edition before citing
-them.</strong> None was read in full.</p>
+them.</strong> None of the documents in this list was read in full.</p>
 `;
 
 // ------------------------------------------------------------------ helpers
@@ -531,7 +531,7 @@ export function buildReportMarkdown(result, delta) {
   const counts = statusCounts();
   P(`Of ${REFERENCES.length} entries: `
     + Object.entries(counts).map(([k, v]) => `${v} ${STATUS_LABELS[k].toLowerCase()}`).join(', ')
-    + `. **${counts.read || 0} were read in full.**`);
+    + `. **${counts.read || 0} ${(counts.read || 0) === 1 ? 'was' : 'were'} read in full.**`);
   P('');
   P('The environment this tool was built in had no general outbound network access. Formulas taken');
   P('from standard references were validated against independently known values instead, which is a');

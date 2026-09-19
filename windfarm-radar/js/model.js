@@ -73,7 +73,131 @@ export const RADAR_PRESETS = {
     dopplerSpreadGainDb: 0, rangeSidelobeDb: -30, dynamicRangeDb: 60,
     heightAgl: 40, instrumentedRangeM: 45000,
   },
+  'star-ng': {
+    label: 'Thales STAR NG (S-band, partly from datasheet)',
+    note: 'Band, maximum range and scan rate come from the 2023 Thales '
+      + 'datasheet. Everything else is copied from the terminal PSR preset '
+      + 'and is NOT the real radar.',
+    freqHz: 2.8e9, peakPowerW: 25000, gainDbi: 34,
+    azBeamwidthDeg: 1.4, elBeamwidthDeg: 4.8, elPeakDeg: 4.0, cscMaxDeg: 30,
+    pulseWidthS: 60e-6, compressedBandwidthHz: 1.2e6, prfHz: 1100, rpm: 12.5,
+    noiseFigureDb: 3.5, systemLossDb: 6, mtiRejectionDb: 45, mtiNotchMs: 4,
+    dopplerSpreadGainDb: 0, rangeSidelobeDb: -35, dynamicRangeDb: 70,
+    heightAgl: 12, instrumentedRangeM: 222240,
+  },
 };
+
+// ----------------------------------------------------- preset provenance
+//
+// Which numbers came from a document, and which are our own invention.
+// Anything not listed as 'datasheet' below is representative only.
+//
+// The point of this table is that the STAR NG entry is mostly empty. The
+// published datasheet gives the radar band, the maximum range and the scan
+// rate. The parameter-sensitivity run in tools/radar_sensitivity.mjs measured
+// which inputs actually move the interference result: antenna height
+// (10.6 dB), azimuth beamwidth (8.2 dB), elevation beamwidth (8.0 dB), beam
+// tilt (7.5 dB), frequency (6.7 dB) and antenna gain (6.0 dB) dominate. The
+// datasheet supplies none of those six. It supplies scan rate (1.1 dB) and
+// instrumented range (0.0 dB), which are the bottom of that ranking, and the
+// band, which pins frequency only to somewhere between 2 and 4 GHz.
+
+export const DATASHEET_SOURCES = {
+  'thales-star-ng-2023': {
+    title: 'Thales STAR NG / RSM NG, Military Air Traffic Management datasheet',
+    publisher: 'THALES LAS France, Limours Cedex',
+    dated: '2023-06-15',
+    obtained: 'Saved copy of the Thales digital-seller viewer page, supplied 2026-09-19.',
+    text: 'docs/evidence/thales-star-ng-datasheet-2023-06-15.txt',
+    read: true,
+  },
+};
+
+export const RADAR_PRESET_PROVENANCE = {
+  'psr-terminal': { kind: 'representative' },
+  'psr-enroute': { kind: 'representative' },
+  'ad-long': { kind: 'representative' },
+  'weather-c': { kind: 'representative' },
+  'marine-x': { kind: 'representative' },
+  'star-ng': {
+    kind: 'mixed',
+    source: 'thales-star-ng-2023',
+    // parameter -> the words on the page, and what we did with them.
+    // Every quote below is checked verbatim against the extracted document
+    // by test/radarprovenance.test.mjs, so it cannot drift.
+    datasheet: {
+      instrumentedRangeM: {
+        quote: 'Range up to 120 NM with PSR in S Band',
+        value: 222240,
+        working: '120 NM x 1852 m = 222,240 m.',
+      },
+      rpm: {
+        quote: 'Scan rate from 10 to 15 RPM',
+        value: 12.5,
+        range: [10, 15],
+        working: 'The preset uses the middle of the published range.',
+      },
+    },
+    // stated in the document but not as a number we can use directly.
+    qualitative: {
+      freqHz: 'S Band only. That constrains the frequency to roughly 2 to 4 GHz. '
+        + 'The 2.8 GHz in the preset is our own pick inside that band, not a Thales figure.',
+      elBeamwidthDeg: 'The datasheet claims 3D detection, so elevation behaviour is '
+        + 'better than the 2D terminal PSR this preset copies. No pattern is published.',
+      dopplerSpreadGainDb: 'The datasheet states: "STAR NG has a dedicated, and field '
+        + 'proven, processing to mitigate windfarm impact." No figure is given, so the '
+        + 'preset claims no benefit (0 dB). Results for this radar are therefore an '
+        + 'upper bound on the turbine problem, not a prediction.',
+    },
+    // copied wholesale from psr-terminal. These are not the real radar.
+    inherited: 'psr-terminal',
+    inheritedKeys: [
+      'freqHz', 'peakPowerW', 'gainDbi', 'azBeamwidthDeg', 'elBeamwidthDeg',
+      'elPeakDeg', 'cscMaxDeg', 'pulseWidthS', 'compressedBandwidthHz', 'prfHz',
+      'noiseFigureDb', 'systemLossDb', 'mtiRejectionDb', 'mtiNotchMs',
+      'dopplerSpreadGainDb', 'rangeSidelobeDb', 'dynamicRangeDb', 'heightAgl',
+    ],
+    // the six parameters the sensitivity run showed matter most, and whether
+    // the datasheet answers them. It answers none of them.
+    dominantParametersAnswered: [],
+    dominantParametersUnanswered: [
+      'heightAgl', 'azBeamwidthDeg', 'elBeamwidthDeg', 'elPeakDeg', 'freqHz', 'gainDbi',
+    ],
+    // Verbatim fragments from the document, each checked against the
+    // extracted text by the test. Claims, not measurements.
+    claims: [
+      'STAR NG has a dedicated, and field proven, processing to mitigate windfarm impact.',
+      'STAR NG can be operated under adverse conditions thanks to frequency agility, '
+        + '4G/5G filter or interference map.',
+      'Range up to 256 NM with MSSR',
+      '2000 tracks per scan',
+      'MTBCF 66000 h',
+      'Availability > 99.999 %',
+      'ECCM (Freq Agility, LJF, strobe)',
+      'Detection and tracking of hovering helicopters',
+      '3D detection',
+    ],
+  },
+};
+
+// Short sentence for the UI, built from the table above rather than typed
+// twice, so it cannot drift away from the data.
+export function radarPresetProvenanceNote(key) {
+  const preset = RADAR_PRESETS[key];
+  const prov = RADAR_PRESET_PROVENANCE[key];
+  if (!preset || !prov) return 'Custom parameters.';
+  if (prov.kind === 'representative') {
+    return `${preset.note} Values are representative, not from a datasheet.`;
+  }
+  const src = DATASHEET_SOURCES[prov.source];
+  const n = Object.keys(prov.datasheet || {}).length;
+  const q = Object.keys(prov.qualitative || {}).length;
+  const unanswered = (prov.dominantParametersUnanswered || []).length;
+  return `${preset.note} ${n} parameter${n === 1 ? '' : 's'} taken from `
+    + `${src ? src.title : 'a datasheet'} (${src ? src.dated : 'undated'}), `
+    + `${q} more constrained but not given as numbers, and ${unanswered} of the `
+    + `6 parameters that most affect the result are not published at all.`;
+}
 
 export const TURBINE_PRESETS = {
   'small-850': {
