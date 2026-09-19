@@ -240,6 +240,58 @@ Exports: heat maps as PNG, standalone SVG (one `<title>` per cell, so values
 survive on hover) and CSV; plus PNG capture of the 3D view, the plan display,
 the vertical section and the wind rose.
 
+## What radar information you actually need
+
+A radar operator will give you some numbers and not others. `tools/radar_sensitivity.mjs`
+measures which ones move the answer, by perturbing one at a time across farms
+at 5, 9, 20 and 40 km. Ask for the top of this list and do not waste a meeting
+on the bottom.
+
+| Parameter | Perturbation tested | Worst margin shift |
+| --- | --- | --- |
+| **Antenna height AGL** | out by 10 m | **10.6 dB** |
+| **Azimuth beamwidth** | out by 0.4° | **8.2 dB** |
+| **Elevation beamwidth** | out by 1° | **8.0 dB** |
+| **Beam tilt (peak elevation)** | out by 2° | **7.5 dB** |
+| **Frequency** | S-band to L-band | 6.7 dB |
+| **Antenna gain** | out by 3 dB | 6.0 dB |
+| Doppler spread gain | out by 6 dB | 5.9 dB |
+| Peak power | halved | 3.0 dB |
+| Compressed bandwidth | halved | 3.0 dB |
+| System loss | out by 3 dB | 3.0 dB |
+| Noise figure | out by 2 dB | 2.0 dB |
+| Scan rate | out by 5 rpm | 1.1 dB |
+| PRF | out by 30% | 0.7 dB |
+| MTI notch width | out by 2 m/s | 0.3 dB |
+| MTI rejection depth | out by 10 dB | **0.0 dB, but see below** |
+| Range sidelobe level | out by 10 dB | 0.0 dB |
+| Pulse width | halved | 0.0 dB |
+| Dynamic range | out by 20 dB | 0.0 dB |
+| Cosecant-squared limit | out by 10° | 0.0 dB |
+| Instrumented range | doubled | 0.0 dB |
+
+**Antenna height beats peak power by three to one.** Height sets the horizon,
+and the horizon decides what is visible at all; power only moves a margin that
+is usually already large. Geometry beats the transmitter.
+
+### The ranking is misleading on its own
+
+MTI rejection depth reads as 0.0 dB above, which is true and would be the wrong
+thing to conclude. Its importance depends entirely on whether the rotor is
+turning:
+
+| Wind | Peak blade Doppler | Turbine SNR at 45 dB | at 25 dB | Difference |
+| --- | --- | --- | --- | --- |
+| 0 m/s, parked | 0 Hz | 18.0 dB | 38.0 dB | **20.0 dB** |
+| 2 m/s | 129 Hz | 49.8 dB | 50.4 dB | 0.6 dB |
+| 12 m/s | 1572 Hz | 52.2 dB | 52.4 dB | 0.2 dB |
+
+A turning rotor puts the blade Doppler far outside the notch, so the rejection
+figure never applies. A parked rotor sits in the notch, where the same error
+costs 20 dB. **Ask for the MTI figures only if parked machines are part of what
+you are assessing** — and measured SCADA says 12 per cent of operating-wind time
+is spent stopped, so they often are.
+
 ## Reference targets
 
 Twenty-five aircraft across four classes: uncrewed (4), general aviation (7),
