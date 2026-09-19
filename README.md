@@ -1,3 +1,11 @@
+> **This repository holds two independent browser tools.** This README covers the
+> FPV drone trainer at the repository root. The other is the
+> [Wind Farm / Radar Interference Assessor](windfarm-radar/) under
+> `windfarm-radar/`, a 3D screening tool for wind turbine effects on primary
+> surveillance radar. Both are static, dependency-free, and share the vendored
+> copy of Three.js in `js/vendor/`. Serve the repository root and open
+> `/` for the drone trainer or `/windfarm-radar/` for the radar tool.
+
 # FPV Drone Pilot Trainer
 
 A browser-based FPV (First-Person View) drone flight simulator for practicing
