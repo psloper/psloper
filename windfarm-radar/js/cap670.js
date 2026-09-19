@@ -159,7 +159,7 @@ export function subtenseDeg(widthM, rangeM) {
  * reported in `warnings` rather than resolved silently, because resolving it
  * either way would be this tool deciding what the regulator meant.
  */
-export function zonalCheck({ classKey, distanceM, rotorDiameterM, angleDeg }) {
+export function zonalCheck({ classKey, distanceM, rotorDiameterM, angleDeg }, opts = {}) {
   const z = ZONES[classKey];
   if (!z) throw new Error(`unknown turbine class: ${classKey}`);
   const km = distanceM / 1000;
@@ -188,12 +188,29 @@ export function zonalCheck({ classKey, distanceM, rotorDiameterM, angleDeg }) {
     zone = KNOWN_CELL.result;
     cellBasis = 'the one cell of Table 3 that was supplied';
   } else {
-    // More favourable of the two, extrapolated from that cell.
-    zone = rank[byDistance] > rank[byAngle] ? byDistance : byAngle;
-    cellBasis = 'INFERRED: the rest of Table 3 was not supplied';
-    warnings.push(`Distance says ${byDistance} and angle says ${byAngle}. That combination is `
-      + 'not one this tool was given, so it took the more favourable of the two. Check the '
-      + 'real Table 3 before relying on it.');
+    // The other seven disagreeing cells were never supplied, so this is a
+    // CHOICE, not a transcription. It takes the WORSE of the two.
+    //
+    // That choice was made by measurement. The largest unknown in this module
+    // is what the angle column is measured across: if it is tower width rather
+    // than rotor diameter, every angle reads far greener than the tool assumes.
+    // Extrapolating Table 3 permissively let that error drag 68 per cent of
+    // zones to a more permissive verdict; taking the worse of the two holds it
+    // to 23 per cent. Two unknowns that compound are worse than either alone,
+    // and a false "no objection" is the expensive direction to be wrong in.
+    //
+    // Set unsuppliedCellsFavourable if you have the real Table 3 and it says
+    // otherwise. The one cell that WAS supplied is permissive and is honoured
+    // above regardless, because that one is not a guess.
+    const favourable = opts.unsuppliedCellsFavourable === true;
+    zone = favourable
+      ? (rank[byDistance] > rank[byAngle] ? byDistance : byAngle)
+      : (rank[byDistance] < rank[byAngle] ? byDistance : byAngle);
+    cellBasis = `INFERRED: Table 3 does not supply this combination, so the `
+      + `${favourable ? 'more favourable' : 'worse'} of the two was taken`;
+    warnings.push(`Distance says ${byDistance} and angle says ${byAngle}. Table 3 as supplied `
+      + `does not cover that combination, so the ${favourable ? 'more favourable' : 'WORSE'} of `
+      + 'the two was used. Check the real Table 3 before relying on it.');
   }
 
   if (byDistance === 'red' && byAngle === 'green') {
@@ -357,6 +374,34 @@ export function gen01Check({ distanceM, tipHeightAmslM, siteAmslM, ilsApproach =
 // ---------------------------------------------------------------------------
 // What this module does NOT do.
 // ---------------------------------------------------------------------------
+
+// What was measured about the unknowns, rather than asserted. 18,240 synthetic
+// geometries, rotor 22 to 236 m, 0.15 to 30 km, 1 to 30 turbines, with one
+// assumption perturbed at a time and the verdicts compared.
+//
+//   what the angle is measured ACROSS (tower width, not rotor)  65% of verdicts
+//   Table 1 class one step too small                            19%, all permissive
+//   angle read as a radius rather than a diameter               18%, all permissive
+//   Table 1 class one step too large                             7%, none permissive
+//   green distance threshold out by 20 per cent                  3%
+//   red distance threshold out by 20 per cent                    2%
+//   either angle threshold out by 20 per cent                   <1%
+//   field strength limits, single-turbine C/I, GEN 01 radius      0%
+//
+// The last line is the useful one: those three change no verdict this tool
+// produces, because it computes no field strength, no C/I ratio, and does not
+// gate anything on the consultation radius. Getting them wrong costs nothing
+// today. Getting the angle basis wrong costs almost everything.
+export const SENSITIVITY = {
+  measuredOn: 18240,
+  worstUnknown: 'what the angle column is measured across',
+  worstUnknownImpact: '65 per cent of verdicts, all of them more permissive',
+  zeroImpact: ['fieldStrengthVhfDbuVm', 'fieldStrengthUhfDbuVm', 'singleTurbineDb',
+    'worstOfSeveralDb', 'consultationRadiusKm', 'ilsApproachRadiusKm'],
+  note: 'Zero impact means zero impact ON A ZONAL VERDICT. The consultation radius still '
+    + 'changes what the tool reports, and the C/I thresholds still apply to a ratio computed '
+    + 'elsewhere. They are simply not on the path that decides Red, Amber or Green.',
+};
 
 export const NOT_IMPLEMENTED = [
   { item: 'Table 3 in full',

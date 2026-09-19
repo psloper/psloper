@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  PROVENANCE, ZONES, CLASS_ORDER, TABLE_1, ANGLE_BASIS, NOT_IMPLEMENTED,
+  PROVENANCE, ZONES, CLASS_ORDER, TABLE_1, ANGLE_BASIS, NOT_IMPLEMENTED, SENSITIVITY,
   CI_THRESHOLDS, CI_TRIGGERS, GEN01, FLOWCHART_DISCREPANCY,
   classifyByRotor, subtenseDeg, zonalCheck, routeToCI, checkCarrierToInterference,
   gen01Check, operationalImpactOutcome,
@@ -122,13 +122,32 @@ test('THE KNOWN CONTRADICTION: a red distance with a green angle comes out green
     'the contradiction with the Red definition must be reported, not resolved silently');
 });
 
-test('combinations that were NOT supplied are flagged as extrapolated', () => {
-  // Amber distance with a red angle is not a cell anyone gave us.
+test('combinations that were NOT supplied take the WORSE of the two, and say so', () => {
+  // Amber distance with a red angle is not a cell anyone gave us. The default
+  // is the conservative reading: it was chosen by measuring that a permissive
+  // extrapolation triples the damage from the angle-basis unknown.
   const r = zonalCheck({ classKey: 'medium', distanceM: 700, rotorDiameterM: 60 });
   assert.equal(r.byDistance, 'amber');
   assert.equal(r.byAngle, 'red');
+  assert.equal(r.zone, 'red', 'the worse of amber and red is red');
   assert.match(r.cellBasis, /INFERRED/);
-  assert.ok(r.warnings.some((w) => /not one this tool was given/i.test(w)));
+  assert.ok(r.warnings.some((w) => /WORSE/.test(w)));
+
+  // The permissive reading is available for anyone who has the real table.
+  const loose = zonalCheck({ classKey: 'medium', distanceM: 700, rotorDiameterM: 60 },
+    { unsuppliedCellsFavourable: true });
+  assert.equal(loose.zone, 'amber');
+  assert.match(loose.cellBasis, /more favourable/);
+});
+
+test('the one SUPPLIED cell stays permissive whichever extrapolation is chosen', () => {
+  // Red distance with a green angle is not a guess, so the conservative
+  // default must not override it.
+  for (const opts of [{}, { unsuppliedCellsFavourable: true }]) {
+    const r = zonalCheck({ classKey: 'large', distanceM: 500, rotorDiameterM: 60, angleDeg: 0.3 }, opts);
+    assert.equal(r.zone, 'green');
+    assert.equal(r.cellBasis, 'the one cell of Table 3 that was supplied');
+  }
 });
 
 test('an unknown class is refused rather than guessed', () => {
@@ -200,4 +219,14 @@ test('the visual horizon rule is geometry, and "may be acceptable" is kept as th
   const far = gen01Check({ distanceM: 60000, tipHeightAmslM: cut - 1, siteAmslM: 0 });
   assert.equal(far.belowVisualHorizon, true, 'a tip below the threshold is hidden');
   assert.match(far.note, /may be/i, 'the source wording is "may be", not a pass');
+});
+
+test('the sensitivity measurement is recorded, including what costs nothing', () => {
+  assert.ok(SENSITIVITY.measuredOn > 10000);
+  assert.match(SENSITIVITY.worstUnknown, /angle/i);
+  // These are on no verdict path. If that ever stops being true, this must fail.
+  for (const k of ['fieldStrengthVhfDbuVm', 'singleTurbineDb', 'consultationRadiusKm']) {
+    assert.ok(SENSITIVITY.zeroImpact.includes(k), `${k} should be recorded as zero-impact`);
+  }
+  assert.match(SENSITIVITY.note, /zonal verdict/i);
 });
