@@ -332,6 +332,44 @@ export const REFERENCES = [
     source: 'https://github.com/charlie9578/CubicoOpenData',
   },
 
+  {
+    id: 'cap670',
+    title: 'CAP 670 Part B Section 4: GEN 01, GEN 02 and Appendix A to GEN 02',
+    org: 'UK Civil Aviation Authority',
+    type: 'Regulatory requirement',
+    status: 'recalled',
+    supports: ['CAP 670 GEN 02 zonal check for ATC radio sites'],
+    reports: 'A wind turbine assessment for ATC RADIO sites. Turbine classification by hub, rotor '
+      + 'and tip height (Table 1), zonal thresholds by distance and angle (Tables 2 and 3), a '
+      + 'flowchart routing to a carrier-to-interference method when the tip exceeds 110 m, there '
+      + 'are more than 10 turbines, or the zone is Amber. C/I thresholds of 20 dB for a single '
+      + 'turbine, 23 dB for the worst of several and 14 dB aggregate, with field strength limits '
+      + 'of 26 dBuV/m VHF and 35 dBuV/m UHF. GEN 01 gives a 20 km consultation radius, 34 km for '
+      + 'ILS approaches, and a visual horizon allowance from 25 m above the site.',
+    validation: 'THE DOCUMENT WAS NOT READ AND NO FIGURE HERE WAS VERIFIED AGAINST IT. Everything '
+      + 'was transcribed from a written summary supplied by a third party who states they checked '
+      + 'it against the PDF. This tool never had that PDF. What this tool COULD check is internal '
+      + 'consistency, and did: reading the angle column as an angular subtense, the green distance '
+      + 'and angle pairs imply widths of 120, 92, 61, 43 and 22 m, which are recognisable rotor '
+      + 'diameters, and the thresholds order correctly with class size. The red pairs imply 79 to '
+      + '94 per cent of those widths, so the subtense reading is supported but not exact. On the '
+      + 'disputed Large class: the green pair implies 61 m, supporting 60 m, while the red pair '
+      + 'implies 50 m, so the two columns disagree and the printed values are used as given.',
+    caution: 'GEN 02 COVERS ATC RADIO SITES, NOT RADAR. The radar requirement is SUR 13, which was '
+      + 'not read and is not implemented. Three things could not be implemented at all: Table 1, '
+      + 'because its height bands were not supplied, so the class is inferred from rotor diameter '
+      + 'or set by hand; Table 3 in full, because only one cell was supplied, so other disagreeing '
+      + 'combinations take the more favourable of the two and say so; and any C/I ratio, because '
+      + 'the source says that work must be done by a qualified consultancy and this tool has no '
+      + 'validated propagation model for a radio site. Two contradictions in the source are '
+      + 'implemented rather than resolved: Table 3 lets a Red distance with a Green angle come out '
+      + 'Green although Red is defined as an automatic objection, and the last flowchart box reads '
+      + 'inverted against the surrounding text. The conservative reading is taken for the '
+      + 'flowchart and both are reported. Whether a Supplementary Amendment has changed GEN 02 was '
+      + 'not checked. caa.co.uk, publicapps.caa.co.uk and regulatorylibrary.caa.co.uk are all '
+      + 'refused by this environment. Confirm with CAP670editor@caa.co.uk.',
+  },
+
   // ------------------------------------------------- real UK site positions
   {
     id: 'repd-pipeline',

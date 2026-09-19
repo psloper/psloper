@@ -303,6 +303,18 @@ export const TARGET_GROUPS = ['Uncrewed', 'General aviation', 'Commercial', 'Mil
 export function defaultScenario() {
   return {
     name: 'Untitled assessment',
+    // CAP 670 GEN 02 covers ATC RADIO sites, which is a different assessment
+    // from the radar modelling everything else here does. Off by default,
+    // because the figures behind it were transcribed and never verified
+    // against the document.
+    cap670: {
+      enabled: false,
+      rangeM: 4000,            // radio site range from the radar origin
+      bearingDeg: 200,         // and bearing, so it need not be co-located
+      siteAmslM: 60,
+      ilsApproach: false,
+      turbineClass: 'auto',    // 'auto' infers from rotor diameter; or name a class
+    },
     site: {
       // Where the farm and radar sit, and what the surface between them is.
       environment: 'onshore',          // 'onshore' | 'offshore'

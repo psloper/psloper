@@ -332,19 +332,52 @@ beyond a user-supplied attenuation figure.
 
 ## Regulatory position
 
-**This tool does not assess conformance with anything, and says so on its own
-face.** Nothing in it has been checked against ICAO, EUROCONTROL or any national
-requirement, and no such document was retrieved or read: the environment it was
-built in had no access to them. A permanent finding states this, lists the
-instruments an assessment of this kind normally engages with, and says plainly
-that the list itself is written from general knowledge rather than read from the
-documents. Confirm the current edition, number and applicability of every one
-before relying on it, and engage the ANSP and the regulator.
+**Nothing in the radar modelling has been checked against any regulation.** The
+tool computes physics. It does not know what any authority requires, and no
+standards document was retrieved or read in building it.
 
-The same discipline runs through the rest of the tool. Where a figure could not
-be verified against a primary source, it is an input you supply rather than a
-constant the tool asserts: sigma-zero for sea clutter, atmospheric attenuation,
-turbine RCS, and the wind rose itself.
+There is **one** regulatory check in the tool, and it is on a weaker footing
+than anything else here.
+
+### CAP 670 GEN 02: the ATC radio site check
+
+Site & data tab, off by default. It implements the zonal check from CAP 670
+Part B Section 4, Appendix A to GEN 02: turbine class, distance and angle
+against the Table 2 and 3 thresholds, the flowchart routing to a
+carrier-to-interference assessment, the C/I thresholds, and the GEN 01
+consultation radius and visual horizon rule. Every result carries the table it
+came from.
+
+**Four things you must know.**
+
+1. **The document was not read.** Every figure was transcribed from a written
+   summary. `caa.co.uk`, `publicapps.caa.co.uk` and `regulatorylibrary.caa.co.uk`
+   are all refused by the network this was built on, so the transcription could
+   not be checked against CAP 670 itself.
+2. **GEN 02 covers ATC radio sites, not radar.** The radar requirement is
+   SUR 13, which was not read and is not implemented. The rest of this tool
+   models primary surveillance radar as physics, and this check sits alongside
+   it rather than feeding it.
+3. **Three rules could not be implemented.** Table 1, because its height bands
+   were not supplied, so the class is inferred from rotor diameter or you set it
+   by hand. Table 3 in full, because only one cell was supplied. Any C/I ratio,
+   because the source says that work must be done by a qualified consultancy and
+   this tool has no validated propagation model for a radio site.
+4. **Two contradictions in the source are reported, not resolved.** Table 3 lets
+   a Red distance with a Green angle come out Green although Red is defined as
+   an automatic objection; that is implemented as printed and warned about. The
+   last flowchart box reads inverted against the surrounding text; the
+   conservative reading is taken and both are reported.
+
+What the tool *could* check, it did. Reading the angle column as an angular
+subtense, the green distance and angle pairs imply widths of 120, 92, 61, 43 and
+22 m, which are recognisable rotor diameters, and the thresholds order correctly
+with class size. The red pairs imply 79 to 94 per cent of those widths, so the
+reading is supported but not exact. On the disputed Large class the green pair
+implies 61 m and the red pair 50 m, so the two columns disagree and the printed
+values are used as given.
+
+Confirm anything you rely on with `CAP670editor@caa.co.uk`.
 
 ## Tests
 
@@ -356,7 +389,7 @@ but wrong assessment:
 cd windfarm-radar && npm test
 ```
 
-111 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
+127 assertions. Anchors include grazing-incidence knife-edge loss of 6.02 dB, exactly 0 dB at the
 v = −0.78 cut-off, 13.1 dB required SNR for Pd = 0.9 / Pfa = 1e-6, the 4.12·√h
 horizon rule, and a cosecant-squared check that the pattern compensates R⁻⁴
 exactly for a constant-altitude target. The behavioural tests check that the
@@ -478,6 +511,7 @@ js/
   sweep.js          Two-parameter sweeps over the whole model
   heatmap.js        Heat map rendering, PNG and SVG export
   officewriter.js   ZIP, .xlsx and .docx writers, no dependencies
+  cap670.js         CAP 670 GEN 02 zonal check (transcribed, document NOT read)
   uksites.js        Real UK wind farm and civil radar positions (generated)
   references.js     The evidence register
 test/
@@ -488,6 +522,7 @@ test/
   geometry.test.mjs Every drawn dimension exists in the model; one girth factor only
   siteimport.test.mjs Site lists import, and nothing is invented when columns are missing
   office.test.mjs   The .docx and .xlsx writers produce valid Office files
+  cap670.test.mjs   The transcribed CAP 670 figures, and how its contradictions are handled
   calibration.test.mjs  The control curve matches measured SCADA; diffraction
                     matches the ITU's own reference implementation
 data/

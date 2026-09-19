@@ -10,6 +10,13 @@
 // rather than implying more confidence than exists.
 
 import { M_PER_FT, M_PER_NM } from './geo.js';
+import {
+  PROVENANCE as CAP670_PROVENANCE, ZONES as CAP670_ZONES, NOT_IMPLEMENTED as CAP670_GAPS,
+  classifyByRotor, zonalCheck, routeToCI, gen01Check, CI_THRESHOLDS,
+} from './cap670.js';
+
+// The observer height GEN 01 uses for the visual horizon rule.
+const GEN01_EYE = 25;
 import { cylinderRcsDbsm, wavelength } from './rf.js';
 import { operatingState, tipSpeedRatioAtRated, operatingFractions } from './wind.js';
 import {
@@ -827,6 +834,103 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
       },
       source: 'repd-pipeline',
     });
+  }
+
+  // ------------------------------------------------------------ CAP 670
+  // GEN 02 Appendix A, the ATC RADIO site check. A different assessment from
+  // the radar physics above, run only when asked for, and every result carries
+  // the table it came from and the fact that the document was never read.
+  const cap = scenario.cap670;
+  if (cap && cap.enabled && fleet.length) {
+    const br = cap.bearingDeg * Math.PI / 180;
+    const sx = cap.rangeM * Math.sin(br);
+    const sy = cap.rangeM * Math.cos(br);
+
+    const perTurbine = fleet.map((t) => {
+      const d = Math.hypot(t.east - sx, t.north - sy);
+      const cls = cap.turbineClass === 'auto'
+        ? classifyByRotor(t.rotorDiameterM)
+        : { key: cap.turbineClass, inferred: false, borderline: false };
+      const z = zonalCheck({ classKey: cls.key, distanceM: d, rotorDiameterM: t.rotorDiameterM });
+      return { t, d, cls, z };
+    });
+
+    const rank = { red: 0, amber: 1, green: 2 };
+    const worst = perTurbine.reduce((a, b) => (rank[b.z.zone] < rank[a.z.zone] ? b : a));
+    const tallest = Math.max(...fleet.map((t) => t.hubHeightM + t.rotorRadiusM));
+    const route = routeToCI({ zone: worst.z.zone, tipHeightM: tallest, turbineCount: fleet.length });
+    const g1 = gen01Check({
+      distanceM: worst.d,
+      tipHeightAmslM: worst.t.groundM + worst.t.hubHeightM + worst.t.rotorRadiusM,
+      siteAmslM: cap.siteAmslM,
+      ilsApproach: cap.ilsApproach,
+    });
+
+    const counts = { red: 0, amber: 0, green: 0 };
+    for (const p of perTurbine) counts[p.z.zone] += 1;
+
+    add({
+      id: 'cap670-zonal',
+      severity: worst.z.zone === 'red' ? 'critical' : worst.z.zone === 'amber' ? 'major' : 'info',
+      title: `CAP 670 GEN 02 zonal result: ${worst.z.zone.toUpperCase()}`
+        + ` (${counts.red} red, ${counts.amber} amber, ${counts.green} green)`,
+      detail: `Against an ATC RADIO site ${(cap.rangeM / 1000).toFixed(1)} km away on `
+        + `${cap.bearingDeg.toFixed(0)}\u00b0, the worst machine is ${worst.t.id} at `
+        + `${(worst.d / 1000).toFixed(2)} km, class ${CAP670_ZONES[worst.cls.key].label}, `
+        + `subtending ${worst.z.angleDeg.toFixed(2)}\u00b0. Distance says `
+        + `${worst.z.byDistance}, angle says ${worst.z.byAngle}, combined by ${worst.z.cellBasis}. `
+        + `Routing: ${route.outcome}`
+        + (route.reasons.length ? ` because ${route.reasons.join(', and ')}.` : '.')
+        + ` ${cap.turbineClass === 'auto' ? 'The class was INFERRED from rotor diameter: Table 1 '
+          + 'of the source was not supplied, so it could not be implemented. ' : ''}`
+        + 'THIS IS NOT A RADAR CHECK. GEN 02 covers radio sites; the radar requirement is SUR 13 '
+        + 'and is not implemented anywhere in this tool. The figures behind this result were '
+        + 'transcribed from a summary and the document itself was never read.',
+      basis: 'check',
+      metrics: {
+        'Worst zone': worst.z.zone.toUpperCase(),
+        'Turbine class': CAP670_ZONES[worst.cls.key].label
+          + (worst.cls.inferred ? ' (inferred)' : '')
+          + (worst.cls.borderline ? ', borderline, took the larger' : ''),
+        'Distance / thresholds': `${(worst.d / 1000).toFixed(2)} km vs red `
+          + `${worst.z.thresholds.redKm} km, green ${worst.z.thresholds.greenKm} km`,
+        'Angle / thresholds': `${worst.z.angleDeg.toFixed(2)}\u00b0 vs red `
+          + `${worst.z.thresholds.redDeg}\u00b0, green ${worst.z.thresholds.greenDeg}\u00b0`,
+        'Tallest tip': `${tallest.toFixed(0)} m (C/I trigger above 110 m)`,
+        'Turbines': `${fleet.length} (C/I trigger above 10)`,
+        'GEN 01 consultation': g1.withinConsultation
+          ? `inside the ${g1.radiusKm} km radius` : `outside the ${g1.radiusKm} km radius`,
+        'Reference': worst.z.ref,
+      },
+      source: 'cap670',
+    });
+
+    for (const w of new Set(perTurbine.flatMap((p) => p.z.warnings))) {
+      add({
+        id: `cap670-warn-${[...w].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)}`,
+        severity: 'info',
+        title: 'CAP 670 check: a rule that could not be applied cleanly',
+        detail: w,
+        basis: 'check',
+        metrics: { Reference: 'CAP 670 GEN 02 Appendix A, Table 3 (as transcribed)' },
+        source: 'cap670',
+      });
+    }
+
+    if (g1.belowVisualHorizon) {
+      add({
+        id: 'cap670-gen01-horizon',
+        severity: 'info',
+        title: 'Blade tips fall below the visual horizon from 25 m above the radio site',
+        detail: `${g1.note} The horizon from ${GEN01_EYE} m above a site at ${cap.siteAmslM} m is `
+          + `${(g1.horizonDistanceM / 1000).toFixed(1)} km, and beyond it a tip must exceed `
+          + `${g1.tipHiddenBelowAmslM.toFixed(0)} m AMSL to be seen. "May be acceptable" is the `
+          + 'source wording and is not a pass.',
+        basis: 'check',
+        metrics: { Reference: g1.ref },
+        source: 'cap670',
+      });
+    }
   }
 
   // Real arrays mix hub heights. If this one does not, say so, because tip

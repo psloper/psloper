@@ -301,6 +301,32 @@ export const TABS = {
       { type: 'hint', text: 'Nothing is uploaded. Files are parsed in the page. Sample files showing the '
         + 'expected shape are in the samples folder of the repository.' },
     ] },
+    { group: 'CAP 670 GEN 02: ATC radio site', fields: [
+      { type: 'check', path: 'cap670.enabled', label: 'Run the CAP 670 GEN 02 zonal check',
+        note: 'A DIFFERENT assessment from the radar modelling on the other tabs. GEN 02 covers '
+          + 'ATC radio sites; the radar requirement is SUR 13 and is not implemented here.' },
+      { type: 'range', path: 'cap670.rangeM', label: 'Radio site distance', min: 200, max: 40000, step: 100,
+        fmt: (v) => `${(v / 1000).toFixed(1)} km` },
+      { type: 'range', path: 'cap670.bearingDeg', label: 'Radio site bearing', min: 0, max: 359, step: 1,
+        fmt: (v) => `${String(v).padStart(3, '0')}\u00b0` },
+      { type: 'range', path: 'cap670.siteAmslM', label: 'Radio site ground level', min: 0, max: 600, step: 5,
+        fmt: (v) => `${v} m AMSL` },
+      { type: 'select', path: 'cap670.turbineClass', label: 'Turbine class (Table 1)', options: [
+        { value: 'auto', label: 'Infer from rotor diameter (NOT Table 1)' },
+        { value: 'small', label: 'Small' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'large', label: 'Large' },
+        { value: 'reference', label: 'Reference' },
+        { value: 'large-industrial', label: 'Large Industrial' },
+      ] },
+      { type: 'check', path: 'cap670.ilsApproach', label: 'ILS approach',
+        note: 'Widens the GEN 01 consultation radius from 20 km to 34 km.' },
+      { type: 'hint', text: 'THE DOCUMENT WAS NOT READ. Every figure behind this check was '
+        + 'transcribed from a written summary; caa.co.uk is unreachable from here, so the '
+        + 'transcription could not be checked against CAP 670 itself. Table 1 was not supplied, '
+        + 'so the class is inferred unless you set it. Only one cell of Table 3 was supplied. '
+        + 'Treat every output as indicative and check it against your own copy.' },
+    ] },
     { group: 'Sea surface', fields: [
       { type: 'check', path: 'site.waveFromWind', label: 'Derive wave height from wind speed',
         note: 'Fully developed sea. Real sites are fetch and duration limited, so measured or hindcast '
