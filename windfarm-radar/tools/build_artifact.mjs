@@ -53,9 +53,22 @@ copyFileSync(join(repoRoot, 'js', 'vendor', 'three.module.js'), join(outDir, 'js
 // bucket sends no CORS headers, so the browser cannot fetch it from source.
 mkdirSync(join(outDir, 'data', 'terrain'), { recursive: true });
 const terrain = readdirSync(join(root, 'data', 'terrain'));
+// The artifact host serves no binary type, so each .bin is re-emitted as
+// base64 text and the manifest is rewritten to point at it. The repository
+// keeps the real binaries; only the published copy carries base64. js/terrain.js
+// detects which it got from the first two bytes.
+const manifestPath = join(root, 'data', 'terrain', 'manifest.json');
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+const rename = (n) => `${n}.b64.txt`;
 for (const f of terrain) {
-  copyFileSync(join(root, 'data', 'terrain', f), join(outDir, 'data', 'terrain', f));
+  const src = join(root, 'data', 'terrain', f);
+  if (!f.endsWith('.bin')) continue;
+  writeFileSync(join(outDir, 'data', 'terrain', rename(f)), readFileSync(src).toString('base64'));
 }
+manifest.coarse.file = rename(manifest.coarse.file);
+for (const b of manifest.blocks) b.file = rename(b.file);
+manifest.encoding = 'base64 of the repository .bin, because the artifact host serves no binary type';
+writeFileSync(join(outDir, 'data', 'terrain', 'manifest.json'), JSON.stringify(manifest));
 
 console.log(`built ${js.length + 2 + terrain.length} files into ${outDir}`);
 console.log(`modules: ${js.length}`);

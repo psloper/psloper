@@ -51,6 +51,18 @@ export const TERRAIN_SOURCE = {
  */
 export async function decodeBlock(buffer) {
   let bytes = new Uint8Array(buffer);
+
+  // The published copy of this tool carries the same bytes as base64 text,
+  // because the artifact host serves no binary type. The repository keeps the
+  // real .bin files. Gzip starts 0x1f 0x8b, and base64 of that starts "H4sI",
+  // so the two are never ambiguous.
+  if (bytes[0] === 0x48 && bytes[1] === 0x34) {
+    const text = new TextDecoder().decode(bytes).replace(/\s+/g, '');
+    const bin = atob(text);
+    bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  }
+
   // gzip magic. Everything the builder writes is compressed, but accept plain
   // too so a file can be inspected without tooling.
   if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
