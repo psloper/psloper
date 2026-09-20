@@ -92,7 +92,8 @@ function updateScalebar() {
       ? ` \u00b7 vertical \u00d7${view.vExag} (terrain heights, and whole turbines; spacing between them is true)`
       : ' \u00b7 true scale')
     + (view.girthExag > 1.5
-      ? ` \u00b7 girth \u00d7${view.girthExag} (every structural width; spans are true)` : '');
+      ? ` \u00b7 girth \u00d7${view.girthExag} (every structural width; spans are true)`
+      + (view.aircraftScale > 1.5 ? ` \u00b7 aircraft \u00d7${view.aircraftScale.toFixed(0)} (a point target in the maths; drawn to be visible)` : '') : '');
 }
 
 function run(skipCoverage) {

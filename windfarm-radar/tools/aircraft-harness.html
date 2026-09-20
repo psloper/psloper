@@ -13,13 +13,14 @@ import { TARGET_PRESETS } from '../js/model.js';
 
 // Measure the drawn geometry against the dimensions the model carries. A wing
 // must span spanM and a fuselage must run lengthM, whatever the girth factor.
-const SHOW = ['uas-micro', 'light-ga', 'turboprop', 'widebody', 'sar-helicopter', 'fast-jet'];
+const SHOW = ['light-ga', 'light-twin', 'turboprop', 'regional-jet', 'widebody', 'mil-transport', 'fast-jet', 'sar-helicopter'];
 const lines = [`${'class'.padEnd(16)}${'span in'.padStart(9)}${'span out'.padStart(10)}${'len in'.padStart(9)}${'len out'.padStart(10)}  girth`];
 const box = new THREE.Box3();
 for (const key of SHOW) {
   const p = TARGET_PRESETS[key];
   for (const girth of [1, 6]) {
-    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth });
+    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth,
+      engines: p.engines, enginesOn: p.enginesOn });
     g.updateMatrixWorld(true);
     box.setFromObject(g);
     const sx = box.max.x - box.min.x;
@@ -34,7 +35,8 @@ const fails = [];
 for (const key of SHOW) {
   const p = TARGET_PRESETS[key];
   const dims = [1, 6].map((girth) => {
-    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth });
+    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth,
+      engines: p.engines, enginesOn: p.enginesOn });
     g.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(g);
     return { x: bb.max.x - bb.min.x, z: bb.max.z - bb.min.z };
@@ -74,7 +76,8 @@ cam.position.set(0, 58, 96); cam.lookAt(0, 0, 0);
 const mat = new THREE.MeshStandardMaterial({ color: 0xdbe7f0, roughness: 0.5, metalness: 0.1 });
 SHOW.forEach((key, i) => {
   const p = TARGET_PRESETS[key];
-  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth: 2 });
+  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth: 2,
+    engines: p.engines, enginesOn: p.enginesOn });
   g.traverse((m) => { if (m.isMesh) m.material = mat; });
   const k = 20 / Math.max(p.lengthM, p.spanM);   // same drawn size for every one
   g.scale.setScalar(k);

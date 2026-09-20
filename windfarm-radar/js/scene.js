@@ -252,7 +252,8 @@ function wingPanel(spanM, rootChordM, tipChordM, sweepM, thickM) {
  *
  * Returns a THREE.Group whose local +Z is the direction of flight.
  */
-export function aircraftGeometry(spanM, lengthM, { planform = 'wing', girth = 1 } = {}) {
+export function aircraftGeometry(spanM, lengthM,
+  { planform = 'wing', girth = 1, engines = 0, enginesOn = 'none' } = {}) {
   const span = Math.max(0.3, spanM);
   const len = Math.max(0.3, lengthM);
   const g = new THREE.Group();
@@ -343,6 +344,48 @@ export function aircraftGeometry(spanM, lengthM, { planform = 'wing', girth = 1 
   fin.position.set(0, finSpan / 2, -nz + finSweep + finTip / 2);
   fin.userData.part = 'fin';
   g.add(fin);
+
+  // Podded engines. They are the strongest cue that something is an airliner
+  // rather than a dart, which is the whole reason for drawing them. Every one
+  // sits INSIDE the existing span and length, so the measured bounding box is
+  // still exactly the span and length the model carries.
+  if (engines > 0 && (enginesOn === 'wing' || enginesOn === 'rear')) {
+    const podR = Math.min(bodyR * 0.62, span * 0.035) * Math.max(1, girth * 0.5);
+    const podLen = len * 0.16;
+    const pairs = Math.max(1, Math.round(engines / 2));
+    // Outermost the pod may sit and still be inside the wingtip. Without this
+    // the nacelles push past the span, which the verifier caught: a four-
+    // engined transport came out 47 m across a 40.4 m wing, and at high girth
+    // the rear-mounted pods widened a regional jet from 26 m to 34 m.
+    const maxOut = Math.max(0, span / 2 - podR);
+    for (let e = 0; e < pairs; e++) {
+      // Fractions of the SEMI-span: inboard pair first, then outboard.
+      const frac = pairs === 1 ? 0.34 : 0.3 + e * 0.32;
+      for (const side of [-1, 1]) {
+        const pod = new THREE.Mesh(
+          new THREE.CapsuleGeometry(podR, podLen * 0.7, 3, 8), null);
+        pod.rotation.x = Math.PI / 2;
+        if (enginesOn === 'wing') {
+          pod.position.set(side * Math.min((span / 2) * frac, maxOut),
+            -bodyR * 0.5, len * 0.02 + podLen * 0.3);
+        } else {
+          pod.position.set(side * Math.min(bodyR * 1.5, maxOut), bodyR * 0.35, -len * 0.26);
+        }
+        pod.userData.part = 'engine';
+        g.add(pod);
+      }
+    }
+  }
+
+  // A nose-mounted propeller disc on a light single, for the same reason.
+  if (engines > 0 && enginesOn === 'nose') {
+    const disc = new THREE.Mesh(
+      new THREE.CylinderGeometry(len * 0.13, len * 0.13, Math.max(0.05, bodyR * 0.15), 12), null);
+    disc.rotation.x = Math.PI / 2;
+    disc.position.z = nz - noseLen * 0.15;
+    disc.userData.part = 'propeller';
+    g.add(disc);
+  }
 
   g.userData.spanM = span;
   g.userData.lengthM = len;
@@ -1249,9 +1292,15 @@ export class SceneView {
     const t = r.scenario.target;
     const span = Number.isFinite(t.spanM) ? t.spanM : 30;
     const length = Number.isFinite(t.lengthM) ? t.lengthM : 32;
-    this.aircraftScale = clamp((this.extent * 0.0075) / Math.max(span, 1), 1, 60);
+    // Drawn well above life size so it can be read at all. A 36 m airliner is
+    // a fraction of a pixel across a 40 km scene, and the aircraft is a POINT
+    // target in the physics, so enlarging it distorts no result. The factor is
+    // stated on screen next to the other exaggerations.
+    this.aircraftScale = clamp((this.extent * 0.022) / Math.max(span, 1), 1, 200);
     this.aircraft = aircraftGeometry(span, length, {
       planform: t.planform || 'wing',
+      engines: t.engines || 0,
+      enginesOn: t.enginesOn || 'none',
       girth: Math.min(this.girthExag || 1, 6),
     });
     this.aircraft.scale.setScalar(this.aircraftScale);
