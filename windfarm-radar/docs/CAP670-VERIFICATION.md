@@ -11,7 +11,7 @@ Every figure and quote in `js/cap670.js` is checked against those files by
 `test/cap670.test.mjs`. A figure cannot be edited into the module unless CAP 670
 actually contains it.
 
-**80 checks: 70 confirmed, 7 corrected, 3 still open.** The full record is
+**89 checks: 74 confirmed, 7 corrected, 8 still open.** The full record is
 `docs/CAP670-verification-checklist.xlsx`, rebuilt by
 `node tools/build_cap670_checklist.mjs`.
 
@@ -148,6 +148,36 @@ criteria a tool can compute against.** So nothing in this tool is gated on it.
 The line of sight analysis the tool performs is the kind SUR 13.5 requires, but
 SUR 13 sets no pass or fail criterion for it, so what the tool reports is
 geometry, not compliance.
+
+## Second pass: figures elsewhere in the tool
+
+The first pass audited `js/cap670.js`. A second pass swept every other figure in
+the tool that CAP 670 could adjudicate, and read Appendix A to SUR 13, the
+guidance on the mitigation techniques the tool models.
+
+**No verdict changed.** Every finding id, severity and title is byte-identical
+across 12 scenarios (4 separations by 3 mitigation states, 192 findings) before
+and after. What changed is provenance and the conditions attached to a
+mitigation, not a number.
+
+### Four things CAP 670 does settle
+
+| Figure | Where | Effect |
+|---|---|---|
+| Sector blanking is permitted only with a robust safety argument that **total** loss of surveillance in the blanked area causes no safety impact | SUR 13.40, and 13.41 on the traffic strategy | The blanking finding now carries this. It did not before. |
+| A threshold assessment must account for a **1 m²** target | SUR 13.44 | The only numeric target size CAP 670 names anywhere in its wind turbine material. |
+| The mitigations are **guidance only and not CAA-endorsed** | SUR 13A.107 | Recorded. |
+| The 10 km SSR proximity figure | SUR 13A.75 | Was carried on a CAP 764 search summary alone. Now corroborated by a document that was read. |
+
+### Five figures CAP 670 cannot adjudicate
+
+Listed rather than filled in:
+
+- **The 30 km primary radar assessment guide.** The string "30 km" does not appear anywhere in CAP 670. It is CAP 764's figure and CAP 764 is still a search summary.
+- **Radar absorbent material, 10 dB default.** SUR 13A.105 describes RAM as ferrite paints or polymer layers with crystalline graphite and gives no figure at all.
+- **Enhanced Doppler processing, 15 dB default.** CAP 670 sets conditions on amplitude, CFAR and clutter map processing but publishes no rejection figure for any of them.
+- **Turbine curtailment.** Not mentioned in CAP 670 anywhere. It is in the tool as a theoretical best case, not a recognised mitigation.
+- **Turbine RCS at microwave frequencies.** Tables 4 and 5 are calculated at 127 and 368 MHz. This tool models 1.25 to 9.4 GHz. The scaling formula is linear in frequency and would extrapolate, but a factor of seven beyond the highest frequency the document states is outside what it supports, and turbine RCS does not scale that simply once the wavelength is short against the blade chord. Nothing was extrapolated.
 
 ## What was not checked
 

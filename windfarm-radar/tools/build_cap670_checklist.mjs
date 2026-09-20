@@ -16,7 +16,7 @@ import {
   PROVENANCE, CORRECTIONS, TABLE_1, ZONES, CLASS_ORDER, ANGLE_BASIS, TABLE_3,
   TABLE_3_CONTRADICTION, SCOPE, CI_THRESHOLDS, METHOD_2_BASELINE, RCS_DBSM,
   RCS_SCALING, TABLE_4_5_INCONSISTENCY, GEN01, GEN02_VHF_UHF_FRAME, SUR13,
-  FLOWCHART_DISCREPANCY,
+  FLOWCHART_DISCREPANCY, SUR13_MITIGATION, OUT_OF_REACH,
 } from '../js/cap670.js';
 
 const CONFIRMED = 'Confirmed';
@@ -179,6 +179,30 @@ add('Does SUR 13 give radar thresholds a tool can check?', 'no, and nothing is g
 add('Line of sight analysis', 'the tool computes the geometry, not a verdict',
   `"${SUR13.lineOfSightDuty}"`, CONFIRMED, 'SUR 13.5',
   'SUR 13 sets no pass or fail criterion for the analysis.');
+
+// ------------------------------------- conditions SUR 13 puts on mitigations
+section('J. WHAT SUR 13 SAYS ABOUT THE MITIGATIONS THIS TOOL OFFERS');
+add('Sector blanking', 'the tool sizes the coverage hole and now states the condition',
+  `"${SUR13_MITIGATION.sectorBlanking.quote}"`, CONFIRMED, SUR13_MITIGATION.sectorBlanking.ref,
+  'Added in the second pass. The tool did not previously carry this condition.');
+add('Reference target size for a threshold assessment',
+  `${SUR13_MITIGATION.amplitudeThreshold.referenceTargetRcsDbsm} dBsm `
+  + `(${SUR13_MITIGATION.amplitudeThreshold.referenceTargetRcsM2} m2)`,
+  `"${SUR13_MITIGATION.amplitudeThreshold.quote}"`, CONFIRMED,
+  SUR13_MITIGATION.amplitudeThreshold.ref,
+  'The only numeric target size CAP 670 names anywhere in its wind turbine material.');
+add('Are these mitigations CAA-endorsed?', 'no, and the tool does not say they are',
+  `"${SUR13_MITIGATION.notEndorsed.quote}"`, CONFIRMED, SUR13_MITIGATION.notEndorsed.ref);
+add('10 km SSR proximity figure', `${SUR13_MITIGATION.ssrProximityKm.value} km`,
+  `"${SUR13_MITIGATION.ssrProximityKm.quote}"`, CONFIRMED, SUR13_MITIGATION.ssrProximityKm.ref,
+  'Was carried on a CAP 764 search summary alone. Now corroborated by a document that was read.');
+
+// ------------------------------- figures CAP 670 cannot settle either way
+section('K. FIGURES CAP 670 CANNOT ADJUDICATE, AND WHY');
+for (const f of OUT_OF_REACH) {
+  add(f.figure, `used in ${f.usedIn}`, 'nothing applicable', OPEN,
+    'searched the whole document', f.why);
+}
 
 // -------------------------------------------------------------------- totals
 const body = rows.slice(1).filter((r) => r[0] !== '');

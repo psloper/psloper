@@ -13,6 +13,7 @@ import { M_PER_FT, M_PER_NM } from './geo.js';
 import {
   PROVENANCE as CAP670_PROVENANCE, ZONES as CAP670_ZONES, NOT_IMPLEMENTED as CAP670_GAPS,
   classifyTurbine, zonalCheck, hubElevationDeg, routeToCI, gen01Check, CI_THRESHOLDS,
+  SUR13_MITIGATION,
 } from './cap670.js';
 
 // The observer height GEN 01 uses for the visual horizon rule.
@@ -261,12 +262,17 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
       detail: `Sector ${blankZone.centreDeg.toFixed(0)}° ± ${blankZone.halfWidthDeg.toFixed(1)}°, `
         + `${km(blankZone.rangeMinM)} to ${km(blankZone.rangeMaxM)}. Blanking suppresses the turbine returns and `
         + 'every real target in the same volume, at every altitude. It trades a false-plot problem for a '
-        + 'coverage hole, and the hole has to be acceptable operationally or filled by another sensor.'
+        + 'coverage hole, and the hole has to be acceptable operationally or filled by another sensor. '
+        + 'CAP 670 SUR 13.40 permits this only where the service provider produces a robust safety '
+        + 'argument that TOTAL loss of all surveillance data in the blanked area causes no safety '
+        + 'related impact, and SUR 13.41 requires the traffic management strategy for any masked '
+        + 'area to be specified and justified. This tool sizes the hole; it does not make that argument.'
         + (summary.blankedCount ? ` The modelled flight spends ${summary.blankedCount} samples inside it.` : ''),
       basis: 'computed',
       metrics: {
         'Blanked area': `${summary.blankedAreaKm2.toFixed(0)} km²`,
         'Track samples lost to blanking': `${summary.blankedCount}`,
+        'Regulatory condition': SUR13_MITIGATION.sectorBlanking.ref,
       },
     });
   }
@@ -361,7 +367,9 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
           + 'turbines are less than 10 km from the SSR. This tool models primary radar only: SSR reflection '
           + 'and multipath effects are NOT assessed here and need separate work.',
         basis: 'screening',
-        source: 'UK CAA CAP 764 (10 km SSR consideration distance; retrieved via search summary, '
+        source: 'UK CAA CAP 670 SUR 13A.75, read in full: "These effects are only a consideration '
+          + 'when the turbines are located very close to the SSR, i.e less than 10 km." Corroborates '
+          + 'the same figure in CAP 764 (10 km SSR consideration distance; retrieved via search summary, '
           + 'primary document not reachable from this environment)',
         metrics: { 'Nearest turbine': km(nearest), 'SSR consideration distance': '10 km' },
       });

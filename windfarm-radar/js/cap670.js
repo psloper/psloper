@@ -655,6 +655,84 @@ export const SUR13 = {
     + 'compliance.',
 };
 
+// SUR 13 does place a small number of checkable conditions on the mitigations
+// this tool offers. They are conditions, not thresholds, so they are recorded
+// and surfaced rather than computed.
+export const SUR13_MITIGATION = {
+  sectorBlanking: {
+    ref: 'CAP 670 SUR 13.40 and SUR 13.41',
+    quote: 'PSR sector blanking for the purposes of mitigating wind turbine effects on a '
+      + 'controller\u2019s display shall only be permitted where the ANSP provides a robust safety '
+      + 'argument that total loss of all surveillance data on the blanked areas would cause no '
+      + 'safety related impact.',
+    alsoRequires: 'Where air traffic services are provided in the areas masked on the '
+      + 'controller\u2019s display, the strategy for managing traffic shall be specified and justified.',
+  },
+  amplitudeThreshold: {
+    ref: 'CAP 670 SUR 13.43 and SUR 13.44',
+    referenceTargetRcsM2: 1,
+    referenceTargetRcsDbsm: 0,
+    quote: 'The threshold set shall take in to account the RCS of the largest wind turbine in '
+      + 'the area affected, the largest fixed clutter (other than turbine), and a 1m2 target '
+      + 'likely to fly within the area of interest.',
+    note: 'The only numeric target size CAP 670 names anywhere in the wind turbine material. '
+      + 'A 1 m2 target is 0 dBsm, which is a light single piston aircraft or a tactical UAS in '
+      + 'this tool\u2019s target list.',
+  },
+  notEndorsed: {
+    ref: 'CAP 670 SUR 13A.107',
+    quote: 'ANSPs are also reminded that the mitigation mechanisms listed here are guidance '
+      + 'only and must not be regarded as mitigations that are recommended or endorsed by the CAA.',
+  },
+  ssrProximityKm: {
+    value: 10,
+    ref: 'CAP 670 SUR 13A.75',
+    quote: 'These effects are only a consideration when the turbines are located very close to '
+      + 'the SSR, i.e less than 10 km.',
+    note: 'Independently corroborates the 10 km figure this tool previously carried on a CAP 764 '
+      + 'search summary alone. The two sources agree and CAP 670 has been read.',
+  },
+};
+
+// Figures the tool uses that CAP 670 CANNOT adjudicate, and why. Recorded so
+// that reading the document is not mistaken for having verified everything.
+export const OUT_OF_REACH = [
+  {
+    figure: 'The 30 km primary radar assessment guide',
+    usedIn: 'the cap764-30km finding',
+    why: 'The string "30 km" does not appear anywhere in CAP 670. The figure is CAP 764\u2019s '
+      + 'and CAP 764 has still only been seen as a search summary.',
+  },
+  {
+    figure: 'Radar absorbent material, 10 dB default reduction',
+    usedIn: 'the ram mitigation',
+    why: 'SUR 13A.105 describes RAM qualitatively, as ferrite paints or polymer layers '
+      + 'incorporating crystalline graphite, and gives NO figure for the reduction achieved. '
+      + 'The 10 dB default is this tool\u2019s, not the regulator\u2019s.',
+  },
+  {
+    figure: 'Enhanced Doppler processing, 15 dB default extra rejection',
+    usedIn: 'the enhancedDoppler mitigation',
+    why: 'CAP 670 sets conditions on amplitude, CFAR and clutter map processing but publishes '
+      + 'no rejection figure for any of them.',
+  },
+  {
+    figure: 'Turbine curtailment',
+    usedIn: 'the curtail mitigation',
+    why: 'Curtailment is not mentioned in CAP 670 at all. It is in the tool as a theoretical '
+      + 'best case, not as a recognised mitigation.',
+  },
+  {
+    figure: 'Turbine RCS defaults at microwave frequencies',
+    usedIn: 'TURBINE_PRESETS in js/model.js',
+    why: 'CAP 670 Tables 4 and 5 are calculated at 127 MHz and 368 MHz. This tool models L, S, '
+      + 'C and X band, between 1.25 and 9.4 GHz. The published scaling formula is linear in '
+      + 'frequency and would extrapolate, but a factor of seven beyond the highest frequency the '
+      + 'document states is outside what it supports, and turbine RCS does not scale that simply '
+      + 'once the wavelength is short against the blade chord. Nothing is extrapolated.',
+  },
+];
+
 // ---------------------------------------------------------------------------
 // What this module still does NOT do.
 // ---------------------------------------------------------------------------

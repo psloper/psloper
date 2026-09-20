@@ -12,7 +12,7 @@ import {
   PROVENANCE, CORRECTIONS, TABLE_1, CLASS_ORDER, ZONES, ANGLE_BASIS, TABLE_3,
   TABLE_3_CONTRADICTION, SCOPE, CI_THRESHOLDS, METHOD_2_BASELINE, RCS_DBSM,
   RCS_SCALING, TABLE_4_5_INCONSISTENCY, GEN01, GEN02_VHF_UHF_FRAME, SUR13,
-  NOT_IMPLEMENTED, FLOWCHART_DISCREPANCY,
+  NOT_IMPLEMENTED, FLOWCHART_DISCREPANCY, SUR13_MITIGATION, OUT_OF_REACH,
   classifyTurbine, hubElevationDeg, zonalCheck, outOfScopeCheck, routeToCI,
   checkCarrierToInterference, gen01Check, operationalImpactOutcome,
   scaledMonostaticRcsDbsm, rotorFromRcsM,
@@ -407,4 +407,44 @@ test('nothing still claims to be inferred that the document settles', () => {
   assert.equal(TABLE_3.implemented, true);
   assert.ok(!/impliedWidthFromGreenM/.test(src), 'the subtense inference is still in the source');
   assert.ok(!/classifyByRotor/.test(src), 'the inferred rotor classifier is still in the source');
+});
+
+// ------------------------------------- what SUR 13 says about the mitigations
+
+test('the SUR 13 conditions on mitigations are quoted verbatim from the document', () => {
+  const m = SUR13_MITIGATION;
+  for (const q of [m.sectorBlanking.quote, m.sectorBlanking.alsoRequires,
+    m.amplitudeThreshold.quote, m.notEndorsed.quote, m.ssrProximityKm.quote]) {
+    assert.ok(sur.includes(squash(q)), `not verbatim in SUR 13: "${q.slice(0, 70)}..."`);
+  }
+});
+
+test('the only target size CAP 670 names is 1 square metre', () => {
+  assert.equal(SUR13_MITIGATION.amplitudeThreshold.referenceTargetRcsM2, 1);
+  assert.equal(SUR13_MITIGATION.amplitudeThreshold.referenceTargetRcsDbsm, 0);
+  assert.ok(sur.includes('a 1m2 target likely to fly within the area of interest'));
+});
+
+test('the 10 km SSR figure is corroborated by a document that was actually read', () => {
+  assert.equal(SUR13_MITIGATION.ssrProximityKm.value, 10);
+  assert.match(SUR13_MITIGATION.ssrProximityKm.ref, /SUR 13A\.75/);
+  assert.ok(sur.includes('i.e less than 10 km'));
+});
+
+test('figures CAP 670 cannot adjudicate are listed, with the reason', () => {
+  assert.ok(OUT_OF_REACH.length >= 5);
+  for (const f of OUT_OF_REACH) {
+    assert.ok(f.figure && f.usedIn && f.why, `incomplete entry: ${JSON.stringify(f)}`);
+    assert.ok(f.why.length > 60, `${f.figure}: the reason does not explain anything`);
+  }
+  // The 30 km guide is the clearest case: the string is not in the document.
+  assert.ok(!doc.includes('30 km') && !sur.includes('30 km'),
+    'CAP 670 does contain "30 km" after all, so that entry is wrong');
+  assert.ok(OUT_OF_REACH.some((f) => /30 km/.test(f.figure)));
+  // Nor does it mention curtailment anywhere.
+  assert.ok(!/curtail/i.test(doc) && !/curtail/i.test(sur));
+  assert.ok(OUT_OF_REACH.some((f) => /curtailment/i.test(f.figure)));
+  // RAM is described but never quantified.
+  assert.ok(sur.includes('radar absorbing materials (RAM)'));
+  assert.ok(OUT_OF_REACH.some((f) => /absorbent/i.test(f.figure)));
 });
