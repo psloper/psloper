@@ -987,15 +987,33 @@ export class SceneView {
         : tr.falsePlot ? COLORS.bad
           : tr.snrEffDb > r.radar.requiredSnrDb - 10 ? COLORS.warn : COLORS.ok;
 
-      const hubY = t.hubHeightM * this.vExag;
+      // THE WHOLE MACHINE IS SCALED, NOT ITS HEIGHT ALONE.
+      //
+      // Two earlier attempts were both wrong. Scaling only the height made the
+      // rotor an ellipse and the three identical blades look different lengths.
+      // Drawing the rotor true while the tower stayed exaggerated made the
+      // blades look far too short, which is just as misleading: a 4.5 MW
+      // machine has a rotor WIDER than its hub height, so a correct turbine is
+      // mostly rotor.
+      //
+      // So the turbine is built at true dimensions and the whole group is
+      // scaled uniformly at the end. The silhouette is then correct, the rotor
+      // is circular, and the spacing BETWEEN machines is untouched, because
+      // positions are not scaled. Each machine is drawn larger than life; the
+      // farm layout is true.
+      const hubY = t.hubHeightM;
+      // Girth is a factor on the finished picture, so divide out the group
+      // scale the whole turbine is about to get. A girth of 5 then means
+      // structural widths are 5 times true on screen, which is what it says.
+      const tGirth = girth / this.vExag;
       const towerMat = new THREE.MeshStandardMaterial({
         color: COLORS.tower, roughness: 0.55, metalness: 0.15,
         emissive: colour, emissiveIntensity: 0.22,
       });
       // TRUE tower taper, from the model's own base and top diameters, widened
       // by the girth multiplier so it is visible across the scene.
-      const baseR = (t.towerBaseDiameterM ?? 5) / 2 * girth;
-      const topR = (t.towerTopDiameterM ?? 3) / 2 * girth;
+      const baseR = (t.towerBaseDiameterM ?? 5) / 2 * tGirth;
+      const topR = (t.towerTopDiameterM ?? 3) / 2 * tGirth;
       const tower = new THREE.Mesh(
         geoCache(`tw:${baseR.toFixed(1)}:${topR.toFixed(1)}:${hubY.toFixed(0)}`,
           () => new THREE.CylinderGeometry(topR, baseR, hubY, 20, 1)),
@@ -1015,8 +1033,8 @@ export class SceneView {
       // Nacelle length is a span along the rotor axis, so it is NOT widened;
       // its width and height are girths, so they are.
       const nacL = t.nacelleLengthM;
-      const nacW = t.nacelleWidthM * girth;
-      const nacH = t.nacelleHeightM * girth;
+      const nacW = t.nacelleWidthM * tGirth;
+      const nacH = t.nacelleHeightM * tGirth;
       const nacelle = new THREE.Mesh(
         geoCache(`nc:${nacL.toFixed(1)}:${nacW.toFixed(1)}:${nacH.toFixed(1)}`,
           () => nacelleGeometry(nacL, nacW, nacH)),
@@ -1041,7 +1059,7 @@ export class SceneView {
       // So the tower height is exaggerated and the rotor is drawn true. The
       // readout says both, because a viewer cannot infer it from the picture.
 
-      const spinR = t.hubDiameterM / 2 * girth;
+      const spinR = t.hubDiameterM / 2 * tGirth;
       const spinL = t.hubDiameterM * 0.95;   // a span, so left alone
       const nose = new THREE.Mesh(
         geoCache(`sp:${spinR.toFixed(1)}:${spinL.toFixed(1)}`, () => spinnerGeometry(spinR, spinL)),
@@ -1056,7 +1074,7 @@ export class SceneView {
         emissive: colour, emissiveIntensity: 0.3,
       });
       // Chord is a girth, so it takes the same factor as everything else.
-      const chord = (t.bladeChordM ?? 3) * girth;
+      const chord = (t.bladeChordM ?? 3) * tGirth;
       const bladeGeo = geoCache(`bl:${bladeLen.toFixed(0)}:${chord.toFixed(1)}`,
         () => bladeGeometry(bladeLen, chord));
       for (let b = 0; b < t.bladeCount; b++) {
@@ -1074,7 +1092,7 @@ export class SceneView {
 
       // Invisible pick proxy, sized generously so hovering is not fiddly.
       const proxyR = Math.max(bladeLen * 0.55, shaftR * 3);
-      const proxyH = hubY + bladeLen;   // the rotor is drawn true, so no vExag here
+      const proxyH = hubY + bladeLen;   // true dimensions; the group scale handles the rest
       const proxy = new THREE.Mesh(
         geoCache(`px:${proxyR.toFixed(0)}:${proxyH.toFixed(0)}`,
           () => new THREE.CylinderGeometry(proxyR, proxyR, proxyH, 6)),
@@ -1086,6 +1104,8 @@ export class SceneView {
       g.add(proxy);
       this._pickables.push(proxy);
 
+      // One uniform scale for the finished machine. Position is untouched.
+      g.scale.setScalar(this.vExag);
       this.groups.turbines.add(g);
     }
   }
@@ -1321,7 +1341,9 @@ export class SceneView {
   highlight(id) {
     for (const g of this.groups.turbines.children) {
       const on = g.userData.turbine?.turbine.id === id;
-      g.scale.setScalar(on ? 1.35 : 1);
+      // The turbine group already carries the vertical exaggeration, so the
+      // hover highlight scales relative to that rather than resetting it to 1.
+      g.scale.setScalar(this.vExag * (on ? 1.35 : 1));
     }
   }
 

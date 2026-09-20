@@ -88,7 +88,7 @@ view.onHover = (tr) => {
 function updateScalebar() {
   el.scalebar.textContent = `rings ${(view.ringStepM / 1000).toFixed(0)} km`
     + (view.vExag !== 1
-      ? ` \u00b7 vertical \u00d7${view.vExag} (tower and terrain heights only; rotors drawn true)`
+      ? ` \u00b7 vertical \u00d7${view.vExag} (terrain heights, and whole turbines; spacing between them is true)`
       : ' \u00b7 true scale')
     + (view.girthExag > 1.5
       ? ` \u00b7 girth \u00d7${view.girthExag} (every structural width; spans are true)` : '');

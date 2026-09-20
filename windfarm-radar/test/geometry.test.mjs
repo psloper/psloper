@@ -52,30 +52,58 @@ test('the scene applies ONE girth factor, and never to a span', () => {
   // A source check, because the failure this guards against is a second factor
   // creeping back in. The rendered proof is in tools/verify-geometry.mjs.
   const src = readFileSync(new URL('../js/scene.js', import.meta.url), 'utf8');
-  // Anchor on the method DEFINITIONS, not the call sites, which come first.
   const build = src.slice(src.indexOf('\n  _buildTurbines()'), src.indexOf('\n  _buildShadows()'));
   assert.ok(build.length > 1000, 'failed to locate the turbine builder');
-  const factors = [...build.matchAll(/const (girth\w*|chordExag|\w*Exag) =/g)].map((m) => m[1]);
-  assert.deepEqual(factors, ['girth'],
-    `expected exactly one girth factor in _buildTurbines, found: ${factors.join(', ')}`);
-  // Spans must not be multiplied by it.
+  // girth is the stated factor; tGirth is that same factor with the group
+  // scale divided out, so the net width on screen equals what girth says.
+  const factors = [...build.matchAll(/const (girth\w*|tGirth|chordExag|\w*Exag) =/g)].map((m) => m[1]);
+  assert.deepEqual(factors, ['girth', 'tGirth'],
+    `expected girth and tGirth in _buildTurbines, found: ${factors.join(', ')}`);
+  assert.ok(/const tGirth = girth \/ this\.vExag;/.test(build),
+    'tGirth must be girth with the group scale divided out, or the stated factor lies');
+
+  // Spans must not be multiplied by any girth factor.
   for (const span of ['bladeLen = t.rotorRadiusM', 'nacL = t.nacelleLengthM']) {
     const line = build.split('\n').find((l) => l.includes(span));
     assert.ok(line, `could not find "${span}"`);
-    assert.ok(!/girth/.test(line), `a span is being scaled by girth: ${line.trim()}`);
+    assert.ok(!/girth/i.test(line), `a span is being scaled by girth: ${line.trim()}`);
   }
-  // Girths must be.
+  // Widths must be.
   for (const girth of ['baseR =', 'topR =', 'nacW =', 'nacH =', 'spinR =', 'const chord =']) {
     const line = build.split('\n').find((l) => l.includes(girth));
-    assert.ok(line && /girth/.test(line), `a girth is NOT being scaled: ${line?.trim() ?? girth}`);
+    assert.ok(line && /tGirth/.test(line), `a width is NOT being scaled: ${line?.trim() ?? girth}`);
   }
 });
 
-test('hub height is exaggerated vertically and never by girth', () => {
+test('the turbine is built true and scaled ONCE, uniformly', () => {
+  // This is the invariant two earlier versions broke. Scaling only the height
+  // made the rotor an ellipse and three identical blades look like three
+  // different ones. Leaving the rotor true while the tower stayed exaggerated
+  // made the blades look far too short. A uniform scale on the finished group
+  // is the only arrangement that keeps the silhouette right.
   const src = readFileSync(new URL('../js/scene.js', import.meta.url), 'utf8');
-  const line = src.split('\n').find((l) => l.includes('const hubY = t.hubHeightM'));
-  assert.ok(/vExag/.test(line) && !/girth/.test(line), line);
+  const build = src.slice(src.indexOf('\n  _buildTurbines()'), src.indexOf('\n  _buildShadows()'));
+
+  // Built at true dimensions: no vExag inside the builder at all.
+  const inside = build.split('\n').filter((l) => /this\.vExag/.test(l) && !/^\s*\/\//.test(l));
+  assert.deepEqual(inside.map((l) => l.trim()), [
+    'const tGirth = girth / this.vExag;',
+    'g.scale.setScalar(this.vExag);',
+  ], `vExag used somewhere unexpected inside the turbine builder:\n${inside.join('\n')}`);
+
+  // And nowhere may a single axis be scaled on its own: that is the ellipse.
+  const perAxis = build.split('\n')
+    .filter((l) => !/^\s*\/\//.test(l))          // the comment explaining why not
+    .filter((l) => /\.scale\.[xyz]\s*=/.test(l));
+  assert.deepEqual(perAxis, [],
+    `a single axis is being scaled, which distorts the rotor:\n${perAxis.join('\n')}`);
+
+  assert.ok(/g\.scale\.setScalar\(this\.vExag\);/.test(build),
+    'the finished turbine group must carry one uniform scale');
+  assert.ok(/const hubY = t\.hubHeightM;/.test(build),
+    'hub height must be the true figure; the group scale does the exaggerating');
 });
+
 
 // ----------------------------------------------------------------- aircraft
 
