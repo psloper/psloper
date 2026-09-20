@@ -386,5 +386,18 @@
    "bytes": 34089,
    "seaCells": 2134882
   }
- ]
+ ],
+ "mid": {
+  "file": "uk-200m.bin",
+  "spacingM": 200,
+  "lat0": 49.0,
+  "lon0": -9.0,
+  "dlat": 0.0017966223499820337,
+  "dlon": 0.003132315479017423,
+  "nlat": 6680,
+  "nlon": 3832,
+  "bytes": 8267863,
+  "seaCells": 4258975,
+  "derivedFrom": "2x2 max-pool of the committed 100 m blocks"
+ }
 }

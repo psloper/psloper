@@ -291,7 +291,9 @@ async function loadRealTerrain() {
     run(false);
     rebuildRail();
     const cov = realTerrain.coverage();
-    const spacing = loaded.blockMeta.length ? '100 m' : '500 m, no fine block covers this site';
+    const spacing = loaded.blockMeta.length
+      ? `${loaded.blockMeta[0].spacingM} m`
+      : `${loaded.manifest.coarse.spacingM} m, no finer block in this build`;
     importStatus(`${loaded.manifest.source}, ${spacing}. Real data for `
       + `${(cov * 100).toFixed(0)}% of the modelled area. SURFACE model: includes trees and `
       + 'buildings. Sampled at the radar position you placed, whose own error this does not fix.');

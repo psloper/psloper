@@ -28,9 +28,12 @@ const repoRoot = resolve(root, '..');
 // 100 m blocks too and comes out around 38 MB, which is fine on a stick but
 // too big for some ways of moving a file about.
 const coarseOnly = process.argv.includes('--coarse');
+const midOnly = process.argv.includes('--200m');
 const named = process.argv.slice(2).find((a) => !a.startsWith('--'));
 const outFile = named || join(root, 'dist',
-  coarseOnly ? 'windfarm-radar-offline-500m.html' : 'windfarm-radar-offline.html');
+  coarseOnly ? 'windfarm-radar-offline-500m.html'
+    : midOnly ? 'windfarm-radar-offline-200m.html'
+      : 'windfarm-radar-offline.html');
 
 const esbuild = process.env.ESBUILD || 'npx';
 const esbuildArgs = process.env.ESBUILD ? [] : ['--yes', 'esbuild'];
@@ -64,6 +67,7 @@ let terrainBytes = 0;
 for (const f of readdirSync(tdir)) {
   if (!f.endsWith('.bin')) continue;
   if (coarseOnly && f !== manifest.coarse.file) continue;
+  if (midOnly && f !== manifest.mid.file && f !== manifest.coarse.file) continue;
   const b = readFileSync(join(tdir, f));
   terrainBytes += b.length;
   embedded[f] = b.toString('base64');
@@ -74,6 +78,13 @@ if (coarseOnly) {
   // giving coarser ground than they expect.
   manifest.blocks = [];
   manifest.coarseOnly = true;
+}
+if (midOnly) {
+  // The 200 m grid becomes the coarse layer. It covers the whole box, so there
+  // is no fine block to load and the page says 200 m rather than pretending.
+  manifest.blocks = [];
+  manifest.coarseOnly = true;
+  manifest.coarse = manifest.mid;
 }
 console.log(`  terrain ${(terrainBytes / 1e6).toFixed(1)} MB binary, `
   + `${(Object.values(embedded).reduce((a, s) => a + s.length, 0) / 1e6).toFixed(1)} MB as base64`);
