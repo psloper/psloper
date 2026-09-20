@@ -115,7 +115,40 @@ const esc = (s) => String(s === null || s === undefined ? '' : s)
   .replace(/"/g, '&quot;')
   .replace(CONTROL, '');
 
+import { AUTHOR } from './authorship.js';
+
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+
+// --------------------------------------------------- document properties
+//
+// Word and Excel read the author from docProps/core.xml, so an exported
+// report carries its developer inside the file and not only in the visible
+// text. Both packages get the same part.
+
+const CORE_CT = '<Override PartName="/docProps/core.xml" '
+  + 'ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>';
+const CORE_REL = '<Relationship Id="rIdCore" '
+  + 'Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" '
+  + 'Target="docProps/core.xml"/>';
+
+function corePropsPart() {
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const who = esc(AUTHOR.organisation ? `${AUTHOR.name}, ${AUTHOR.organisation}` : AUTHOR.name);
+  return {
+    name: 'docProps/core.xml',
+    data: XML + '<cp:coreProperties '
+      + 'xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
+      + 'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+      + 'xmlns:dcterms="http://purl.org/dc/terms/" '
+      + 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+      + `<dc:creator>${who}</dc:creator>`
+      + `<cp:lastModifiedBy>${who}</cp:lastModifiedBy>`
+      + '<dc:title>Wind farm / radar screening assessment</dc:title>'
+      + `<dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>`
+      + `<dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>`
+      + '</cp:coreProperties>',
+  };
+}
 
 // ------------------------------------------------------------------- xlsx
 
@@ -164,11 +197,12 @@ export async function buildXlsx(sheets) {
         + `<Override PartName="/xl/styles.xml" ContentType="${ct}.styles+xml"/>`
         + safe.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" `
           + `ContentType="${ct}.worksheet+xml"/>`).join('')
-        + '</Types>' },
+        + CORE_CT + '</Types>' },
     { name: '_rels/.rels',
       data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + `<Relationship Id="rId1" Type="${rel}/officeDocument" Target="xl/workbook.xml"/>`
-        + '</Relationships>' },
+        + CORE_REL + '</Relationships>' },
+    corePropsPart(),
     { name: 'xl/workbook.xml',
       data: XML + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
         + `xmlns:r="${rel}"><sheets>`
@@ -282,11 +316,12 @@ export async function buildDocx(blocks) {
         + '<Default Extension="xml" ContentType="application/xml"/>'
         + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
         + '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
-        + '</Types>' },
+        + CORE_CT + '</Types>' },
     { name: '_rels/.rels',
       data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + `<Relationship Id="rId1" Type="${rel}/officeDocument" Target="word/document.xml"/>`
-        + '</Relationships>' },
+        + CORE_REL + '</Relationships>' },
+    corePropsPart(),
     { name: 'word/_rels/document.xml.rels',
       data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + `<Relationship Id="rId1" Type="${rel}/styles" Target="styles.xml"/>`

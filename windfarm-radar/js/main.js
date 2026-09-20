@@ -2,6 +2,7 @@
 // view, the two flat displays and the results panel into one running tool.
 
 import { analyse, analyseWindRose } from './analysis.js';
+import { AUTHOR, authorLine } from './authorship.js';
 import {
   defaultScenario, loadScenario, saveScenario, mergeDeep,
   applyRadarPreset, applyTurbinePreset, applyTargetPreset, applyTerrainPreset,
@@ -162,6 +163,13 @@ function rebuildRail() {
 
 // A control that writes several scenario fields at once asks for the rail to be
 // rebuilt, so the other controls stop showing stale values.
+// The byline reads from js/authorship.js, so the name appears in exactly one
+// place in the source and everywhere it is needed in the output.
+{
+  const by = document.getElementById('byline');
+  if (by) by.textContent = ` \u00b7 ${authorLine()}`;
+}
+
 el.rail.addEventListener('rail-rebuild', () => rebuildRail());
 
 // ------------------------------------------------------------ file imports

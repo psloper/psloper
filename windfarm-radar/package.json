@@ -8,5 +8,6 @@
     "test": "node --test test/*.test.mjs",
     "start": "python3 -m http.server 8080 --directory .."
   },
-  "license": "MIT"
+  "license": "MIT",
+  "author": "Paul Sloper"
 }

@@ -18,6 +18,7 @@ import {
 } from '../js/model.js';
 import { buildReportMarkdown, buildAssessmentPayload, buildDelta, METHOD_HTML } from '../js/report.js';
 import { REFERENCES, STATUS_LABELS, referencesFor } from '../js/references.js';
+import { AUTHOR, authorLine } from '../js/authorship.js';
 
 const base = () => mergeDeep(defaultScenario(), {
   environment: { terrain: { preset: 'flat', relief: 0, baseHeight: 20 } },
@@ -284,4 +285,13 @@ test('findings that rest on a document are linked to it', () => {
   // And the linkage must actually resolve for the findings present.
   assert.ok(referencesFor('cap764-30km').length > 0, 'CAP 764 finding has no evidence linked');
   assert.ok(referencesFor('scatterer-split').length > 0, 'scatterer split has no evidence linked');
+});
+
+test('the developer is named in the report and in the Office file properties', async () => {
+  // The name lives in exactly one module. If it moves or is dropped, an
+  // exported report circulates with no author on it.
+  const md = buildReportMarkdown(analyse(defaultScenario(), { skipCoverage: true }));
+  assert.ok(md.includes(AUTHOR.name), 'the report byline has no developer name');
+  assert.ok(md.includes(authorLine()), 'the byline is not built from authorship.js');
+  assert.ok(AUTHOR.name.trim().length > 2, 'the author name is empty');
 });

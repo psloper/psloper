@@ -5,6 +5,7 @@
 // no result.
 
 import { M_PER_FT } from './geo.js';
+import { AUTHOR, authorLine } from './authorship.js';
 import { SEVERITY_LABELS } from './findings.js';
 import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
 import { buildXlsx, buildDocx } from './officewriter.js';
@@ -403,6 +404,7 @@ export function buildReportMarkdown(result, delta) {
   P(`# Wind farm / radar screening assessment`);
   P('');
   P(`**${s.name}**  `);
+  P(`${authorLine()}  `);
   P(`Generated ${new Date().toISOString()}`);
   P('');
   P('> **First-order screening model. Not a technical or safety assessment.**  ');
