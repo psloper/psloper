@@ -10,6 +10,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  defaultScenario, RADAR_MOUNTS, applyRadarMount, antennaHeightAgl,
+} from '../js/model.js';
+import { analyse } from '../js/analysis.js';
+
+import {
   effectiveEarthRadius, horizonDistance, curvatureDrop, bearingOf, angleDelta,
   createTerrain, profileObstruction, viewGeometry,
 } from '../js/geo.js';
@@ -270,4 +275,45 @@ test('view geometry reports range, bearing and elevation', () => {
   close(g.ground, 3000, 1e-9, 'ground range');
   // 1000 m up over 3000 m out, less ~0.5 m of curvature drop.
   close(g.elevationDeg, Math.atan2(1000 - curvatureDrop(3000, ae), 3000) * 180 / Math.PI, 1e-6, 'elevation');
+});
+
+// ------------------------------------------------- how the radar is mounted
+
+test('antenna height is the structure plus the mast, and nothing else', () => {
+  assert.equal(antennaHeightAgl({ mount: { structureHeightM: 15, mastHeightM: 6 } }), 21);
+  assert.equal(antennaHeightAgl({ mount: { structureHeightM: 0, mastHeightM: 12 } }), 12);
+  // A radar on the ground with no mast is still at ground level, not negative.
+  assert.equal(antennaHeightAgl({ mount: { structureHeightM: 0, mastHeightM: 0 } }), 0);
+  // Falls back to a plain heightAgl for a scenario saved before mounts existed.
+  assert.equal(antennaHeightAgl({ heightAgl: 25 }), 25);
+});
+
+test('every mounting arrangement produces the height it claims', () => {
+  for (const [key, m] of Object.entries(RADAR_MOUNTS)) {
+    const s = applyRadarMount(defaultScenario(), key);
+    assert.equal(s.radar.mount.type, key);
+    assert.equal(s.radar.heightAgl, m.structureHeightM + m.mastHeightM,
+      `${key}: heightAgl does not match the mount`);
+    assert.ok(m.note && m.note.length > 30, `${key}: no explanation of what it is`);
+  }
+});
+
+test('putting the radar on a building actually changes the answer', () => {
+  // If this does not move, the mount controls are decoration. Height is the
+  // most influential parameter in the tool, so it must reach the physics.
+  const ground = analyse(applyRadarMount(defaultScenario(), 'ground-mast'), { skipCoverage: true });
+  const tower = analyse(applyRadarMount(defaultScenario(), 'tall-tower'), { skipCoverage: true });
+  assert.ok(tower.radar.amslM > ground.radar.amslM + 40,
+    'a 60 m tower should put the antenna far higher than a 12 m mast');
+  assert.ok(tower.radar.horizonM > ground.radar.horizonM * 1.8,
+    `horizon barely moved: ${(ground.radar.horizonM / 1000).toFixed(1)} km to `
+    + `${(tower.radar.horizonM / 1000).toFixed(1)} km`);
+});
+
+test('a scenario with no mount still works, so old saved files keep loading', () => {
+  const s = defaultScenario();
+  delete s.radar.mount;
+  s.radar.heightAgl = 18;
+  const r = analyse(s, { skipCoverage: true });
+  assert.ok(Number.isFinite(r.radar.horizonM) && r.radar.horizonM > 0);
 });

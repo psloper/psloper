@@ -1028,10 +1028,18 @@ export class SceneView {
       const spinner = new THREE.Group();
       spinner.position.z = nacL * 0.52;
       rotor.add(spinner);
-      // Blade span is exaggerated VERTICALLY only, by scaling the rotor disc,
-      // so the rotor covers the ground width it really covers. Scaling y after
-      // a rotation about y is safe: the two commute.
-      spinner.scale.y = this.vExag;
+      // THE ROTOR IS NOT EXAGGERATED, AND MUST NOT BE.
+      //
+      // It used to carry spinner.scale.y = vExag, so that the drawn tip height
+      // lined up with the exaggerated tower. The cost was that a blade pointing
+      // straight up was drawn four times longer than one pointing sideways: the
+      // rotor became a tall ellipse and the three identical blades looked like
+      // three different blades. It also made the on-screen claim that geometry
+      // is preserved untrue, and it misrepresented the swept area, which is the
+      // thing being assessed.
+      //
+      // So the tower height is exaggerated and the rotor is drawn true. The
+      // readout says both, because a viewer cannot infer it from the picture.
 
       const spinR = t.hubDiameterM / 2 * girth;
       const spinL = t.hubDiameterM * 0.95;   // a span, so left alone
@@ -1066,7 +1074,7 @@ export class SceneView {
 
       // Invisible pick proxy, sized generously so hovering is not fiddly.
       const proxyR = Math.max(bladeLen * 0.55, shaftR * 3);
-      const proxyH = hubY + bladeLen * this.vExag;
+      const proxyH = hubY + bladeLen;   // the rotor is drawn true, so no vExag here
       const proxy = new THREE.Mesh(
         geoCache(`px:${proxyR.toFixed(0)}:${proxyH.toFixed(0)}`,
           () => new THREE.CylinderGeometry(proxyR, proxyR, proxyH, 6)),

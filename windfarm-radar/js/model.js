@@ -199,6 +199,83 @@ export function radarPresetProvenanceNote(key) {
     + `6 parameters that most affect the result are not published at all.`;
 }
 
+// --------------------------------------------------------- how a radar is mounted
+//
+// Antenna height above ground is the single most influential parameter in this
+// tool. The sensitivity run in tools/radar_sensitivity.mjs measured a 10 m
+// error as moving the worst detection margin by 10.6 dB, more than any other
+// input, because the radio horizon goes as the square root of height.
+//
+// A single "antenna height" slider hides where that height comes from. Real
+// radars sit on a short mast on the ground, on a purpose-built tower, on the
+// roof of a terminal or control building, on a hilltop, or on an offshore
+// platform, and the answer you get depends on adding the structure and the
+// mast together correctly. Getting the building height right is worth more
+// than getting any radar parameter right.
+//
+// The structure heights below are TYPICAL, not any particular installation.
+// They are a starting point to be replaced with the real figure.
+
+export const RADAR_MOUNTS = {
+  'ground-mast': {
+    label: 'Ground-level mast',
+    note: 'A short mast on a concrete base, the usual arrangement for an aerodrome PSR.',
+    structureHeightM: 0, mastHeightM: 12,
+  },
+  'building': {
+    label: 'On a building roof',
+    note: 'A terminal, control building or radar hall. The building height is usually the '
+      + 'bigger term and is the one worth checking against a drawing.',
+    structureHeightM: 15, mastHeightM: 6,
+  },
+  'tower': {
+    label: 'Purpose-built tower',
+    note: 'A lattice or concrete tower carrying the antenna clear of local clutter.',
+    structureHeightM: 30, mastHeightM: 8,
+  },
+  'tall-tower': {
+    label: 'Tall tower or mast',
+    note: 'An en-route or long-range site, often on high ground as well.',
+    structureHeightM: 50, mastHeightM: 10,
+  },
+  'offshore-platform': {
+    label: 'Offshore platform or vessel',
+    note: 'Deck height above sea level plus the mast. There is no terrain under it, so the '
+      + 'horizon is the only thing limiting low cover.',
+    structureHeightM: 25, mastHeightM: 10,
+  },
+  custom: {
+    label: 'Custom',
+    note: 'Set the structure and mast heights from the survey or the site drawing.',
+    structureHeightM: 0, mastHeightM: 12,
+  },
+};
+
+/** Antenna height above ground level: the structure it stands on, plus its mast. */
+export function antennaHeightAgl(radar) {
+  const m = radar && radar.mount;
+  if (!m) return radar && Number.isFinite(radar.heightAgl) ? radar.heightAgl : 0;
+  return Math.max(0, (m.structureHeightM || 0) + (m.mastHeightM || 0));
+}
+
+/**
+ * Apply a mounting arrangement, keeping heightAgl in step.
+ * heightAgl stays the field the rest of the tool reads, so nothing downstream
+ * has to know how the height was arrived at.
+ */
+export function applyRadarMount(scenario, key) {
+  const m = RADAR_MOUNTS[key];
+  if (!m) return scenario;
+  const mount = {
+    type: key,
+    structureHeightM: m.structureHeightM,
+    mastHeightM: m.mastHeightM,
+  };
+  return mergeDeep(scenario, {
+    radar: { mount, heightAgl: antennaHeightAgl({ mount }) },
+  });
+}
+
 export const TURBINE_PRESETS = {
   'small-850': {
     label: '0.85 MW (legacy onshore)',
@@ -554,6 +631,8 @@ export function defaultScenario() {
     radar: {
       preset: 'psr-terminal',
       ...RADAR_PRESETS['psr-terminal'],
+      // How the antenna gets to its height. heightAgl stays the derived total.
+      mount: { type: 'ground-mast', structureHeightM: 0, mastHeightM: 12 },
       east: 0, north: 0,
       // Detection criterion
       pd: 0.8, pfa: 1e-6, fluctuationMarginDb: 5,

@@ -877,40 +877,21 @@ export async function readKmz(arrayBuffer) {
 // environment it was built in has no outbound network access. Treat it as
 // unverified until you have run it yourself.
 //
-// Google's Elevation API is deliberately not the default: it needs a paid API
-// key, and its terms restrict storing the results, which is the opposite of
-// what this tool does with them.
+// NO REMOTE ELEVATION LOOKUP. This file used to carry code that fetched ground
+// heights from api.open-elevation.com, api.open-meteo.com and
+// api.opentopodata.org. It was never wired to any button, but a security
+// reviewer searching for network calls would have found three third-party
+// services, and that is a fair thing to fail a review over. It is also
+// obsolete: the elevation data now ships pre-baked in data/terrain, built at
+// build time by tools/build_terrain.py.
+//
+// The only network call left in this tool is js/terrain.js reading its own
+// files from its own origin, and the offline single-file build does not even
+// do that, because the data is embedded in the page.
+//
+// FREE_ELEVATION_SOURCES below is a plain list of places a human can download
+// a DEM from. It contains no URLs and triggers no requests.
 
-export const ELEVATION_ENDPOINTS = {
-  'open-elevation': {
-    label: 'Open-Elevation (free, no key)',
-    url: 'https://api.open-elevation.com/api/v1/lookup',
-    method: 'POST',
-    note: 'Keyless and free. Rate limited and best-effort. Roughly SRTM resolution, about 30 m.',
-  },
-  'opentopodata-srtm': {
-    label: 'OpenTopoData SRTM 30 m (free, no key)',
-    url: 'https://api.opentopodata.org/v1/srtm30m',
-    method: 'GET',
-    note: 'Keyless and free. 100 points per call, 1000 calls a day on the public instance.',
-  },
-  'opentopodata-eudem': {
-    label: 'OpenTopoData EU-DEM 25 m (free, no key)',
-    url: 'https://api.opentopodata.org/v1/eudem25m',
-    method: 'GET',
-    note: 'Europe only, 25 m. Same public limits as above.',
-  },
-  'open-meteo': {
-    label: 'Open-Meteo elevation (free, no key)',
-    url: 'https://api.open-meteo.com/v1/elevation',
-    method: 'GET-METEO',
-    note: 'Keyless and free, generous limits. Copernicus DEM based, about 90 m.',
-  },
-};
-
-// Free bulk sources worth using instead of any API, because a downloaded tile
-// is reproducible, has a known provenance, and needs no network at run time.
-// These all export formats this tool reads directly.
 export const FREE_ELEVATION_SOURCES = [
   ['Copernicus DEM GLO-30', 'Global, 30 m, open licence. The current default choice for most of the world.'],
   ['NASA SRTM 30 m', 'Global to 60 degrees latitude, 30 m, free. Via USGS EarthExplorer or OpenTopography.'],
@@ -921,89 +902,6 @@ export const FREE_ELEVATION_SOURCES = [
   ['GEBCO', 'Free global bathymetry, for the seabed under an offshore array.'],
 ];
 
-/**
- * Fetch ground elevations for a list of {latitude, longitude}.
- * Batched, because every public service caps points per request.
- *
- * @param {Array} coords
- * @param {object} opts {url, batchSize, onProgress, signal}
- */
-export async function fetchElevations(coords, opts = {}) {
-  const url = opts.url || ELEVATION_ENDPOINTS['open-elevation'].url;
-  const batchSize = Math.min(opts.batchSize || 100, 100);
-  const out = [];
-
-  for (let i = 0; i < coords.length; i += batchSize) {
-    if (opts.signal && opts.signal.aborted) throw new Error('Elevation lookup cancelled.');
-    const batch = coords.slice(i, i + batchSize);
-    const method = opts.method || 'POST';
-    let res;
-    if (method === 'GET') {
-      // OpenTopoData style: locations=lat,lon|lat,lon
-      const q = batch.map((c) => `${c.latitude.toFixed(6)},${c.longitude.toFixed(6)}`).join('|');
-      res = await fetch(`${url}?locations=${encodeURIComponent(q)}`, { signal: opts.signal });
-    } else if (method === 'GET-METEO') {
-      // Open-Meteo style: parallel latitude and longitude lists.
-      const lat = batch.map((c) => c.latitude.toFixed(6)).join(',');
-      const lon = batch.map((c) => c.longitude.toFixed(6)).join(',');
-      res = await fetch(`${url}?latitude=${lat}&longitude=${lon}`, { signal: opts.signal });
-    } else {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          locations: batch.map((c) => ({ latitude: c.latitude, longitude: c.longitude })),
-        }),
-        signal: opts.signal,
-      });
-    }
-    if (!res.ok) {
-      throw new Error(`Elevation service returned ${res.status}. Public services are rate limited; `
-        + 'wait and retry, reduce the number of points, or import a DEM file instead.');
-    }
-    const data = await res.json();
-    // Open-Meteo returns a bare array of numbers; the others return objects.
-    const results = Array.isArray(data.elevation)
-      ? data.elevation.map((e) => ({ elevation: e }))
-      : (data.results || data.data || []);
-    if (!Array.isArray(results) || results.length !== batch.length) {
-      throw new Error('Elevation service returned an unexpected response shape. '
-        + 'Public services change; import a DEM file instead if this keeps happening.');
-    }
-    results.forEach((r, k) => out.push({
-      latitude: batch[k].latitude,
-      longitude: batch[k].longitude,
-      east: batch[k].east,
-      north: batch[k].north,
-      elevation: Number(r.elevation ?? r.elev ?? NaN),
-    }));
-    if (opts.onProgress) opts.onProgress(Math.min(i + batchSize, coords.length) / coords.length);
-  }
-
-  const bad = out.filter((p) => !Number.isFinite(p.elevation)).length;
-  if (bad === out.length) throw new Error('The elevation service returned no usable values.');
-  return { points: out, missing: bad };
-}
-
-/** A regular lat/lon grid covering the modelled area, for an online lookup. */
-export function elevationGridRequest(originLat, originLon, halfExtentM, steps = 40) {
-  const coords = [];
-  const mPerDegLat = 111132.92 - 559.82 * Math.cos(2 * originLat * DEG);
-  const mPerDegLon = 111412.84 * Math.cos(originLat * DEG);
-  for (let j = 0; j < steps; j++) {
-    for (let i = 0; i < steps; i++) {
-      const east = -halfExtentM + (2 * halfExtentM * i) / (steps - 1);
-      const north = -halfExtentM + (2 * halfExtentM * j) / (steps - 1);
-      coords.push({
-        latitude: originLat + north / mPerDegLat,
-        longitude: originLon + east / mPerDegLon,
-        east,
-        north,
-      });
-    }
-  }
-  return coords;
-}
 
 // ===========================================================================
 // Entry point

@@ -5,6 +5,7 @@ import { analyse, analyseWindRose } from './analysis.js';
 import {
   defaultScenario, loadScenario, saveScenario, mergeDeep,
   applyRadarPreset, applyTurbinePreset, applyTargetPreset, applyTerrainPreset,
+  applyRadarMount, antennaHeightAgl,
 } from './model.js';
 import { SceneView } from './scene.js';
 import { PpiDisplay, ProfileDisplay, WindRoseDisplay } from './displays.js';
@@ -87,13 +88,17 @@ view.onHover = (tr) => {
 function updateScalebar() {
   el.scalebar.textContent = `rings ${(view.ringStepM / 1000).toFixed(0)} km`
     + (view.vExag !== 1
-      ? ` \u00b7 vertical \u00d7${view.vExag} (heights exaggerated, geometry preserved)`
+      ? ` \u00b7 vertical \u00d7${view.vExag} (tower and terrain heights only; rotors drawn true)`
       : ' \u00b7 true scale')
     + (view.girthExag > 1.5
       ? ` \u00b7 girth \u00d7${view.girthExag} (every structural width; spans are true)` : '');
 }
 
 function run(skipCoverage) {
+  // heightAgl is derived from how the radar is mounted, so keep it in step
+  // before every analysis. Everything downstream reads heightAgl, and a
+  // stale one silently answers with the wrong radio horizon.
+  if (scenario.radar.mount) scenario.radar.heightAgl = antennaHeightAgl(scenario.radar);
   const t0 = performance.now();
   try {
     result = analyse(scenario, { skipCoverage, importedTerrain, realTerrain });
@@ -385,6 +390,7 @@ function railAction(id, btn) {
 
 function applyPreset(kind, key) {
   if (kind === 'radar') scenario = applyRadarPreset(scenario, key);
+  else if (kind === 'radarMount') scenario = applyRadarMount(scenario, key);
   else if (kind === 'turbine') scenario = applyTurbinePreset(scenario, key);
   else if (kind === 'target') scenario = applyTargetPreset(scenario, key);
   else if (kind === 'terrain') scenario = applyTerrainPreset(scenario, key);

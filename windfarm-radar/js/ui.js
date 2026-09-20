@@ -6,6 +6,7 @@
 
 import {
   RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS, REFRACTION_PRESETS,
+  RADAR_MOUNTS, antennaHeightAgl,
   radarPresetProvenanceNote,
   TARGET_GROUPS, tipHeightOf, groundClearanceOf, setTipHeight,
   BLADE_CONSTRUCTIONS, TOWER_MATERIALS, DRIVETRAINS,
@@ -49,7 +50,13 @@ export const TABS = {
       { type: 'range', path: 'radar.peakPowerW', label: 'Peak power', min: 1000, max: 400000, step: 1000,
         fmt: (v) => `${(v / 1000).toFixed(0)} kW` },
       { type: 'range', path: 'radar.gainDbi', label: 'Antenna gain', min: 20, max: 50, step: 0.5, fmt: (v) => `${v} dBi` },
-      { type: 'range', path: 'radar.heightAgl', label: 'Antenna height', min: 3, max: 120, step: 1, fmt: (v) => `${v} m AGL` },
+      { type: 'select', path: 'radar.mount.type', label: 'How it is mounted',
+        options: opts(RADAR_MOUNTS), preset: 'radarMount' },
+      { type: 'range', path: 'radar.mount.structureHeightM', label: 'Building or tower height',
+        min: 0, max: 150, step: 1, fmt: (v) => `${v} m` },
+      { type: 'range', path: 'radar.mount.mastHeightM', label: 'Mast above that',
+        min: 0, max: 60, step: 0.5, fmt: (v) => `${v} m` },
+      { type: 'note', id: 'mount-note' },
       { type: 'range', path: 'radar.instrumentedRangeM', label: 'Instrumented range', min: 10000, max: 400000, step: 5000,
         fmt: (v) => `${(v / 1000).toFixed(0)} km` },
     ] },
@@ -600,13 +607,13 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
         .map((r, i) => ({ i, name: r[0], mw: r[3], status: r[4], off: r[5] === 1, keep: keep(r) }))
         .filter((r) => r.keep)
         .sort((a, b) => a.name.localeCompare(b.name));
-      const mine = imported.farms.map((f, i) => `<option value="imp:${i}">${f.name} \u2014 `
-        + `${f.mw} MW${f.offshore ? ', offshore' : ''} [${f.status}]</option>`).join('');
+      const mine = imported.farms.map((f, i) => `<option value="imp:${i}">${esc(f.name)} \u2014 `
+        + `${esc(f.mw)} MW${f.offshore ? ', offshore' : ''} [${esc(f.status)}]</option>`).join('');
       farmSel.innerHTML = `<option value="">Choose one of ${rows.length + imported.farms.length} \u2026</option>`
-        + (mine ? `<optgroup label="Imported from ${imported.source.farms || 'your file'}">${mine}</optgroup>` : '')
+        + (mine ? `<optgroup label="Imported from ${esc(imported.source.farms || 'your file')}">${mine}</optgroup>` : '')
         + `<optgroup label="UK planning database">`
-        + rows.map((r) => `<option value="${r.i}">${r.name} \u2014 ${r.mw} MW`
-          + `${r.off ? ', offshore' : ''}${scope === 'live' || scope === 'all' ? ` [${r.status}]` : ''}`
+        + rows.map((r) => `<option value="${r.i}">${esc(r.name)} \u2014 ${esc(r.mw)} MW`
+          + `${r.off ? ', offshore' : ''}${scope === 'live' || scope === 'all' ? ` [${esc(r.status)}]` : ''}`
           + '</option>').join('')
         + '</optgroup>';
     };
@@ -621,15 +628,15 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
     const radarSel = document.createElement('select');
     radarSel.style.width = '100%';
     radarSel.style.marginTop = '6px';
-    const myRadars = imported.radars.map((r, i) => `<option value="imp:${i}">${r.name} \u2014 `
-      + `${r.role}</option>`).join('');
+    const myRadars = imported.radars.map((r, i) => `<option value="imp:${i}">${esc(r.name)} \u2014 `
+      + `${esc(r.role)}</option>`).join('');
     radarSel.innerHTML = '<option value="">Nearest radar (automatic)</option>'
-      + (myRadars ? `<optgroup label="Imported from ${imported.source.radars || 'your file'}">${myRadars}</optgroup>` : '')
+      + (myRadars ? `<optgroup label="Imported from ${esc(imported.source.radars || 'your file')}">${myRadars}</optgroup>` : '')
       + '<optgroup label="UK civil radar sites">'
       + UK_RADAR_SITES
         .map((r, i) => [i, r[0], r[1]])
         .sort((a, b) => a[1].localeCompare(b[1]))
-        .map(([i, name, role]) => `<option value="${i}">${name} \u2014 ${role}</option>`)
+        .map(([i, name, role]) => `<option value="${i}">${esc(name)} \u2014 ${esc(role)}</option>`)
         .join('')
       + '</optgroup>';
     wrap.append(radarSel);
@@ -806,7 +813,7 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
       + 'often decides a real UK application.</strong> Neither aviation source carries it: one marks '
       + 'the section &quot;Mil Radars TBA&quot;. Sites named in search summaries, unverified and with '
       + 'no coordinates asserted: '
-      + UK_MILITARY_RADAR_NOTE.sites.map((x) => `${x.name} (${x.radar})`).join('; ')
+      + UK_MILITARY_RADAR_NOTE.sites.map((x) => `${esc(x.name)} (${esc(x.radar)})`).join('; ')
       + '. YOU CAN STILL MODEL ONE: the radar under assessment is always at the origin, so choose the '
       + '\u201cAir defence surveillance (L-band, 3D)\u201d preset on the Radar tab and set the farm\u2019s '
       + 'distance and bearing by hand. What is missing is the positions, not the ability to model them. '
@@ -932,6 +939,21 @@ export function updateNotes(noteEls, result, extra = {}) {
   const set = (id, text) => { if (noteEls[id]) noteEls[id].textContent = text; };
 
   set('radar-note', radarPresetProvenanceNote(r.preset));
+
+  // Antenna height is the parameter that moves the answer most, so show the
+  // total and what it buys rather than leaving two sliders to be added up.
+  const mnt = result.scenario.radar.mount;
+  if (mnt) {
+    const agl = antennaHeightAgl(result.scenario.radar);
+    const m = RADAR_MOUNTS[mnt.type];
+    set('mount-note', `${m ? m.note + ' ' : ''}`
+      + `Antenna is ${agl.toFixed(1)} m above ground: `
+      + `${mnt.structureHeightM} m of structure plus a ${mnt.mastHeightM} m mast. `
+      + `That puts it ${r.amslM.toFixed(0)} m AMSL and gives a surface horizon of `
+      + `${(r.horizonM / 1000).toFixed(1)} km. Height is the single most influential number `
+      + 'in this tool: a 10 m error moves the worst detection margin by about 10.6 dB, '
+      + 'measured, more than any radar parameter. Check it against a site drawing.');
+  }
 
   // Say plainly which surface is actually in use. The synthetic landform
   // controls stay on screen when real or imported data is loaded, and without
@@ -1126,9 +1148,9 @@ export function renderMetrics(el, result) {
 
   el.innerHTML = tiles.map((t) => `
     <div class="metric"${t.level ? ` data-level="${t.level}"` : ''}>
-      <span class="m-label">${t.label}</span>
-      <span class="m-value">${t.value}</span>
-      <span class="m-sub">${t.sub}</span>
+      <span class="m-label">${esc(t.label)}</span>
+      <span class="m-value">${esc(t.value)}</span>
+      <span class="m-sub">${esc(t.sub)}</span>
     </div>`).join('');
 }
 
@@ -1174,8 +1196,14 @@ export function renderTurbineTable(table, result, onHover) {
     const colour = t.visibility === 'masked' ? '#5d6b78'
       : t.falsePlot ? '#e8524a'
         : t.snrEffDb > result.radar.requiredSnrDb - 10 ? '#f0a83a' : '#3fd18b';
-    return `<tr data-id="${t.turbine.id}">
-      <td>${dot(colour)}${t.turbine.id}</td>
+    // Turbine ids come straight from an imported schedule, so they are
+    // attacker-controlled text and must be escaped before they touch innerHTML.
+    // The parser keeps the id column verbatim by design, which is right: it is
+    // the renderer's job to be safe, not the parser's job to mangle the user's
+    // labels.
+    const id = esc(t.turbine.id);
+    return `<tr data-id="${id}">
+      <td>${dot(colour)}${id}</td>
       <td>${(t.hub.ground / 1000).toFixed(2)}</td>
       <td>${t.hub.bearing.toFixed(0).padStart(3, '0')}</td>
       <td>${t.visibility === 'masked' ? 'masked' : t.visibility === 'clear' ? 'clear' : t.visibility}</td>
@@ -1238,8 +1266,8 @@ export function renderReadout(el, tr, result) {
     ['Return', `${tr.snrEffDb.toFixed(1)} dB SNR`],
     ['Above threshold', tr.falsePlot ? 'YES' : 'no'],
   ];
-  el.innerHTML = `<h4>${t.id}</h4><dl>${rows
-    .map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`;
+  el.innerHTML = `<h4>${esc(t.id)}</h4><dl>${rows
+    .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`;
 }
 
 export function renderLegend(el, mode, result) {
