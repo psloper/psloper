@@ -209,12 +209,27 @@ export function createRealTerrain({ anchorLat, anchorLon, coarse, blocks = [], s
  */
 export async function loadTerrain({ baseUrl = 'data/terrain/', lat, lon, halfExtentM = 40000,
   fetchFn = null, fine = true } = {}) {
-  const get = fetchFn || (async (path) => {
+  // The offline single-file build embeds the data in the page, because a
+  // file:// page cannot fetch anything at all: every request is blocked as a
+  // cross-origin request from origin "null".
+  const embedded = typeof globalThis !== 'undefined' && globalThis.__TERRAIN_FILES__;
+  const fromEmbedded = embedded && ((path) => {
+    const b64 = embedded[path];
+    if (b64 === undefined) throw new Error(`${path} is not embedded in this build`);
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.buffer;
+  });
+
+  const get = fetchFn || fromEmbedded || (async (path) => {
     const r = await fetch(baseUrl + path);
     if (!r.ok) throw new Error(`Could not load ${path}: ${r.status}`);
     return r.arrayBuffer();
   });
-  const getJson = fetchFn
+  const getJson = (embedded && !fetchFn && globalThis.__TERRAIN_MANIFEST__)
+    ? async () => globalThis.__TERRAIN_MANIFEST__
+    : fetchFn
     ? async (p) => JSON.parse(new TextDecoder().decode(await get(p)))
     : async (p) => {
       const r = await fetch(baseUrl + p);

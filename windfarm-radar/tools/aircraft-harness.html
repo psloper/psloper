@@ -1,0 +1,86 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aircraft geometry harness</title>
+<script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
+<style>
+body{margin:0;background:#0b0f13;color:#cdd8e1;font:13px system-ui}
+#out{padding:10px 14px;font-family:ui-monospace,monospace;white-space:pre;font-size:12px;border-bottom:1px solid #223}
+canvas{display:block}
+</style></head><body>
+<div id="out">measuring...</div><canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { aircraftGeometry } from '../js/scene.js';
+import { TARGET_PRESETS } from '../js/model.js';
+
+// Measure the drawn geometry against the dimensions the model carries. A wing
+// must span spanM and a fuselage must run lengthM, whatever the girth factor.
+const SHOW = ['uas-micro', 'light-ga', 'turboprop', 'widebody', 'sar-helicopter', 'fast-jet'];
+const lines = [`${'class'.padEnd(16)}${'span in'.padStart(9)}${'span out'.padStart(10)}${'len in'.padStart(9)}${'len out'.padStart(10)}  girth`];
+const box = new THREE.Box3();
+for (const key of SHOW) {
+  const p = TARGET_PRESETS[key];
+  for (const girth of [1, 6]) {
+    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth });
+    g.updateMatrixWorld(true);
+    box.setFromObject(g);
+    const sx = box.max.x - box.min.x;
+    const sz = box.max.z - box.min.z;
+    lines.push(`${(girth === 1 ? key : '').padEnd(16)}${p.spanM.toFixed(1).padStart(9)}${sx.toFixed(1).padStart(10)}`
+      + `${p.lengthM.toFixed(1).padStart(9)}${sz.toFixed(1).padStart(10)}  x${girth}`);
+  }
+}
+// Assert, don't just display. Span and length must equal the model figures,
+// and the girth factor must not move either of them.
+const fails = [];
+for (const key of SHOW) {
+  const p = TARGET_PRESETS[key];
+  const dims = [1, 6].map((girth) => {
+    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth });
+    g.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(g);
+    return { x: bb.max.x - bb.min.x, z: bb.max.z - bb.min.z };
+  });
+  for (const d of dims) {
+    if (Math.abs(d.x - p.spanM) > 0.05) fails.push(`${key}: drawn span ${d.x.toFixed(2)} vs ${p.spanM}`);
+    // A rotor disc legitimately overhangs the fuselage nose and tail, so
+    // lengthM is the fuselage length for those and the extent is larger.
+    if (p.planform === 'wing' && Math.abs(d.z - p.lengthM) > 0.05) {
+      fails.push(`${key}: drawn length ${d.z.toFixed(2)} vs ${p.lengthM}`);
+    }
+    if (p.planform === 'rotor' && (d.z < p.lengthM - 0.05 || d.z > p.lengthM + p.spanM * 0.5)) {
+      fails.push(`${key}: rotor overhang out of range, ${d.z.toFixed(2)} against ${p.lengthM}`);
+    }
+  }
+  if (Math.abs(dims[0].x - dims[1].x) > 1e-6) fails.push(`${key}: girth changed the SPAN`);
+  if (Math.abs(dims[0].z - dims[1].z) > 1e-6) fails.push(`${key}: girth changed the LENGTH`);
+}
+lines.push('');
+lines.push(fails.length ? 'FAIL\n  ' + fails.join('\n  ')
+  : `PASS: ${SHOW.length} classes, span and length match the model, girth moves neither`);
+document.getElementById('out').textContent = lines.join('\n');
+window.__measured = lines;
+window.__fails = fails;
+
+// Draw them side by side, each scaled to the same drawn length so the shapes
+// can be compared. The numbers above are what carry the real proportions.
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(innerWidth, innerHeight - 120);
+renderer.setClearColor(0x0b0f13, 1);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0x8fa6bb, 0x202820, 1.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(1, 2, 1.4); scene.add(sun);
+const cam = new THREE.PerspectiveCamera(40, innerWidth / (innerHeight - 120), 0.1, 1000);
+cam.position.set(0, 58, 96); cam.lookAt(0, 0, 0);
+const mat = new THREE.MeshStandardMaterial({ color: 0xdbe7f0, roughness: 0.5, metalness: 0.1 });
+SHOW.forEach((key, i) => {
+  const p = TARGET_PRESETS[key];
+  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth: 2 });
+  g.traverse((m) => { if (m.isMesh) m.material = mat; });
+  const k = 20 / Math.max(p.lengthM, p.spanM);   // same drawn size for every one
+  g.scale.setScalar(k);
+  g.position.set((i - (SHOW.length - 1) / 2) * 25, 0, 0);
+  scene.add(g);
+});
+renderer.render(scene, cam);
+window.__drawn = true;
+</script></body></html>

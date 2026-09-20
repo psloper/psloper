@@ -200,6 +200,155 @@ export class Orbit {
   }
 }
 
+// --------------------------------------------------------- aircraft geometry
+//
+// The target used to be a six-sided cone sized from the scene extent, so a
+// light single and a widebody were drawn identically and changing the target
+// class changed nothing you could see. It is now built from the span and
+// length the model carries, like the turbines.
+//
+// The same girth rule applies as for the turbines: ONE exaggeration factor
+// multiplies every structural WIDTH, and nothing else. Span and length are the
+// true dimensions, so relative proportions stay honest: a widebody really is
+// drawn five times the span of a light single.
+
+/** A swept, tapered wing panel lying in the horizontal plane. */
+function wingPanel(spanM, rootChordM, tipChordM, sweepM, thickM) {
+  const half = spanM / 2;
+  const v = [];
+  const idx = [];
+  // Root and tip sections, each a thin lens so the wing has a top and bottom.
+  const sec = (x, chord, z0) => {
+    const base = v.length / 3;
+    v.push(x, 0, z0 + chord * 0.5);          // leading edge
+    v.push(x, thickM * 0.5, z0);             // upper crest
+    v.push(x, 0, z0 - chord * 0.5);          // trailing edge
+    v.push(x, -thickM * 0.5, z0);            // lower crest
+    return base;
+  };
+  const a = sec(-half, tipChordM, -sweepM);
+  const b = sec(0, rootChordM, 0);
+  const c = sec(half, tipChordM, -sweepM);
+  for (const [p, q] of [[a, b], [b, c]]) {
+    for (let k = 0; k < 4; k++) {
+      const k2 = (k + 1) % 4;
+      idx.push(p + k, q + k, q + k2);
+      idx.push(p + k, q + k2, p + k2);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * An aircraft built from its own dimensions.
+ *
+ * spanM and lengthM are the real figures from the target model. `girth` is the
+ * shared width exaggeration; it never touches span or length, so the footprint
+ * the aircraft covers is true.
+ *
+ * Returns a THREE.Group whose local +Z is the direction of flight.
+ */
+export function aircraftGeometry(spanM, lengthM, { planform = 'wing', girth = 1 } = {}) {
+  const span = Math.max(0.3, spanM);
+  const len = Math.max(0.3, lengthM);
+  const g = new THREE.Group();
+
+  // Everything is laid out between an explicit nose at +len/2 and tail at
+  // -len/2, so the drawn aircraft is exactly as long as the model says and the
+  // girth factor cannot stretch it. The first version let the nose cone and the
+  // capsule end caps run past the tail, and raising girth from 1 to 6 grew a
+  // light single from 9.1 m to 10.6 m long, which is exactly the defect the
+  // turbine geometry was rewritten to remove.
+  const NOSE = 0.18;
+  const nz = len / 2;
+  const noseLen = len * NOSE;
+  const bodyLen = len - noseLen;
+  const bodyR = Math.min(len * 0.05, span * 0.085) * girth;
+  const cylLen = Math.max(0.01, bodyLen - 2 * bodyR);
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(bodyR, cylLen, 4, 10), null);
+  body.rotation.x = Math.PI / 2;
+  body.position.z = -nz + bodyLen / 2;
+  body.userData.part = 'fuselage';
+  g.add(body);
+
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(bodyR, noseLen, 10), null);
+  nose.rotation.x = -Math.PI / 2;
+  nose.position.z = nz - noseLen / 2;
+  nose.userData.part = 'nose';
+  g.add(nose);
+
+  if (planform === 'rotor') {
+    // A helicopter. spanM is the main rotor diameter for this class, and the
+    // boom is sized to end exactly at the tail.
+    const disc = new THREE.Mesh(
+      new THREE.CylinderGeometry(span / 2, span / 2, Math.max(0.12, bodyR * 0.12), 24), null);
+    disc.position.set(0, bodyR * 1.5, -nz + bodyLen * 0.45);
+    disc.userData.part = 'rotor';
+    g.add(disc);
+
+    const boomLen = bodyLen * 0.5;
+    const boom = new THREE.Mesh(
+      new THREE.CylinderGeometry(bodyR * 0.26, bodyR * 0.16, boomLen, 8), null);
+    boom.rotation.x = Math.PI / 2;
+    boom.position.z = -nz + boomLen / 2;
+    boom.userData.part = 'boom';
+    g.add(boom);
+
+    const tr = span * 0.16;
+    const tailRotor = new THREE.Mesh(
+      new THREE.CylinderGeometry(tr, tr, Math.max(0.08, bodyR * 0.1), 12), null);
+    tailRotor.rotation.z = Math.PI / 2;
+    tailRotor.position.set(0, bodyR * 1.1, -nz + tr * 0.3);
+    tailRotor.userData.part = 'tail-rotor';
+    g.add(tailRotor);
+
+    g.userData.spanM = span;
+    g.userData.lengthM = len;
+    return g;
+  }
+
+  // Wing, a little forward of centre as on most aeroplanes.
+  const rootChord = len * 0.24;
+  const wing = new THREE.Mesh(
+    wingPanel(span, rootChord, rootChord * 0.42, span * 0.13, rootChord * 0.11 * girth), null);
+  wing.position.z = len * 0.02;
+  wing.userData.part = 'wing';
+  g.add(wing);
+
+  // Tailplane and fin, scaled off the wing. A swept panel's rearmost point is
+  // its tip trailing edge, so each is placed to put that point exactly on the
+  // tail rather than somewhere past it.
+  const tailSpan = span * 0.36;
+  const tailChord = rootChord * 0.55;
+  const tailSweep = tailSpan * 0.16;
+  const tailTip = tailChord * 0.55;
+  const tail = new THREE.Mesh(
+    wingPanel(tailSpan, tailChord, tailTip, tailSweep, tailChord * 0.12 * girth), null);
+  tail.position.z = -nz + tailSweep + tailTip / 2;
+  tail.userData.part = 'tailplane';
+  g.add(tail);
+
+  const finSpan = tailSpan * 0.92;
+  const finChord = tailChord * 1.1;
+  const finSweep = finSpan * 0.3;
+  const finTip = finChord * 0.5;
+  const fin = new THREE.Mesh(
+    wingPanel(finSpan, finChord, finTip, finSweep, finChord * 0.12 * girth), null);
+  fin.rotation.z = Math.PI / 2;
+  fin.position.set(0, finSpan / 2, -nz + finSweep + finTip / 2);
+  fin.userData.part = 'fin';
+  g.add(fin);
+
+  g.userData.spanM = span;
+  g.userData.lengthM = len;
+  return g;
+}
+
 // ------------------------------------------------------------------- viewer
 
 // --------------------------------------------------------- turbine geometry
@@ -1065,12 +1214,24 @@ export class SceneView {
       }
     }
 
-    const acSize = Math.max(this.extent * 0.006, 60);
-    this.aircraft = new THREE.Mesh(
-      new THREE.ConeGeometry(acSize * 0.55, acSize * 1.8, 6),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35 }),
-    );
-    this.aircraft.rotation.x = Math.PI / 2;
+    // The aircraft is drawn at its real span and length, then scaled up as a
+    // whole so it is visible across a 40 km scene. The scale is uniform, so
+    // proportions are true: a widebody is drawn five times the span of a light
+    // single because it is five times the span.
+    const t = r.scenario.target;
+    const span = Number.isFinite(t.spanM) ? t.spanM : 30;
+    const length = Number.isFinite(t.lengthM) ? t.lengthM : 32;
+    this.aircraftScale = clamp((this.extent * 0.0075) / Math.max(span, 1), 1, 60);
+    this.aircraft = aircraftGeometry(span, length, {
+      planform: t.planform || 'wing',
+      girth: Math.min(this.girthExag || 1, 6),
+    });
+    this.aircraft.scale.setScalar(this.aircraftScale);
+    const acMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35,
+    });
+    this.aircraftMaterial = acMat;
+    this.aircraft.traverse((m) => { if (m.isMesh) m.material = acMat; });
     this.groups.track.add(this.aircraft);
   }
 
@@ -1222,11 +1383,13 @@ export class SceneView {
           const pa = this.pos(a.east, a.north, a.amsl);
           const pb = this.pos(b.east, b.north, b.amsl);
           this.aircraft.position.lerpVectors(pa, pb, clamp(k, 0, 1));
+          // aircraftGeometry points along +Z, which is what lookAt aligns, so
+          // the extra rotateX the old cone needed is gone.
           this.aircraft.lookAt(pb);
-          this.aircraft.rotateX(Math.PI / 2);
           const st = b.tracked ? b.status : 'lost';
-          this.aircraft.material.color.setHex(b.blanked ? COLORS.info : statusColor(st));
-          this.aircraft.material.emissive.setHex(b.blanked ? COLORS.info : statusColor(st));
+          const hex = b.blanked ? COLORS.info : statusColor(st);
+          this.aircraftMaterial.color.setHex(hex);
+          this.aircraftMaterial.emissive.setHex(hex);
           this.currentPoint = b;
         }
       }

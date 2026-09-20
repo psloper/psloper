@@ -387,39 +387,45 @@ export const REFRACTION_PRESETS = {
 // equally: a widebody has 45 dB more return than a small uncrewed aircraft, so
 // a wind farm that is invisible against one can hide the other completely.
 
+// Span and length are REPRESENTATIVE dimensions for each class, in metres,
+// taken from a common type in that role. They drive the drawing only: the
+// radar maths uses radar cross-section, not size. They exist so that a light
+// single and a widebody are not drawn the same, and so the picture changes when
+// the class does. `planform` says whether the lift comes from a wing or a
+// rotor, which is what decides the shape.
 export const TARGET_PRESETS = {
   // ---- uncrewed
-  'uas-micro':      { label: 'Small multirotor UAS', group: 'Uncrewed', rcsDbsm: -20, speedKt: 35, altitudeFt: 300 },
-  'uas-fixed':      { label: 'Fixed-wing small UAS', group: 'Uncrewed', rcsDbsm: -10, speedKt: 60, altitudeFt: 400 },
-  'uas-tactical':   { label: 'Tactical UAS', group: 'Uncrewed', rcsDbsm: 0, speedKt: 90, altitudeFt: 5000 },
-  'uas-male':       { label: 'Medium-altitude long-endurance UAS', group: 'Uncrewed', rcsDbsm: 5, speedKt: 150, altitudeFt: 15000 },
+  'uas-micro':      { label: 'Small multirotor UAS', group: 'Uncrewed', rcsDbsm: -20, speedKt: 35, altitudeFt: 300, spanM: 0.6, lengthM: 0.5, planform: 'rotor' },
+  'uas-fixed':      { label: 'Fixed-wing small UAS', group: 'Uncrewed', rcsDbsm: -10, speedKt: 60, altitudeFt: 400, spanM: 3.0, lengthM: 1.8, planform: 'wing' },
+  'uas-tactical':   { label: 'Tactical UAS', group: 'Uncrewed', rcsDbsm: 0, speedKt: 90, altitudeFt: 5000, spanM: 5.7, lengthM: 3.1, planform: 'wing' },
+  'uas-male':       { label: 'Medium-altitude long-endurance UAS', group: 'Uncrewed', rcsDbsm: 5, speedKt: 150, altitudeFt: 15000, spanM: 20.1, lengthM: 11.0, planform: 'wing' },
 
   // ---- general aviation and rotary
-  'glider':         { label: 'Glider', group: 'General aviation', rcsDbsm: 2, speedKt: 60, altitudeFt: 3000 },
-  'microlight':     { label: 'Microlight', group: 'General aviation', rcsDbsm: -3, speedKt: 55, altitudeFt: 1500 },
-  'light-ga':       { label: 'Light single piston', group: 'General aviation', rcsDbsm: 0, speedKt: 110, altitudeFt: 2000 },
-  'light-twin':     { label: 'Light twin', group: 'General aviation', rcsDbsm: 5, speedKt: 160, altitudeFt: 4000 },
-  'helicopter':     { label: 'Light helicopter', group: 'General aviation', rcsDbsm: 3, speedKt: 110, altitudeFt: 1200 },
-  'helicopter-med': { label: 'Medium helicopter', group: 'General aviation', rcsDbsm: 9, speedKt: 130, altitudeFt: 1500 },
-  'sar-helicopter': { label: 'Search and rescue helicopter', group: 'General aviation', rcsDbsm: 10, speedKt: 120, altitudeFt: 500 },
+  'glider':         { label: 'Glider', group: 'General aviation', rcsDbsm: 2, speedKt: 60, altitudeFt: 3000, spanM: 15.0, lengthM: 6.6, planform: 'wing' },
+  'microlight':     { label: 'Microlight', group: 'General aviation', rcsDbsm: -3, speedKt: 55, altitudeFt: 1500, spanM: 9.5, lengthM: 5.5, planform: 'wing' },
+  'light-ga':       { label: 'Light single piston', group: 'General aviation', rcsDbsm: 0, speedKt: 110, altitudeFt: 2000, spanM: 11.0, lengthM: 8.3, planform: 'wing' },
+  'light-twin':     { label: 'Light twin', group: 'General aviation', rcsDbsm: 5, speedKt: 160, altitudeFt: 4000, spanM: 11.9, lengthM: 8.8, planform: 'wing' },
+  'helicopter':     { label: 'Light helicopter', group: 'General aviation', rcsDbsm: 3, speedKt: 110, altitudeFt: 1200, spanM: 11.0, lengthM: 12.9, planform: 'rotor' },
+  'helicopter-med': { label: 'Medium helicopter', group: 'General aviation', rcsDbsm: 9, speedKt: 130, altitudeFt: 1500, spanM: 13.4, lengthM: 15.9, planform: 'rotor' },
+  'sar-helicopter': { label: 'Search and rescue helicopter', group: 'General aviation', rcsDbsm: 10, speedKt: 120, altitudeFt: 500, spanM: 16.3, lengthM: 19.5, planform: 'rotor' },
 
   // ---- commercial
-  'bizjet':         { label: 'Business jet', group: 'Commercial', rcsDbsm: 8, speedKt: 250, altitudeFt: 12000 },
-  'turboprop':      { label: 'Regional turboprop', group: 'Commercial', rcsDbsm: 13, speedKt: 220, altitudeFt: 6000 },
-  'regional-jet':   { label: 'Regional jet', group: 'Commercial', rcsDbsm: 16, speedKt: 260, altitudeFt: 9000 },
-  'airliner':       { label: 'Narrowbody airliner', group: 'Commercial', rcsDbsm: 20, speedKt: 280, altitudeFt: 10000 },
-  'widebody':       { label: 'Widebody airliner', group: 'Commercial', rcsDbsm: 25, speedKt: 300, altitudeFt: 15000 },
+  'bizjet':         { label: 'Business jet', group: 'Commercial', rcsDbsm: 8, speedKt: 250, altitudeFt: 12000, spanM: 17.2, lengthM: 19.5, planform: 'wing' },
+  'turboprop':      { label: 'Regional turboprop', group: 'Commercial', rcsDbsm: 13, speedKt: 220, altitudeFt: 6000, spanM: 27.1, lengthM: 27.2, planform: 'wing' },
+  'regional-jet':   { label: 'Regional jet', group: 'Commercial', rcsDbsm: 16, speedKt: 260, altitudeFt: 9000, spanM: 26.0, lengthM: 31.7, planform: 'wing' },
+  'airliner':       { label: 'Narrowbody airliner', group: 'Commercial', rcsDbsm: 20, speedKt: 280, altitudeFt: 10000, spanM: 35.8, lengthM: 37.6, planform: 'wing' },
+  'widebody':       { label: 'Widebody airliner', group: 'Commercial', rcsDbsm: 25, speedKt: 300, altitudeFt: 15000, spanM: 60.1, lengthM: 63.7, planform: 'wing' },
 
   // ---- military
-  'mil-trainer':    { label: 'Military trainer', group: 'Military', rcsDbsm: 4, speedKt: 300, altitudeFt: 2000 },
-  'fast-jet':       { label: 'Fast jet, conventional', group: 'Military', rcsDbsm: 6, speedKt: 450, altitudeFt: 1000 },
-  'fast-jet-low':   { label: 'Fast jet at low level', group: 'Military', rcsDbsm: 6, speedKt: 480, altitudeFt: 250 },
-  'fast-jet-head':  { label: 'Fast jet, head-on aspect', group: 'Military', rcsDbsm: -1, speedKt: 450, altitudeFt: 5000 },
-  'low-observable': { label: 'Low-observable aircraft (generic)', group: 'Military', rcsDbsm: -15, speedKt: 420, altitudeFt: 20000 },
-  'mil-rotary':     { label: 'Military helicopter', group: 'Military', rcsDbsm: 10, speedKt: 130, altitudeFt: 300 },
-  'mil-transport':  { label: 'Military transport', group: 'Military', rcsDbsm: 24, speedKt: 260, altitudeFt: 8000 },
-  'maritime-patrol':{ label: 'Maritime patrol aircraft', group: 'Military', rcsDbsm: 21, speedKt: 250, altitudeFt: 1000 },
-  'aew':            { label: 'Airborne early warning', group: 'Military', rcsDbsm: 26, speedKt: 300, altitudeFt: 25000 },
+  'mil-trainer':    { label: 'Military trainer', group: 'Military', rcsDbsm: 4, speedKt: 300, altitudeFt: 2000, spanM: 9.4, lengthM: 11.2, planform: 'wing' },
+  'fast-jet':       { label: 'Fast jet, conventional', group: 'Military', rcsDbsm: 6, speedKt: 450, altitudeFt: 1000, spanM: 11.0, lengthM: 15.6, planform: 'wing' },
+  'fast-jet-low':   { label: 'Fast jet at low level', group: 'Military', rcsDbsm: 6, speedKt: 480, altitudeFt: 250, spanM: 11.0, lengthM: 15.6, planform: 'wing' },
+  'fast-jet-head':  { label: 'Fast jet, head-on aspect', group: 'Military', rcsDbsm: -1, speedKt: 450, altitudeFt: 5000, spanM: 11.0, lengthM: 15.6, planform: 'wing' },
+  'low-observable': { label: 'Low-observable aircraft (generic)', group: 'Military', rcsDbsm: -15, speedKt: 420, altitudeFt: 20000, spanM: 13.6, lengthM: 15.7, planform: 'wing' },
+  'mil-rotary':     { label: 'Military helicopter', group: 'Military', rcsDbsm: 10, speedKt: 130, altitudeFt: 300, spanM: 16.4, lengthM: 19.8, planform: 'rotor' },
+  'mil-transport':  { label: 'Military transport', group: 'Military', rcsDbsm: 24, speedKt: 260, altitudeFt: 8000, spanM: 40.4, lengthM: 45.0, planform: 'wing' },
+  'maritime-patrol':{ label: 'Maritime patrol aircraft', group: 'Military', rcsDbsm: 21, speedKt: 250, altitudeFt: 1000, spanM: 35.8, lengthM: 39.5, planform: 'wing' },
+  'aew':            { label: 'Airborne early warning', group: 'Military', rcsDbsm: 26, speedKt: 300, altitudeFt: 25000, spanM: 30.4, lengthM: 32.9, planform: 'wing' },
 };
 
 export const TARGET_GROUPS = ['Uncrewed', 'General aviation', 'Commercial', 'Military'];

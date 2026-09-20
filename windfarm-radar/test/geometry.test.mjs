@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { defaultScenario, buildTurbines, TURBINE_PRESETS, applyTurbinePreset } from '../js/model.js';
+import { defaultScenario, buildTurbines, TURBINE_PRESETS, applyTurbinePreset, TARGET_PRESETS, applyTargetPreset } from '../js/model.js';
 import { createTerrain } from '../js/geo.js';
 
 const build = (patch = {}) => {
@@ -75,4 +75,45 @@ test('hub height is exaggerated vertically and never by girth', () => {
   const src = readFileSync(new URL('../js/scene.js', import.meta.url), 'utf8');
   const line = src.split('\n').find((l) => l.includes('const hubY = t.hubHeightM'));
   assert.ok(/vExag/.test(line) && !/girth/.test(line), line);
+});
+
+// ----------------------------------------------------------------- aircraft
+
+test('every target class carries the dimensions the drawing needs', () => {
+  for (const [key, p] of Object.entries(TARGET_PRESETS)) {
+    assert.ok(Number.isFinite(p.spanM) && p.spanM > 0, `${key}: no span`);
+    assert.ok(Number.isFinite(p.lengthM) && p.lengthM > 0, `${key}: no length`);
+    assert.ok(['wing', 'rotor'].includes(p.planform), `${key}: planform is ${p.planform}`);
+  }
+});
+
+test('the dimensions order the way the real aircraft do', () => {
+  const span = (k) => TARGET_PRESETS[k].spanM;
+  // If these ever stop holding, the drawing is telling the user something false.
+  assert.ok(span('widebody') > span('airliner'), 'a widebody should out-span a narrowbody');
+  assert.ok(span('airliner') > span('regional-jet'));
+  assert.ok(span('regional-jet') > span('light-twin'));
+  assert.ok(span('light-twin') > span('uas-fixed'));
+  assert.ok(span('uas-fixed') > span('uas-micro'));
+  // A widebody is about five times the span of a light single, which is the
+  // ratio the picture has to show.
+  const ratio = span('widebody') / span('light-ga');
+  assert.ok(ratio > 4 && ratio < 7, `widebody to light single span ratio is ${ratio.toFixed(1)}`);
+});
+
+test('helicopters are rotor planform and their span is the rotor diameter', () => {
+  for (const k of ['helicopter', 'helicopter-med', 'sar-helicopter', 'mil-rotary', 'uas-micro']) {
+    assert.equal(TARGET_PRESETS[k].planform, 'rotor', `${k} should be a rotor type`);
+  }
+  // A rotor is wider than the machine is long for a light helicopter, and the
+  // medium and SAR types are longer than they are wide once the boom counts.
+  assert.ok(TARGET_PRESETS['sar-helicopter'].lengthM > TARGET_PRESETS['sar-helicopter'].spanM);
+});
+
+test('the dimensions reach the scenario, because the drawing reads them there', () => {
+  const s = applyTargetPreset(defaultScenario(), 'widebody');
+  assert.equal(s.target.spanM, TARGET_PRESETS['widebody'].spanM);
+  assert.equal(s.target.planform, 'wing');
+  const h = applyTargetPreset(defaultScenario(), 'sar-helicopter');
+  assert.equal(h.target.planform, 'rotor');
 });
