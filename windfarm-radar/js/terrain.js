@@ -239,7 +239,10 @@ export async function loadTerrain({ baseUrl = 'data/terrain/', lat, lon, halfExt
 
   const manifest = await getJson('manifest.json');
   const coarse = await decodeBlock(await get(manifest.coarse.file));
-  const wanted = fine ? blocksForExtent(manifest, lat, lon, halfExtentM) : [];
+  // A cut-down offline build carries the 500 m grid only. Saying so is the
+  // point: the caller reports the spacing on screen.
+  const wanted = (fine && !manifest.coarseOnly)
+    ? blocksForExtent(manifest, lat, lon, halfExtentM) : [];
   const blocks = [];
   for (const meta of wanted) blocks.push(await decodeBlock(await get(meta.file)));
   return { manifest, coarse, blocks, blockMeta: wanted };

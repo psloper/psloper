@@ -24,7 +24,13 @@ import { execFileSync } from 'node:child_process';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(root, '..');
-const outFile = process.argv[2] || join(root, 'dist', 'windfarm-radar-offline.html');
+// --coarse embeds only the 500 m national grid. The full build carries the
+// 100 m blocks too and comes out around 38 MB, which is fine on a stick but
+// too big for some ways of moving a file about.
+const coarseOnly = process.argv.includes('--coarse');
+const named = process.argv.slice(2).find((a) => !a.startsWith('--'));
+const outFile = named || join(root, 'dist',
+  coarseOnly ? 'windfarm-radar-offline-500m.html' : 'windfarm-radar-offline.html');
 
 const esbuild = process.env.ESBUILD || 'npx';
 const esbuildArgs = process.env.ESBUILD ? [] : ['--yes', 'esbuild'];
@@ -57,11 +63,18 @@ const embedded = {};
 let terrainBytes = 0;
 for (const f of readdirSync(tdir)) {
   if (!f.endsWith('.bin')) continue;
+  if (coarseOnly && f !== manifest.coarse.file) continue;
   const b = readFileSync(join(tdir, f));
   terrainBytes += b.length;
   embedded[f] = b.toString('base64');
 }
 manifest.encoding = 'embedded base64 in the offline single-file build';
+if (coarseOnly) {
+  // Say it in the data, so the page can tell the user rather than silently
+  // giving coarser ground than they expect.
+  manifest.blocks = [];
+  manifest.coarseOnly = true;
+}
 console.log(`  terrain ${(terrainBytes / 1e6).toFixed(1)} MB binary, `
   + `${(Object.values(embedded).reduce((a, s) => a + s.length, 0) / 1e6).toFixed(1)} MB as base64`);
 
