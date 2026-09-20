@@ -212,35 +212,119 @@ export class Orbit {
 // true dimensions, so relative proportions stay honest: a widebody really is
 // drawn five times the span of a light single.
 
-/** A swept, tapered wing panel lying in the horizontal plane. */
-function wingPanel(spanM, rootChordM, tipChordM, sweepM, thickM) {
-  const half = spanM / 2;
+/**
+ * One half of a wing or tail surface, root at x = 0 and tip at x = side*semi.
+ *
+ * Each half is built separately so it can carry dihedral and hang an engine.
+ * Sweep moves the tip section aft and dihedral moves it up; neither moves it
+ * inboard or outboard, so the two halves together are exactly `2*semi` across
+ * whatever those angles are. That is what keeps the drawn span equal to the
+ * span the model carries.
+ */
+function panelGeometry({ semi, rootChord, tipChord, sweep, dihedral = 0, thick, side = 1 }) {
   const v = [];
-  const idx = [];
-  // Root and tip sections, each a thin lens so the wing has a top and bottom.
-  const sec = (x, chord, z0) => {
+  const tris = [];
+  // Each section is a thin four-point lens: leading edge, upper crest,
+  // trailing edge, lower crest. Four points is enough for a wing seen from
+  // hundreds of metres and keeps the whole aircraft under 900 triangles.
+  const sec = (x, chord, z, y) => {
     const base = v.length / 3;
-    v.push(x, 0, z0 + chord * 0.5);          // leading edge
-    v.push(x, thickM * 0.5, z0);             // upper crest
-    v.push(x, 0, z0 - chord * 0.5);          // trailing edge
-    v.push(x, -thickM * 0.5, z0);            // lower crest
+    v.push(x, y, z + chord * 0.5);
+    v.push(x, y + thick * 0.5, z);
+    v.push(x, y, z - chord * 0.5);
+    v.push(x, y - thick * 0.5, z);
     return base;
   };
-  const a = sec(-half, tipChordM, -sweepM);
-  const b = sec(0, rootChordM, 0);
-  const c = sec(half, tipChordM, -sweepM);
-  for (const [p, q] of [[a, b], [b, c]]) {
-    for (let k = 0; k < 4; k++) {
-      const k2 = (k + 1) % 4;
-      idx.push(p + k, q + k, q + k2);
-      idx.push(p + k, q + k2, p + k2);
-    }
+  const a = sec(0, rootChord, 0, 0);
+  const b = sec(side * semi, tipChord, -sweep, dihedral);
+  for (let k = 0; k < 4; k++) {
+    const k2 = (k + 1) % 4;
+    tris.push([a + k, b + k, b + k2], [a + k, b + k2, a + k2]);
   }
+  tris.push([b, b + 1, b + 2], [b, b + 2, b + 3]);   // close the tip
+  // Mirroring the panel reverses its winding, which turns every face inside
+  // out and makes the left wing light as if it were in shadow. Flip it back
+  // rather than reaching for double-sided material, which hides the fault
+  // instead of fixing it.
+  const idx = [];
+  for (const t of tris) idx.push(t[0], side < 0 ? t[2] : t[1], side < 0 ? t[1] : t[2]);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
   g.setIndex(idx);
   g.computeVertexNormals();
   return g;
+}
+
+/**
+ * A fuselage as one continuous surface: nose, constant-section barrel, tapered
+ * tail cone. Built as a lathe about the body axis and then laid along +Z.
+ *
+ * This replaces a capsule plus a separate nose cone. That pairing looked wrong
+ * from every angle and it took a colour-coded render to see why: a capsule end
+ * cap is a hemisphere that closes to a point, so the body pinched to nothing
+ * and the cone then flared straight back out to full width. The join read as a
+ * bulb stuck on a waist. A single profile cannot pinch, because the radius is
+ * a function of position along the body.
+ *
+ * The profile runs from the nose at +len/2 to the tail at -len/2 exactly, so
+ * the fuselage alone sets the drawn length and no girth factor can change it.
+ */
+function fuselageGeometry(len, radius, { nose = 'round', tailUp = 0 } = {}) {
+  const noseFrac = nose === 'sharp' ? 0.28 : 0.13;
+  const tailFrac = nose === 'sharp' ? 0.26 : 0.34;
+  const tailR = nose === 'sharp' ? 0.42 : 0.16;
+  const N = 44;
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;                       // 0 at the nose, 1 at the tail
+    let r;
+    if (t < noseFrac) {
+      const u = t / noseFrac;
+      // A quarter ellipse gives a rounded transport nose; a power curve gives
+      // the long pointed nose of a fast jet.
+      r = nose === 'sharp' ? u ** 0.8 : Math.sqrt(Math.max(0, 1 - (1 - u) ** 2));
+    } else if (t < 1 - tailFrac) {
+      r = 1;
+    } else {
+      const u = (t - (1 - tailFrac)) / tailFrac;
+      r = 1 - (1 - tailR) * u ** 1.7;
+    }
+    pts.push(new THREE.Vector2(Math.max(radius * 0.02, r * radius), (0.5 - t) * len));
+  }
+  const geo = new THREE.LatheGeometry(pts, 18);
+  geo.rotateX(Math.PI / 2);
+  if (tailUp > 0) {
+    // Transports sweep the rear fuselage upwards. This moves vertices in Y
+    // only, so the drawn length and width are untouched.
+    const zStart = (tailFrac - 0.5) * len;
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const z = pos.getZ(i);
+      if (z >= zStart) continue;
+      const u = (zStart - z) / (tailFrac * len);
+      pos.setY(i, pos.getY(i) + tailUp * radius * u * u);
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+  }
+  return geo;
+}
+
+/** A nacelle: a barrel with an inlet lip at the front and a tapered exhaust. */
+function engineNacelleGeometry(podR, podLen) {
+  const g = new THREE.BufferGeometry();
+  const rings = [];
+  const prof = [[0.0, 0.88], [0.08, 1.0], [0.55, 0.98], [1.0, 0.62]];
+  for (const [t, k] of prof) {
+    const ring = [];
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      ring.push(new THREE.Vector3(Math.cos(a) * podR * k, Math.sin(a) * podR * k,
+        podLen * (0.5 - t)));
+    }
+    rings.push(ring);
+  }
+  return loftRings(rings);
 }
 
 /**
@@ -250,141 +334,241 @@ function wingPanel(spanM, rootChordM, tipChordM, sweepM, thickM) {
  * shared width exaggeration; it never touches span or length, so the footprint
  * the aircraft covers is true.
  *
+ * `wing` is 'straight', 'swept' or 'delta', carried on the target preset. It
+ * decides sweep, taper and where the wing sits on the body, which is most of
+ * what makes a light single read as a light single and not as a small airliner.
+ *
  * Returns a THREE.Group whose local +Z is the direction of flight.
  */
-export function aircraftGeometry(spanM, lengthM,
-  { planform = 'wing', girth = 1, engines = 0, enginesOn = 'none' } = {}) {
+export function aircraftGeometry(spanM, lengthM, {
+  planform = 'wing', wing = 'straight', girth = 1, engines = 0, enginesOn = 'none',
+} = {}) {
   const span = Math.max(0.3, spanM);
   const len = Math.max(0.3, lengthM);
   const g = new THREE.Group();
-
-  // Everything is laid out between an explicit nose at +len/2 and tail at
-  // -len/2, so the drawn aircraft is exactly as long as the model says and the
-  // girth factor cannot stretch it. The first version let the nose cone and the
-  // capsule end caps run past the tail, and raising girth from 1 to 6 grew a
-  // light single from 9.1 m to 10.6 m long, which is exactly the defect the
-  // turbine geometry was rewritten to remove.
-  const NOSE = 0.18;
   const nz = len / 2;
-  const noseLen = len * NOSE;
-  const bodyLen = len - noseLen;
-  const bodyR = Math.min(len * 0.05, span * 0.085) * girth;
-  const cylLen = Math.max(0.01, bodyLen - 2 * bodyR);
-
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(bodyR, cylLen, 4, 10), null);
-  body.rotation.x = Math.PI / 2;
-  body.position.z = -nz + bodyLen / 2;
-  body.userData.part = 'fuselage';
-  g.add(body);
-
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(bodyR, noseLen, 10), null);
-  nose.rotation.x = -Math.PI / 2;
-  nose.position.z = nz - noseLen / 2;
-  nose.userData.part = 'nose';
-  g.add(nose);
+  const semi = span / 2;
+  const delta = wing === 'delta';
+  const swept = wing === 'swept';
+  // Clamped so that even at the top of the girth slider the body cannot grow
+  // wider than the wing it hangs under.
+  const bodyR = Math.min(len * 0.055 * girth, span * 0.075 * girth, semi * 0.42, len * 0.2);
 
   if (planform === 'rotor') {
-    // A helicopter. spanM is the main rotor diameter for this class, and the
-    // boom is sized to end exactly at the tail.
-    const disc = new THREE.Mesh(
-      new THREE.CylinderGeometry(span / 2, span / 2, Math.max(0.12, bodyR * 0.12), 24), null);
-    disc.position.set(0, bodyR * 1.5, -nz + bodyLen * 0.45);
-    disc.userData.part = 'rotor';
-    g.add(disc);
+    // A helicopter: cabin, tail boom, fin, tail rotor, and a main rotor drawn
+    // as separate blades. The disc it sweeps used to be drawn as a solid
+    // cylinder, which read as a flying saucer from every angle.
+    const cabinLen = len * 0.52;
+    const cabin = new THREE.Mesh(fuselageGeometry(cabinLen, bodyR * 1.35, { nose: 'round' }), null);
+    cabin.position.z = nz - cabinLen / 2;
+    cabin.userData.part = 'fuselage';
+    g.add(cabin);
 
-    const boomLen = bodyLen * 0.5;
+    const boomLen = len - cabinLen * 0.75;
     const boom = new THREE.Mesh(
-      new THREE.CylinderGeometry(bodyR * 0.26, bodyR * 0.16, boomLen, 8), null);
+      new THREE.CylinderGeometry(bodyR * 0.34, bodyR * 0.2, boomLen, 8), null);
     boom.rotation.x = Math.PI / 2;
     boom.position.z = -nz + boomLen / 2;
     boom.userData.part = 'boom';
     g.add(boom);
 
-    const tr = span * 0.16;
-    const tailRotor = new THREE.Mesh(
-      new THREE.CylinderGeometry(tr, tr, Math.max(0.08, bodyR * 0.1), 12), null);
-    tailRotor.rotation.z = Math.PI / 2;
-    tailRotor.position.set(0, bodyR * 1.1, -nz + tr * 0.3);
-    tailRotor.userData.part = 'tail-rotor';
-    g.add(tailRotor);
+    const finH = len * 0.13;
+    const fin = new THREE.Mesh(panelGeometry({
+      semi: finH, rootChord: len * 0.12, tipChord: len * 0.06,
+      sweep: finH * 0.5, thick: bodyR * 0.2, side: 1,
+    }), null);
+    fin.rotation.z = Math.PI / 2;
+    fin.position.set(0, bodyR * 0.2, -nz + len * 0.07);
+    fin.userData.part = 'fin';
+    g.add(fin);
 
+    const mast = new THREE.Mesh(
+      new THREE.CylinderGeometry(bodyR * 0.16, bodyR * 0.22, bodyR * 0.9, 8), null);
+    mast.position.set(0, bodyR * 1.6, nz - cabinLen * 0.55);
+    mast.userData.part = 'mast';
+    g.add(mast);
+
+    const hubY = bodyR * 2.0;
+    const hubZ = nz - cabinLen * 0.55;
+    for (let b = 0; b < 4; b++) {
+      const a = (b / 4) * Math.PI * 2;
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(semi, Math.max(0.03, bodyR * 0.07), span * 0.05), null);
+      blade.position.set(Math.cos(a) * semi * 0.5, hubY, hubZ + Math.sin(a) * semi * 0.5);
+      blade.rotation.y = -a;
+      blade.userData.part = 'rotor';
+      g.add(blade);
+    }
+    const tr = span * 0.17;
+    for (let b = 0; b < 2; b++) {
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(Math.max(0.03, bodyR * 0.06), tr, span * 0.035), null);
+      blade.position.set(bodyR * 0.3, bodyR * 0.2 + (b ? tr : -tr) * 0.5, -nz + len * 0.05);
+      blade.userData.part = 'tail-rotor';
+      g.add(blade);
+    }
     g.userData.spanM = span;
     g.userData.lengthM = len;
     return g;
   }
 
-  // Wing, a little forward of centre as on most aeroplanes.
-  const rootChord = len * 0.24;
-  const wing = new THREE.Mesh(
-    wingPanel(span, rootChord, rootChord * 0.42, span * 0.13, rootChord * 0.11 * girth), null);
-  wing.position.z = len * 0.02;
-  wing.userData.part = 'wing';
-  g.add(wing);
+  // A propeller at the nose or the tail is part of the aircraft's length, so
+  // the body is shortened to make room for it rather than the disc being hung
+  // off the end where it would make the aircraft longer than the model says.
+  const propAtNose = engines > 0 && enginesOn === 'nose';
+  const propAtTail = engines > 0 && enginesOn === 'tail';
+  const propLen = (propAtNose || propAtTail) ? len * 0.06 : 0;
+  const bodyLen = len - propLen;
+  const bodyZ = propAtNose ? -propLen / 2 : propAtTail ? propLen / 2 : 0;
 
-  // Tailplane and fin, scaled off the wing. A swept panel's rearmost point is
-  // its tip trailing edge, so each is placed to put that point exactly on the
-  // tail rather than somewhere past it.
-  const tailSpan = span * 0.36;
-  const tailChord = rootChord * 0.55;
-  const tailSweep = tailSpan * 0.16;
-  const tailTip = tailChord * 0.55;
-  const tail = new THREE.Mesh(
-    wingPanel(tailSpan, tailChord, tailTip, tailSweep, tailChord * 0.12 * girth), null);
-  tail.position.z = -nz + tailSweep + tailTip / 2;
-  tail.userData.part = 'tailplane';
-  g.add(tail);
+  const fus = new THREE.Mesh(fuselageGeometry(bodyLen, bodyR, {
+    nose: delta ? 'sharp' : 'round',
+    tailUp: delta ? 0 : 0.5,
+  }), null);
+  fus.position.z = bodyZ;
+  fus.userData.part = 'fuselage';
+  g.add(fus);
 
-  const finSpan = tailSpan * 0.92;
-  const finChord = tailChord * 1.1;
-  const finSweep = finSpan * 0.3;
-  const finTip = finChord * 0.5;
-  const fin = new THREE.Mesh(
-    wingPanel(finSpan, finChord, finTip, finSweep, finChord * 0.12 * girth), null);
+  // Wing. The numbers are chords and sweeps taken from the class, not
+  // fractions invented to fill the space: a swept transport wing is about a
+  // sixth of the length at the root and a quarter of that at the tip, and
+  // sweeps back about half a semi-span, which is 27 degrees.
+  const wingSpec = delta
+    ? { root: len * 0.50, taper: 0.10, sweep: semi * 1.00, dihedral: 0, y: 0, z: -len * 0.06 }
+    : swept
+      ? { root: len * 0.17, taper: 0.26, sweep: semi * 0.50, dihedral: semi * 0.07,
+        y: -bodyR * 0.45, z: -len * 0.02 }
+      : { root: len * 0.155, taper: 0.62, sweep: semi * 0.05, dihedral: semi * 0.05,
+        y: bodyR * 0.35, z: len * 0.10 };
+  const wingThick = Math.max(len * 0.004, wingSpec.root * 0.09 * Math.min(girth, 3));
+  for (const side of [-1, 1]) {
+    const panel = new THREE.Mesh(panelGeometry({
+      semi, rootChord: wingSpec.root, tipChord: wingSpec.root * wingSpec.taper,
+      sweep: wingSpec.sweep, dihedral: wingSpec.dihedral, thick: wingThick, side,
+    }), null);
+    panel.position.set(0, wingSpec.y, wingSpec.z);
+    panel.userData.part = 'wing';
+    g.add(panel);
+  }
+
+  // Fin. Height is a seventh of the length, which is what it is on a real
+  // aeroplane. The first version made it a third of the SPAN, so a widebody
+  // carried a twenty-metre fin and looked like a shark.
+  const finH = len * (delta ? 0.11 : 0.145);
+  const finRoot = len * (delta ? 0.20 : 0.165);
+  const finThick = Math.max(len * 0.004, finRoot * 0.07 * Math.min(girth, 3));
+  const finSweep = finH * 0.85;
+  const finTip = finRoot * 0.42;
+  // Placed so the rearmost point of the fin, its tip trailing edge, lands on
+  // the tail rather than somewhere past it.
+  const finZ = -nz + finSweep + finTip / 2;
+  const fin = new THREE.Mesh(panelGeometry({
+    semi: finH, rootChord: finRoot, tipChord: finTip,
+    sweep: finSweep, dihedral: 0, thick: finThick, side: 1,
+  }), null);
   fin.rotation.z = Math.PI / 2;
-  fin.position.set(0, finSpan / 2, -nz + finSweep + finTip / 2);
+  fin.position.set(0, bodyR * 0.35, finZ);
   fin.userData.part = 'fin';
   g.add(fin);
 
-  // Podded engines. They are the strongest cue that something is an airliner
-  // rather than a dart, which is the whole reason for drawing them. Every one
-  // sits INSIDE the existing span and length, so the measured bounding box is
-  // still exactly the span and length the model carries.
-  if (engines > 0 && (enginesOn === 'wing' || enginesOn === 'rear')) {
-    const podR = Math.min(bodyR * 0.62, span * 0.035) * Math.max(1, girth * 0.5);
-    const podLen = len * 0.16;
-    const pairs = Math.max(1, Math.round(engines / 2));
-    // Outermost the pod may sit and still be inside the wingtip. Without this
-    // the nacelles push past the span, which the verifier caught: a four-
-    // engined transport came out 47 m across a 40.4 m wing, and at high girth
-    // the rear-mounted pods widened a regional jet from 26 m to 34 m.
-    const maxOut = Math.max(0, span / 2 - podR);
-    for (let e = 0; e < pairs; e++) {
-      // Fractions of the SEMI-span: inboard pair first, then outboard.
-      const frac = pairs === 1 ? 0.34 : 0.3 + e * 0.32;
-      for (const side of [-1, 1]) {
-        const pod = new THREE.Mesh(
-          new THREE.CapsuleGeometry(podR, podLen * 0.7, 3, 8), null);
-        pod.rotation.x = Math.PI / 2;
-        if (enginesOn === 'wing') {
-          pod.position.set(side * Math.min((span / 2) * frac, maxOut),
-            -bodyR * 0.5, len * 0.02 + podLen * 0.3);
-        } else {
-          pod.position.set(side * Math.min(bodyR * 1.5, maxOut), bodyR * 0.35, -len * 0.26);
-        }
-        pod.userData.part = 'engine';
-        g.add(pod);
-      }
-    }
+  // Tailplane. On an aircraft with rear-fuselage engines it goes on top of the
+  // fin, because that is where it goes and a T-tail is the clearest way to
+  // tell a business jet from an airliner at a glance.
+  const tTail = enginesOn === 'rear';
+  const tailSemi = semi * (delta ? 0.30 : 0.36);
+  const tailRoot = wingSpec.root * (delta ? 0.42 : 0.58);
+  const tailSweep = tailSemi * (swept || delta ? 0.55 : 0.12);
+  const tailThick = Math.max(len * 0.004, tailRoot * 0.09 * Math.min(girth, 3));
+  const tailZ = tTail ? finZ + finSweep * 0.25 : -nz + tailSweep + tailRoot * 0.5;
+  const tailY = tTail ? bodyR * 0.35 + finH : bodyR * 0.3;
+  for (const side of [-1, 1]) {
+    const tp = new THREE.Mesh(panelGeometry({
+      semi: tailSemi, rootChord: tailRoot, tipChord: tailRoot * 0.5,
+      sweep: tailSweep, dihedral: 0, thick: tailThick, side,
+    }), null);
+    tp.position.set(0, tailY, tailZ);
+    tp.userData.part = 'tailplane';
+    g.add(tp);
   }
 
-  // A nose-mounted propeller disc on a light single, for the same reason.
-  if (engines > 0 && enginesOn === 'nose') {
-    const disc = new THREE.Mesh(
-      new THREE.CylinderGeometry(len * 0.13, len * 0.13, Math.max(0.05, bodyR * 0.15), 12), null);
-    disc.rotation.x = Math.PI / 2;
-    disc.position.z = nz - noseLen * 0.15;
-    disc.userData.part = 'propeller';
-    g.add(disc);
+  // Engines. Nacelles are the strongest cue that something is an airliner
+  // rather than a dart, which is the whole reason for drawing them. Every one
+  // sits INSIDE the span and length the model carries.
+  const podR = Math.min(len * 0.030, semi * 0.10) * Math.min(Math.max(1, girth * 0.6), 2.5);
+  const podLen = len * 0.105;
+  if (engines > 0 && enginesOn === 'wing') {
+    const pairs = Math.max(1, Math.round(engines / 2));
+    for (let e = 0; e < pairs; e++) {
+      const frac = pairs === 1 ? 0.34 : 0.28 + e * 0.29;
+      // Furthest out a nacelle may sit and still be inside the wingtip.
+      const x = Math.min(semi * frac, Math.max(0, semi - podR * 1.1));
+      const k = x / semi;
+      const chord = wingSpec.root * (1 + (wingSpec.taper - 1) * k);
+      const leZ = wingSpec.z - wingSpec.sweep * k + chord * 0.5;
+      const y = wingSpec.y + wingSpec.dihedral * k - wingThick * 0.5 - podR * 0.95;
+      for (const side of [-1, 1]) {
+        const pod = new THREE.Mesh(engineNacelleGeometry(podR, podLen), null);
+        pod.position.set(side * x, y, leZ + podLen * 0.16);
+        pod.userData.part = 'engine';
+        g.add(pod);
+        const pylon = new THREE.Mesh(new THREE.BoxGeometry(
+          Math.max(0.02, podR * 0.22), podR * 1.1, podLen * 0.5), null);
+        pylon.position.set(side * x, y + podR * 0.8, leZ - podLen * 0.06);
+        pylon.userData.part = 'pylon';
+        g.add(pylon);
+      }
+    }
+  } else if (engines > 0 && enginesOn === 'rear') {
+    for (const side of [-1, 1]) {
+      const x = Math.min(bodyR + podR * 0.95, Math.max(0, semi - podR * 1.1));
+      const pod = new THREE.Mesh(engineNacelleGeometry(podR, podLen), null);
+      pod.position.set(side * x, bodyR * 0.3, -len * 0.24);
+      pod.userData.part = 'engine';
+      g.add(pod);
+      const pylon = new THREE.Mesh(new THREE.BoxGeometry(
+        podR * 1.2, Math.max(0.02, podR * 0.3), podLen * 0.45), null);
+      pylon.position.set(side * x * 0.55, bodyR * 0.3, -len * 0.24);
+      pylon.userData.part = 'pylon';
+      g.add(pylon);
+    }
+  } else if (engines > 0 && enginesOn === 'buried') {
+    // A fast jet has no pods. Wing-root intakes and an exhaust at the tail are
+    // what there is to draw.
+    for (const side of [-1, 1]) {
+      const intake = new THREE.Mesh(
+        new THREE.BoxGeometry(bodyR * 0.55, bodyR * 0.9, len * 0.2), null);
+      intake.position.set(side * bodyR * 1.05, -bodyR * 0.15, -len * 0.02);
+      intake.userData.part = 'intake';
+      g.add(intake);
+    }
+    const jet = new THREE.Mesh(
+      new THREE.CylinderGeometry(bodyR * 0.5, bodyR * 0.42, len * 0.06, 10), null);
+    jet.rotation.x = Math.PI / 2;
+    jet.position.z = -nz + len * 0.03;
+    jet.userData.part = 'exhaust';
+    g.add(jet);
+  }
+
+  // A propeller, drawn as blades and a spinner rather than a solid disc. The
+  // disc version looked like a lollipop stuck on the nose at close range.
+  if (propAtNose || propAtTail) {
+    const dir = propAtNose ? 1 : -1;
+    const propR = Math.min(len * 0.115, semi * 0.75);
+    const hubZ = dir * (nz - propLen * 0.45);
+    const spinner = new THREE.Mesh(
+      new THREE.ConeGeometry(bodyR * 0.42, propLen * 0.9, 10), null);
+    spinner.rotation.x = dir * Math.PI / 2;
+    spinner.position.z = dir * (nz - propLen * 0.5);
+    spinner.userData.part = 'spinner';
+    g.add(spinner);
+    for (let b = 0; b < 2; b++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(
+        propR * 2, Math.max(0.02, bodyR * 0.1), Math.max(0.02, propLen * 0.22)), null);
+      blade.position.z = hubZ;
+      blade.rotation.z = b ? Math.PI / 3 : -Math.PI / 3;
+      blade.userData.part = 'propeller';
+      g.add(blade);
+    }
   }
 
   g.userData.spanM = span;
@@ -539,6 +723,107 @@ export function spinnerGeometry(radiusM, lengthM, sides = 14) {
     }
     return ring;
   }));
+}
+
+/**
+ * A steel lattice tower: four battered legs, horizontal belts, diagonal
+ * bracing between the belts, a platform at the top and a caged ladder up one
+ * face. Every member is a thin box, so a whole tower is about 300 triangles.
+ *
+ * `baseW` and `topW` are the widths across the legs at the ground and at the
+ * platform. Real towers batter inwards at roughly one in twelve, so the top is
+ * narrower than the base; the caller sets both.
+ *
+ * This changes only what is drawn. The antenna height above ground is the
+ * whole of what the propagation maths takes from the mounting, and it is the
+ * same number whether the structure under it is an open lattice or a tube.
+ */
+export function latticeTowerGeometry(height, baseW, topW, { bays = 0, memberW = 0 } = {}) {
+  const g = new THREE.Group();
+  const h = Math.max(1, height);
+  const nBays = bays || Math.max(3, Math.min(12, Math.round(h / (baseW * 1.15))));
+  const mW = memberW || Math.max(baseW * 0.05, h * 0.004);
+  const bayH = h / nBays;
+  const halfAt = (y) => (baseW + (topW - baseW) * (y / h)) / 2;
+  const corner = (i, y) => {
+    const hw = halfAt(y);
+    return new THREE.Vector3(i & 1 ? hw : -hw, y, i & 2 ? hw : -hw);
+  };
+  // A member drawn as a thin box stretched between two points.
+  const member = (a, b, w) => {
+    const d = new THREE.Vector3().subVectors(b, a);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, w, d.length()), null);
+    m.position.copy(a).addScaledVector(d, 0.5);
+    m.lookAt(b);
+    m.userData.part = 'member';
+    g.add(m);
+    return m;
+  };
+
+  for (let i = 0; i < 4; i++) {
+    // Legs, one straight run each so the batter is a single clean line.
+    member(corner(i, 0), corner(i, h), mW);
+  }
+  for (let b = 1; b <= nBays; b++) {
+    const y = b * bayH;
+    const y0 = (b - 1) * bayH;
+    for (let i = 0; i < 4; i++) {
+      // Belt round the tower at the top of each bay.
+      const j = [1, 3, 2, 0][i];
+      member(corner(i, y), corner(j, y), mW * 0.8);
+      // One diagonal per face per bay, alternating direction up the tower so
+      // the bracing zig-zags the way a real tower's does.
+      const up = (b % 2) === 0;
+      member(corner(up ? i : j, y0), corner(up ? j : i, y), mW * 0.7);
+    }
+  }
+
+  // Platform at the top: a thin deck and a handrail.
+  const topHalf = halfAt(h);
+  const deck = new THREE.Mesh(
+    new THREE.BoxGeometry(topHalf * 2.5, mW * 1.2, topHalf * 2.5), null);
+  deck.position.y = h;
+  deck.userData.part = 'platform';
+  g.add(deck);
+  const railH = Math.max(bayH * 0.25, h * 0.02);
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(
+      dx ? mW * 0.7 : topHalf * 2.5, mW * 0.7, dz ? mW * 0.7 : topHalf * 2.5), null);
+    rail.position.set(dx * topHalf * 1.25, h + railH, dz * topHalf * 1.25);
+    rail.userData.part = 'handrail';
+    g.add(rail);
+  }
+  for (let i = 0; i < 4; i++) {
+    const p = corner(i, h);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(mW * 0.7, railH, mW * 0.7), null);
+    post.position.set(p.x * 1.25, h + railH / 2, p.z * 1.25);
+    post.userData.part = 'handrail';
+    g.add(post);
+  }
+
+  // Caged ladder up one face, outboard of the legs as it is on a real tower.
+  // Drawn as two stringers and a few rungs rather than one slab: a solid panel
+  // up the front closed the tower in and lost the open lattice that is the
+  // whole point of drawing it differently from a tube.
+  const ladZ = (baseW + topW) / 4 + mW * 1.5;
+  const ladW = Math.min(baseW * 0.12, mW * 3);
+  for (const sx of [-1, 1]) {
+    const stringer = new THREE.Mesh(
+      new THREE.BoxGeometry(mW * 0.6, h, mW * 0.6), null);
+    stringer.position.set(sx * ladW / 2, h / 2, ladZ);
+    stringer.userData.part = 'ladder';
+    g.add(stringer);
+  }
+  const rungs = Math.max(4, Math.min(30, Math.round(h / (mW * 9))));
+  for (let i = 1; i < rungs; i++) {
+    const rung = new THREE.Mesh(new THREE.BoxGeometry(ladW, mW * 0.4, mW * 0.4), null);
+    rung.position.set(0, (i / rungs) * h, ladZ);
+    rung.userData.part = 'ladder';
+    g.add(rung);
+  }
+
+  g.userData.heightM = h;
+  return g;
 }
 
 export class SceneView {
@@ -803,13 +1088,48 @@ export class SceneView {
     g.position.copy(base);
 
     const hTower = r.radar.heightAgl * this.vExag;
-    const towerR = Math.max(this.extent * 0.0016, 3);
-    const tower = new THREE.Mesh(
-      new THREE.CylinderGeometry(towerR * 0.7, towerR, hTower, 10),
-      new THREE.MeshStandardMaterial({ color: 0xa9b6c0, roughness: 0.6, metalness: 0.3 }),
-    );
-    tower.position.y = hTower / 2;
-    g.add(tower);
+    // The radar structure follows the same girth exaggeration as the turbines.
+    // At a 40 km scene the whole installation is about fourteen pixels across,
+    // measured, so at girth x1 the lattice is correct and invisible; the slider
+    // is what makes it readable. Widths only: heights go through the vertical
+    // exaggeration and nothing here changes the antenna height.
+    const towerR = Math.max(this.extent * 0.0016, 3) * Math.min(this.girthExag || 1, 6);
+    const steel = new THREE.MeshStandardMaterial({
+      color: 0xa9b6c0, roughness: 0.6, metalness: 0.3,
+    });
+    const mount = r.radar.mount;
+    if (mount && mount.lattice) {
+      // A steel lattice: the platform sits at the top of the STRUCTURE and the
+      // antenna on a short pedestal above it, which is how the two heights are
+      // quoted on a drawing. Both are exaggerated vertically like everything
+      // else in this scene.
+      const hStruct = Math.max(0, mount.structureHeightM || 0) * this.vExag;
+      const hMast = Math.max(hTower - hStruct, 0);
+      const tw = latticeTowerGeometry(hStruct, towerR * 2.6, towerR * 1.5);
+      tw.traverse((m) => { if (m.isMesh) m.material = steel; });
+      g.add(tw);
+      if (hMast > 0) {
+        const pedestal = new THREE.Mesh(
+          new THREE.CylinderGeometry(towerR * 0.55, towerR * 0.75, hMast, 8), steel);
+        pedestal.position.y = hStruct + hMast / 2;
+        g.add(pedestal);
+      }
+    } else {
+      const tower = new THREE.Mesh(
+        new THREE.CylinderGeometry(towerR * 0.7, towerR, hTower, 10), steel);
+      tower.position.y = hTower / 2;
+      g.add(tower);
+      if (mount && mount.type === 'building' && mount.structureHeightM > 0) {
+        // A building is not a mast. Drawing it as one hid the fact that most
+        // of the antenna height on a rooftop site is the building.
+        const hB = mount.structureHeightM * this.vExag;
+        const bw = towerR * 6;
+        const bld = new THREE.Mesh(new THREE.BoxGeometry(bw, hB, bw * 0.75),
+          new THREE.MeshStandardMaterial({ color: 0x8b95a0, roughness: 0.85 }));
+        bld.position.y = hB / 2;
+        g.add(bld);
+      }
+    }
 
     // Rotating antenna reflector.
     const ant = new THREE.Group();
@@ -1299,6 +1619,7 @@ export class SceneView {
     this.aircraftScale = clamp((this.extent * 0.022) / Math.max(span, 1), 1, 200);
     this.aircraft = aircraftGeometry(span, length, {
       planform: t.planform || 'wing',
+      wing: t.wing || 'straight',
       engines: t.engines || 0,
       enginesOn: t.enginesOn || 'none',
       girth: Math.min(this.girthExag || 1, 6),

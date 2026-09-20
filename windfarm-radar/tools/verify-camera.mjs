@@ -10,14 +10,15 @@
 //   python3 -m http.server 8080 --directory ..
 //   node tools/verify-camera.mjs http://127.0.0.1:8080/windfarm-radar/
 
-import { chromium } from 'playwright';
+import { loadChromium, EXECUTABLE, LAUNCH_ARGS } from './playwright.mjs';
+
+const chromium = await loadChromium();
 
 const base = process.argv[2] || 'http://127.0.0.1:8080/windfarm-radar/';
-const exe = process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium';
 
 const browser = await chromium.launch({
-  executablePath: exe,
-  args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
+  executablePath: EXECUTABLE,
+  args: LAUNCH_ARGS,
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 const errors = [];

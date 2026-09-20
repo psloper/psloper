@@ -11,19 +11,24 @@
 //   python3 -m http.server 8125 --directory ..
 //   node tools/verify-aircraft.mjs http://127.0.0.1:8125/windfarm-radar/
 
-import { chromium } from 'playwright';
+import { loadChromium, EXECUTABLE, LAUNCH_ARGS } from './playwright.mjs';
+
+const chromium = await loadChromium();
 
 const base = process.argv[2] || 'http://127.0.0.1:8125/windfarm-radar/';
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium',
-  args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
+  executablePath: EXECUTABLE,
+  args: LAUNCH_ARGS,
 });
 const page = await browser.newPage({ viewport: { width: 1500, height: 720 }, deviceScaleFactor: 2 });
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e).slice(0, 220)));
 
 await page.goto(base + 'tools/aircraft-harness.html');
-await page.waitForTimeout(3500);
+// Wait for the result rather than for a fixed time. A harness that throws
+// before it measures reports nothing, and a timeout long enough to hide that
+// is a timeout long enough to call it a pass.
+await page.waitForFunction(() => Array.isArray(window.__fails), null, { timeout: 30000 });
 
 console.log(await page.$eval('#out', (e) => e.textContent));
 await page.screenshot({ path: process.env.SHOT || 'aircraft-harness.png' });

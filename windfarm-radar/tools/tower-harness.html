@@ -1,0 +1,87 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Radar mounting harness</title>
+<script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
+<style>body{margin:0;background:#0b0f13;color:#cdd8e1;font:13px system-ui}
+#out{padding:10px 14px;font-family:ui-monospace,monospace;white-space:pre;font-size:12px;border-bottom:1px solid #223}
+canvas{display:block}</style></head><body>
+<div id="out">measuring...</div><canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { latticeTowerGeometry } from '../js/scene.js';
+import { RADAR_MOUNTS, antennaHeightAgl, applyRadarMount, defaultScenario } from '../js/model.js';
+
+// The point of the check: a lattice tower is a DRAWING change. The antenna
+// height above ground, which is the only thing the propagation maths takes
+// from the mounting, must be the structure plus the mast whatever the
+// structure is made of.
+const lines = [`${'mount'.padEnd(20)}${'structure'.padStart(10)}${'mast'.padStart(7)}`
+  + `${'antenna AGL'.padStart(13)}${'drawn top'.padStart(11)}  lattice`];
+const fails = [];
+for (const [key, m] of Object.entries(RADAR_MOUNTS)) {
+  const agl = antennaHeightAgl({ mount: { structureHeightM: m.structureHeightM, mastHeightM: m.mastHeightM } });
+  let drawn = 0;
+  if (m.lattice) {
+    const g = latticeTowerGeometry(m.structureHeightM, 8, 5);
+    g.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(g);
+    drawn = bb.max.y;
+    // The platform and its handrail stand above the structure height, so the
+    // box top is a little higher. What must be exact is that the structure
+    // itself reaches its stated height.
+    if (drawn < m.structureHeightM) fails.push(`${key}: drawn top ${drawn.toFixed(2)} below the structure height ${m.structureHeightM}`);
+    if (drawn > m.structureHeightM * 1.12 + 1) fails.push(`${key}: drawn top ${drawn.toFixed(2)} overshoots ${m.structureHeightM}`);
+  }
+  if (Math.abs(agl - (m.structureHeightM + m.mastHeightM)) > 1e-9) {
+    fails.push(`${key}: antenna height ${agl} is not structure + mast`);
+  }
+  lines.push(`${key.padEnd(20)}${String(m.structureHeightM).padStart(10)}${String(m.mastHeightM).padStart(7)}`
+    + `${agl.toFixed(1).padStart(13)}${(drawn ? drawn.toFixed(1) : '-').padStart(11)}  ${m.lattice ? 'yes' : 'no'}`);
+}
+// Same heights, different structure: the number the maths uses must not move.
+const solid = applyRadarMount(defaultScenario(), 'tower');
+const latt = applyRadarMount(defaultScenario(), 'lattice-tower');
+lines.push('');
+lines.push(`solid tower antenna AGL   ${solid.radar.heightAgl} m`);
+lines.push(`lattice tower antenna AGL ${latt.radar.heightAgl} m`);
+const forced = applyRadarMount(defaultScenario(), 'lattice-tower');
+forced.radar.mount.structureHeightM = 30; forced.radar.mount.mastHeightM = 8;
+if (antennaHeightAgl(forced.radar) !== solid.radar.heightAgl) {
+  fails.push('a lattice mount with the same heights gives a different antenna height');
+}
+lines.push('');
+lines.push(fails.length ? 'FAIL\n  ' + fails.join('\n  ')
+  : 'PASS: every mounting reports structure + mast, and the lattice is a drawing change only');
+document.getElementById('out').textContent = lines.join('\n');
+window.__fails = fails; window.__measured = lines;
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(innerWidth, 560);
+renderer.setClearColor(0x0b0f13, 1);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0x9fb4c8, 0x202820, 1.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(1, 2, 1.4); scene.add(sun);
+const steel = new THREE.MeshStandardMaterial({ color: 0xa9b6c0, roughness: 0.6, metalness: 0.3 });
+const shown = ['lattice-tower', 'tall-tower'];
+shown.forEach((key, i) => {
+  const m = RADAR_MOUNTS[key];
+  const tw = latticeTowerGeometry(m.structureHeightM, 8, 5);
+  tw.traverse((o) => { if (o.isMesh) o.material = steel; });
+  const k = 26 / m.structureHeightM;
+  tw.scale.setScalar(k);
+  tw.position.set((i - 0.5) * 30, -13, 0);
+  scene.add(tw);
+  // The pedestal and the antenna above the platform.
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.6, m.mastHeightM, 8), steel);
+  ped.scale.setScalar(k); ped.position.set((i - 0.5) * 30, -13 + (m.structureHeightM + m.mastHeightM / 2) * k, 0);
+  scene.add(ped);
+  const refl = new THREE.Mesh(new THREE.BoxGeometry(14, 4, 0.8),
+    new THREE.MeshStandardMaterial({ color: 0xd94f3d, roughness: 0.5 }));
+  refl.scale.setScalar(k);
+  refl.position.set((i - 0.5) * 30, -13 + (m.structureHeightM + m.mastHeightM) * k, 0);
+  scene.add(refl);
+});
+const cam = new THREE.PerspectiveCamera(38, innerWidth / 560, 0.1, 500);
+cam.position.set(6, 6, 62); cam.lookAt(0, 0, 0);
+renderer.render(scene, cam);
+window.__drawn = true;
+</script></body></html>

@@ -19,7 +19,7 @@ const box = new THREE.Box3();
 for (const key of SHOW) {
   const p = TARGET_PRESETS[key];
   for (const girth of [1, 6]) {
-    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth,
+    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth,
       engines: p.engines, enginesOn: p.enginesOn });
     g.updateMatrixWorld(true);
     box.setFromObject(g);
@@ -35,7 +35,7 @@ const fails = [];
 for (const key of SHOW) {
   const p = TARGET_PRESETS[key];
   const dims = [1, 6].map((girth) => {
-    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth,
+    const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth,
       engines: p.engines, enginesOn: p.enginesOn });
     g.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(g);
@@ -76,7 +76,7 @@ cam.position.set(0, 58, 96); cam.lookAt(0, 0, 0);
 const mat = new THREE.MeshStandardMaterial({ color: 0xdbe7f0, roughness: 0.5, metalness: 0.1 });
 SHOW.forEach((key, i) => {
   const p = TARGET_PRESETS[key];
-  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, girth: 2,
+  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth: 2,
     engines: p.engines, enginesOn: p.enginesOn });
   g.traverse((m) => { if (m.isMesh) m.material = mat; });
   const k = 20 / Math.max(p.lengthM, p.spanM);   // same drawn size for every one
