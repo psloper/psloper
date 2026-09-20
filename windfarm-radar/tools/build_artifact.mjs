@@ -8,7 +8,7 @@
 //
 // Run from the windfarm-radar directory: node tools/build_artifact.mjs [outdir]
 
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,14 +41,23 @@ writeFileSync(join(outDir, 'index.html'), page);
 const modules = readFileSync(join(root, 'js', 'main.js'), 'utf8');
 if (!modules) throw new Error('js/main.js is empty');
 
-// Every module the page loads, plus three.js from the repository root.
-const js = [
-  'analysis', 'cap670', 'displays', 'findings', 'geo', 'heatmap', 'importers',
-  'main', 'model', 'officewriter', 'references', 'report', 'rf', 'scene',
-  'sea', 'sweep', 'ui', 'uksites', 'wind',
-];
-for (const name of js) copyFileSync(join(root, 'js', `${name}.js`), join(outDir, 'js', `${name}.js`));
+// Every module in js/, read from disk rather than listed by hand. A hardcoded
+// list silently drops a new module: adding js/terrain.js and forgetting to
+// list it here shipped a build whose control rail did not render at all.
+const js = readdirSync(join(root, 'js')).filter((f) => f.endsWith('.js'));
+if (!js.includes('main.js')) throw new Error('js/main.js is missing');
+for (const name of js) copyFileSync(join(root, 'js', name), join(outDir, 'js', name));
 copyFileSync(join(repoRoot, 'js', 'vendor', 'three.module.js'), join(outDir, 'js', 'vendor', 'three.module.js'));
 
-console.log(`built ${js.length + 2} files into ${outDir}`);
+// The pre-baked elevation data. It ships with the page because the Copernicus
+// bucket sends no CORS headers, so the browser cannot fetch it from source.
+mkdirSync(join(outDir, 'data', 'terrain'), { recursive: true });
+const terrain = readdirSync(join(root, 'data', 'terrain'));
+for (const f of terrain) {
+  copyFileSync(join(root, 'data', 'terrain', f), join(outDir, 'data', 'terrain', f));
+}
+
+console.log(`built ${js.length + 2 + terrain.length} files into ${outDir}`);
+console.log(`modules: ${js.length}`);
+console.log(`terrain: ${terrain.length} files`);
 console.log(`index.html ${(page.length / 1024).toFixed(1)} kB`);

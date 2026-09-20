@@ -578,9 +578,14 @@ export function analyse(scenario, opts = {}) {
   // Imported elevation data, where the user has supplied it, replaces the
   // synthetic surface entirely. It is passed in at call time rather than held
   // in the scenario, because a raster does not belong in a saved settings blob.
+  // Real elevation data goes through the same rasteriser as the synthetic
+  // surface, so everything downstream sees one interface and the 512-point
+  // grid stays the single place the scene is sampled.
   const terrain = (opts.importedTerrain && tcfg.source === 'imported')
     ? opts.importedTerrain
-    : rasteriseTerrain(terrainSource, { halfExtent: extent, size: 512 });
+    : rasteriseTerrain(
+      (opts.realTerrain && tcfg.source === 'real') ? opts.realTerrain : terrainSource,
+      { halfExtent: extent, size: 512 });
 
   const surface = buildSurface(scenario);
   const radar = deriveRadar(scenario.radar, terrain, ae);

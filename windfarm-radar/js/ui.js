@@ -187,6 +187,7 @@ export const TABS = {
         + 'masking argument survives sub-refractive conditions; run higher for ducting.' },
     ] },
     { group: 'Terrain', fields: [
+      { type: 'note', id: 'terrain-source-note' },
       { type: 'select', path: 'environment.terrain.preset', label: 'Landform', options: opts(TERRAIN_PRESETS), preset: 'terrain' },
       { type: 'range', path: 'environment.terrain.relief', label: 'Relief', min: 0, max: 1200, step: 10, fmt: (v) => `${v} m` },
       { type: 'range', path: 'environment.terrain.featureSize', label: 'Landform scale', min: 800, max: 12000, step: 100,
@@ -294,6 +295,14 @@ export const TABS = {
           + 'and operator are optional. Antenna height matters most, because it sets the horizon. '
           + 'Template: samples/radar-sites-template.csv' },
       { type: 'action', id: 'clear-site-imports', label: 'Imported site lists', button: 'Clear imported sites' },
+      { type: 'action', id: 'load-real-terrain', label: 'Real elevation (Copernicus 30 m)',
+        button: 'Use real ground for this site',
+        note: 'Pre-baked into this tool from Copernicus DEM GLO-30, so it loads from here and '
+          + 'reaches no third party. Needs a UK pairing placed first, because the data is anchored '
+          + 'on the radar. It is a SURFACE model, so it includes trees and buildings, and it is '
+          + 'sampled at a position that carries its own error: the built-in farm positions are out '
+          + 'by about 1,100 m, and inside that radius real ground varies by a median of 232 m in '
+          + 'coastal terrain and 543 m in upland. Surveyed positions are what make it worth having.' },
       { type: 'action', id: 'import-terrain', label: 'Elevation data', button: 'Choose .xlsx or .csv',
         note: 'Point elevations as easting/northing/level or latitude/longitude/level. Replaces the '
           + 'synthetic surface entirely.' },
@@ -771,6 +780,9 @@ function makeField(f, scenario, onChange, onPreset, noteEls) {
       if (!geom) return;
       scenario.site.originLat = Number(geom.farm.lat.toFixed(4));
       scenario.site.originLon = Number(geom.farm.lon.toFixed(4));
+      // The scene origin is the radar, so real elevation data anchors here.
+      scenario.site.radarLat = Number(geom.radar.lat.toFixed(5));
+      scenario.site.radarLon = Number(geom.radar.lon.toFixed(5));
       scenario.farm.centreBearingDeg = Math.round(geom.bearingDeg);
       scenario.farm.centreRangeM = Math.round(Math.min(geom.rangeM, MAX_RANGE_M) / 250) * 250;
       // Land or sea now comes from the data rather than being left to the user.
@@ -920,6 +932,19 @@ export function updateNotes(noteEls, result, extra = {}) {
   const set = (id, text) => { if (noteEls[id]) noteEls[id].textContent = text; };
 
   set('radar-note', radarPresetProvenanceNote(r.preset));
+
+  // Say plainly which surface is actually in use. The synthetic landform
+  // controls stay on screen when real or imported data is loaded, and without
+  // this they read as though they still do something.
+  const tsrc = result.scenario.environment.terrain.source;
+  set('terrain-source-note', tsrc === 'real'
+    ? 'REAL ELEVATION IS IN USE. The landform controls below are ignored until you clear it. '
+      + 'Copernicus DEM GLO-30, a surface model: it includes trees and buildings, and it is '
+      + 'sampled at the position you placed, which carries its own error.'
+    : tsrc === 'imported'
+      ? 'IMPORTED ELEVATION IS IN USE. The landform controls below are ignored until you clear it.'
+      : 'Synthetic surface. It is plausible-looking noise, not this site. Load real elevation on '
+        + 'the Site and data tab, or import your own survey, before relying on any masking result.');
 
   set('waveform-note',
     `Range resolution ${r.rangeResolutionM.toFixed(0)} m · unambiguous range `

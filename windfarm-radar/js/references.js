@@ -271,6 +271,38 @@ export const REFERENCES = [
       + 'the work, and NO figure from it is used as a constant in the model.',
   },
 
+  // ------------------------------------------------------------- elevation
+  {
+    id: 'copernicus-dem-glo30',
+    title: 'Copernicus DEM GLO-30 (COP-DEM_GLO-30-DGED), 30 m global digital surface model',
+    org: 'European Space Agency / Copernicus programme, via AWS Open Data',
+    year: 2022,
+    type: 'Elevation data',
+    status: 'analysed',
+    supports: ['Real terrain for UK sites', 'terrain masking'],
+    reports: '30 m posts globally, referenced to the EGM2008 geoid, served as Cloud Optimized '
+      + 'GeoTIFF from copernicus-dem-30m.s3.amazonaws.com. 96 one-degree tiles cover the British '
+      + 'Isles, 1.54 GB raw. Resampled here onto a 500 m national grid and 100 m blocks, 27.9 MB '
+      + 'committed. Free, full and open under the Copernicus programme.',
+    validation: 'Downloaded and read directly, then checked against published heights. Ben Nevis '
+      + 'reads 1342 m against 1345 m, Scafell Pike 972 m against 978 m and Snowdon 1071 m against '
+      + '1085 m; two open-water points read exactly 0.0 m and the highest cell in the Ben Nevis '
+      + 'tile is 1343 m, which is right because it is the highest point in the British Isles. The '
+      + 'resample MAX-POOLS rather than taking the nearest post: nearest-neighbour lost 33 m at '
+      + 'Snowdon and 11 m at Scafell Pike, and under-reading a hill is the direction that makes a '
+      + 'beam look as though it clears ground it does not. 34 cells out of 85.3 million read below '
+      + '-20 m, which is quarries, polders and Copernicus artefacts near the Channel coast.',
+    caution: 'A SURFACE model, not bare earth: it includes trees and buildings. Arguably right for '
+      + 'whether a beam clears an obstruction, wrong for a turbine base ground level in forest. '
+      + 'ACCURACY IS NOT PRECISION: the grid is 100 m but the position it is sampled at carries '
+      + 'its own error, and the built-in UK farm positions are out by about 1,100 m. Measured '
+      + 'inside that radius, ground height varies by a median of 232 m in coastal terrain, 331 m '
+      + 'in rolling and 543 m in upland. Real terrain sampled at an uncertain position is a '
+      + 'precise number with a large unknown error. It is worth having with surveyed positions. '
+      + 'The data is pre-baked into this repository because the bucket sends no CORS headers: an '
+      + 'OPTIONS preflight carrying an Origin returns 403, so a browser cannot read it directly.',
+  },
+
   // ------------------------------------------------------ radar equipment
   {
     id: 'thales-star-ng-2023',

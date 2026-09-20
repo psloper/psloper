@@ -444,6 +444,11 @@ export function defaultScenario() {
       environment: 'onshore',          // 'onshore' | 'offshore'
       originLat: 55.94,                // used only to place lat/lon imports
       originLon: -3.20,
+      // The radar's own position. The scene origin, east = north = 0, IS the
+      // radar, so real elevation data has to be anchored here and not on
+      // originLat/originLon, which the UK picker sets to the FARM.
+      radarLat: null,
+      radarLon: null,
       radarEasting: 412000,            // grid coordinates of the radar, for imports
       radarNorthing: 318000,
       seaLevelM: 0,
@@ -527,7 +532,7 @@ export function defaultScenario() {
     environment: {
       kFactor: 4 / 3,
       terrain: {
-        source: 'synthetic',           // 'synthetic' | 'imported'
+        source: 'synthetic',           // 'synthetic' | 'imported' | 'real'
         importMeta: null,
         preset: 'rolling',
         relief: 180,

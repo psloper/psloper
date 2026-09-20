@@ -10,6 +10,7 @@ import { SceneView } from './scene.js';
 import { PpiDisplay, ProfileDisplay, WindRoseDisplay } from './displays.js';
 import { deriveWindRoseFindings } from './findings.js';
 import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
+import { loadTerrain, createRealTerrain } from './terrain.js';
 import { WIND_ROSE_PRESETS } from './wind.js';
 import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
 import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
@@ -35,6 +36,7 @@ let noteEls = {};
 let activeTab = 'radar';
 let fullTimer = null;
 let importedTerrain = null;     // held outside the scenario: a raster is not a setting
+let realTerrain = null;         // likewise: real elevation data is not a setting
 let roseResult = null;
 let roseFindings = [];
 let sweepResult = null;
@@ -94,7 +96,7 @@ function updateScalebar() {
 function run(skipCoverage) {
   const t0 = performance.now();
   try {
-    result = analyse(scenario, { skipCoverage, importedTerrain });
+    result = analyse(scenario, { skipCoverage, importedTerrain, realTerrain });
   } catch (err) {
     console.error(err);
     el.verdictChip.dataset.level = 'critical';
@@ -255,6 +257,50 @@ function clearImportedSites() {
   importStatus('Imported site lists cleared. The built-in UK data is unchanged.', 'ok');
 }
 
+/**
+ * Load the pre-baked Copernicus elevation data for wherever the radar is.
+ *
+ * The data ships with this tool because the Copernicus bucket sends no CORS
+ * headers and a browser cannot read it directly. These fetches are to this
+ * tool's own files, not to any third party, and nothing leaves the page.
+ */
+async function loadRealTerrain() {
+  const lat = scenario.site.radarLat;
+  const lon = scenario.site.radarLon;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    importStatus('Place a UK pairing first. Real elevation is anchored on the radar, and this '
+      + 'scenario has no radar position.');
+    return;
+  }
+  importStatus('Loading elevation data...');
+  try {
+    const extent = result ? result.extent : 40000;
+    const loaded = await loadTerrain({ lat, lon, halfExtentM: extent });
+    realTerrain = createRealTerrain({
+      anchorLat: lat, anchorLon: lon,
+      coarse: loaded.coarse, blocks: loaded.blocks,
+    });
+    scenario.environment.terrain.source = 'real';
+    scenario.environment.terrain.importMeta = {
+      file: `${loaded.blockMeta.length} block(s) at 100 m plus the 500 m national grid`,
+      points: null,
+      source: loaded.manifest.source,
+      model: loaded.manifest.model,
+      spacingM: loaded.blockMeta.length ? 100 : 500,
+    };
+    run(false);
+    rebuildRail();
+    const cov = realTerrain.coverage();
+    const spacing = loaded.blockMeta.length ? '100 m' : '500 m, no fine block covers this site';
+    importStatus(`${loaded.manifest.source}, ${spacing}. Real data for `
+      + `${(cov * 100).toFixed(0)}% of the modelled area. SURFACE model: includes trees and `
+      + 'buildings. Sampled at the radar position you placed, whose own error this does not fix.');
+  } catch (err) {
+    realTerrain = null;
+    importStatus(`Could not load the elevation data: ${err.message}`);
+  }
+}
+
 async function importTerrain() {
   const file = await pickFile('.asc,.grd,.kml,.kmz,.xlsx,.xlsm,.csv,.tsv,.txt');
   if (!file) return;
@@ -287,6 +333,7 @@ async function importTerrain() {
       cov < 0.6 ? 'error' : 'ok');
   } catch (err) {
     importedTerrain = null;
+    realTerrain = null;
     importStatus(err.message, 'error');
   }
 }
@@ -329,6 +376,7 @@ function railAction(id, btn) {
   else if (id === 'import-farm-sites') importFarmSites();
   else if (id === 'clear-site-imports') clearImportedSites();
   else if (id === 'import-terrain') importTerrain();
+  else if (id === 'load-real-terrain') loadRealTerrain();
   else if (id === 'clear-imports') clearImports();
   else if (id === 'run-rose') runRoseSweep(btn);
 }
