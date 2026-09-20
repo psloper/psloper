@@ -52,6 +52,22 @@ The highest cell in the Ben Nevis tile is 1343 m, which is correct, because it
 is the highest point in the British Isles. `test/terrain.test.mjs` repeats every
 one of these against the committed files.
 
+The **published** copy carries the same bytes as base64 text, because the
+artifact host serves no binary type. It was checked separately: all 30 blocks
+decode with matching headers, and the worst error against a published height is
+14.0 m, the same Snowdon figure.
+
+## Repository cost, and when to reconsider it
+
+The terrain is **27 MB of a 32 MB repository**: about 85 per cent of it. Before
+this it was roughly 5 MB.
+
+The files are already gzipped, so git cannot delta-compress them and cannot
+compress them further. **Every future rebuild of the terrain adds another
+~27 MB to history, permanently.** Rebuild it rarely, and if it needs to change
+often, move it out to a release asset or drop to the 200 m grid, which is
+8.3 MB for the same national coverage.
+
 ## The resample max-pools, and that is deliberate
 
 Each target cell takes the **highest** 30 m post that falls in it, not the
@@ -67,6 +83,41 @@ is blocked.
 The same choice means a 500 m coastal cell reads as land rather than water,
 because it contains the shoreline. That is the intended behaviour, and there is
 a test asserting it.
+
+## Does the resampling choice change conclusions, or only the picture?
+
+Measured, not assumed. `node tools/terrain_verdict_impact.mjs` runs 178 real UK
+radar-to-farm pairings between 2 and 22 km through the full analysis, three
+ways: the shipped max-pooled data, a nearest-neighbour control set built from
+the same source at the same resolution, and the synthetic surface.
+
+**Max-pooled against nearest-neighbour**, where the only difference is the
+resample:
+
+| | Differs |
+|---|---|
+| Turbines the radar can see | 16 of 178 (9%) |
+| Turbine plots reaching the display | 24 of 178 (13%) |
+| Worst detection margin | median 0.01 dB, max 11.66 dB |
+
+In 12 of the 16 disagreements, **nearest-neighbour saw more turbines** than
+max-pooling: the beam looked clear where the higher resample says it is
+blocked. The worst case is Accolade Wines at 15.4 km, where nearest-neighbour
+reports all 12 turbines visible and max-pooling finds 7 of them masked.
+
+So the resample is not cosmetic. It changes the answer in about one case in
+ten, and almost always in the permissive direction.
+
+**Real terrain against the synthetic surface** is starker:
+
+| Surface | Line-of-sight outcomes across 178 pairings |
+|---|---|
+| Synthetic | **12 of 12 visible in every single case** |
+| Real | 12/12 in 141, partially masked in 27, fully masked in 10 |
+
+The synthetic surface never masked anything at real UK ranges. Terrain
+screening is described in the tool as the strongest mitigation available, and
+before this data it could not produce one.
 
 ## Two things it does not fix
 
