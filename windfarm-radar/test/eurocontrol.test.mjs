@@ -5,13 +5,13 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 import {
   PROVENANCE, NO_REFERENCE_TARGET, PSR, SSR, AGREES_WITH_CAP670, VERIFICATION,
-  NOT_IMPLEMENTED,
+  NOT_IMPLEMENTED, SUPERSEDED,
 } from '../js/eurocontrol.js';
 import { PD_REQUIREMENT } from '../js/cap670.js';
 
@@ -85,9 +85,51 @@ test('a test flight is the exception in this standard, not the method', () => {
   assert.match(VERIFICATION.dataSource.quote, /opportunity traffic/);
 });
 
-test('the age of the edition is declared, and supersession is declared unchecked', () => {
+test('the age of the edition is declared, and the reader is pointed at the successor', () => {
   assert.match(PROVENANCE.currency, /1997/);
-  assert.match(PROVENANCE.currency, /NOT been checked/);
+  assert.match(PROVENANCE.currency, /superseded/i);
+  assert.match(PROVENANCE.currency, /SUPERSEDED/);
+});
+
+test('the successor is read, and its evidence exists', () => {
+  // This guard used to assert the opposite: that the successor must never be
+  // marked read, because at the time it had only been described to the tool.
+  // The document was then supplied, so the guard inverts. Marking something
+  // read still costs an evidence file that the quotes can be checked against.
+  assert.equal(SUPERSEDED.readByThisTool, true);
+  assert.equal(SUPERSEDED.status, 'read');
+  assert.ok(existsSync(resolve(root, SUPERSEDED.evidence)),
+    'SUPERSEDED claims to be read but names no stored text');
+  assert.match(SUPERSEDED.module, /esassp/);
+});
+
+test('the supersession is described precisely, not loosely', () => {
+  // "Superseded" is the word that was reported. The document does not use it,
+  // and the module must keep saying so.
+  assert.match(SUPERSEDED.precise, /does not say it supersedes/);
+  assert.match(SUPERSEDED.precise, /RD 2/);
+  assert.match(SUPERSEDED.effectOnThisTool, /90%/);
+});
+
+test('the correction to the PSR figure matches the document', () => {
+  // The 90 in the correction must be the figure the module actually carries,
+  // and the document must contain no 95% detection figure.
+  assert.equal(PSR.detection.pd, 0.90);
+  assert.match(SUPERSEDED.correction, /6\.4\.2\.1/);
+  assert.match(SUPERSEDED.correction, /no\s+95% PSR detection figure/i);
+  assert.ok(!/probability of target position detection:\s*> 95/.test(doc),
+    'the document does contain a 95% PSR detection figure after all');
+  assert.ok(doc.includes('probability of association'),
+    'the 95% the correction points at is not in the extract');
+});
+
+test('the 90 per cent is traced forward into the current specification', () => {
+  // Before the successor was read, this test checked that the tool did not
+  // depend on a possibly-withdrawn document. Now that it has been read, the
+  // stronger statement holds: the figure is carried into a 2024 specification.
+  assert.match(SUPERSEDED.effectOnThisTool, /survives/);
+  assert.match(SUPERSEDED.effectOnThisTool, /5 NM and\s+|3 NM/);
+  assert.match(SUPERSEDED.effectOnThisTool, /metric is not identical/);
 });
 
 test('nothing in the tool is gated on this standard', () => {

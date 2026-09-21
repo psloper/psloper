@@ -1,4 +1,6 @@
 import { PROVENANCE as EC_STD, PSR as EC_PSR, SSR as EC_SSR } from './eurocontrol.js';
+import { PROVENANCE as DS_STD, APPLIES_TO_THIS_TOOL as DS_APPLIES } from './defencestandards.js';
+import { PROVENANCE as ES_SPEC, NON_COOPERATIVE as ES_PSR } from './esassp.js';
 // Evidence register.
 //
 // Every model component and every screening threshold in this tool traces to
@@ -79,6 +81,79 @@ export const REFERENCES = [
       + 'cross-section, no standard RCS can be identified for micro, medium or large turbines, and the '
       + 'CAA endorses no single radar modelling tool.',
     caution: 'Edition not confirmed. Confirm the current edition and the figures before citing them.',
+  },
+  {
+    id: 'defstan-00-56-part1-issue7',
+    title: `${DS_STD.reference}, ${DS_STD.title}`,
+    org: 'UK Ministry of Defence (DStan)',
+    year: 2017,
+    type: 'Defence Standard',
+    // What it supports is a negative, which is still a claim the tool makes
+    // and still needs a document behind it.
+    supports: ['The statement that no UK Defence Standard applies to this tool'],
+    status: 'read',
+    reports: 'Read to answer whether a UK Defence Standard applies to this tool. It does not, '
+      + 'and the reason is in its own scope. Section 1.1: "This Standard specifies the '
+      + 'requirements for achieving, assuring and managing the safety of PSS defined by the '
+      + 'scope of contract." It binds a Contractor for deliverables defined by an MOD '
+      + 'contract, and a note at 15.1 adds that it "cannot place requirements on the MOD". '
+      + 'Nothing about the subject matter of a piece of work brings it into force; a contract '
+      + 'invoking it does, and this tool is a deliverable under no such contract. CAP 670 '
+      + 'mentions Def Stan 00-56 exactly twice, both times in the same SW 01 Appendix A Note '
+      + 'naming it as an example alongside IEC 61508 Part 1 and ARP4754, introduced by "such '
+      + 'as". That is not an invocation. The EUROCONTROL radar surveillance Standard names no '
+      + 'Defence Standard at all.',
+    validation: 'Read from the published PDF of Part 1 Issue 7, decrypted with qpdf using an '
+      + 'empty password because the file carried permissions encryption rather than a '
+      + 'password. The scope, purpose, warning and the MOD note are stored at '
+      + 'docs/evidence/defstan-00-56-part1-issue7-2017.txt and every quote in '
+      + 'js/defencestandards.js is checked verbatim against it by '
+      + 'test/defencestandards.test.mjs. The claim that the EUROCONTROL Standard mentions no '
+      + 'Defence Standard is tested as a negative against its own extract. Mutation tested '
+      + 'three ways, all caught: claiming the Standard applies to this tool, removing "scope '
+      + 'of contract" from the quoted clause, and claiming CAP 670 invokes it.',
+    caution: 'Only Part 1 was obtained. Part 2 carries the domain tailoring and compliance '
+      + 'matrices that a Regulator mandates, and was not read. Whether Issue 7 of 28 February '
+      + '2017 is still current was not checked, and whether any Defence Standard exists that '
+      + 'is specific to wind turbine effects on radar was NOT established: dstan.mod.uk and '
+      + 'asems.mod.uk are unreachable from the environment this tool was built in. If an MOD '
+      + 'contract is ever in play, read the contract rather than this entry.',
+  },
+  {
+    id: 'eurocontrol-esassp-spec-0147',
+    title: `${ES_SPEC.title}, ${ES_SPEC.reference}, ${ES_SPEC.edition}`,
+    org: 'EUROCONTROL',
+    year: 2024,
+    type: 'Specification',
+    supports: ['The default probability of detection of 0.9'],
+    status: 'read',
+    reports: 'The current EUROCONTROL surveillance performance specification, and the '
+      + 'successor to the 1997 Radar Surveillance Standard. It was put to this tool that the '
+      + 'ESASSP supersedes that Standard; the document says something more precise and more '
+      + 'useful. Neither volume uses the word supersede, replace or withdraw. The 1997 '
+      + 'Standard is a referenced document, [RD 2], whose lessons learnt the ESASSP took into '
+      + 'account, and Annex D states that its own non-cooperative requirements "are derived '
+      + 'from PSR sensor requirements provided in [RD 2]". For a primary radar, Annex D is the '
+      + 'live requirement set: at 5 NM separation a measurement interval of 8 seconds or less, '
+      + 'probability of update of horizontal position greater than 90% global, and horizontal '
+      + 'position RMS error of 500 m or less; at 3 NM, 5 seconds, the same 90%, and 300 m. All '
+      + 'mandatory. Annex D covers 5 NM and 3 NM only: there is no 2.5 NM non-cooperative '
+      + 'case.',
+    validation: 'Read from the published PDFs of Volumes 1 and 2 supplied by the user. The '
+      + 'relevant sections are stored at '
+      + 'docs/evidence/eurocontrol-esassp-spec-0147-ed1.3-2024.txt and every quote and figure '
+      + 'in js/esassp.js is checked against it by test/esassp.test.mjs, including the two '
+      + 'negatives: that the document never says supersede, and that no 2.5 NM non-cooperative '
+      + 'requirement exists. Mutation tested three ways, all caught: claiming it says '
+      + 'supersede, changing the 90% to 95%, and changing the 3 NM interval from 5 to 8 '
+      + 'seconds.',
+    caution: 'The 90% here is a probability of UPDATE of horizontal position within a stated '
+      + 'measurement interval, assessed end to end across a whole surveillance chain. What '
+      + 'this tool computes is a single-look detection probability from the radar range '
+      + 'equation. The agreement with CAP 670 and with the 1997 Standard is in the number, not '
+      + 'in the definition, and nothing in this tool is gated on the specification. The '
+      + 'measurement interval and RMS error requirements are not modelled here at all. Volume '
+      + '2 Appendices and the archived earlier editions were not read.',
   },
   {
     id: 'eurocontrol-radar-surveillance-1997',

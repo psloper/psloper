@@ -20,14 +20,47 @@ export const PROVENANCE = {
   reference: 'SUR.ET1.ST01.1000-STD-01-01',
   edition: 'Edition 1.0, March 1997, Released Issue',
   evidence: 'docs/evidence/eurocontrol-radar-surveillance-std-1997.txt',
-  // Said plainly because it matters: this edition is old enough that it may
-  // have been replaced, and this tool has not established either way.
-  currency: 'Edition 1.0 dates from March 1997. EUROCONTROL has since published a '
-    + 'Specification for ATM Surveillance System Performance, which may supersede this '
-    + 'Standard in whole or in part. That has NOT been checked: eurocontrol.int is '
-    + 'unreachable from the environment this tool was built in, and the later document '
-    + 'was not supplied. Treat the figures here as the 1997 Standard’s, not as current '
-    + 'EUROCONTROL policy.',
+  // Said plainly because it matters: this edition is old enough that it has
+  // probably been replaced, and this tool has not read the replacement.
+  currency: 'Edition 1.0 dates from March 1997 and is very likely superseded. See SUPERSEDED '
+    + 'below. Treat the figures here as the 1997 Standard’s, not as current EUROCONTROL '
+    + 'policy, and do not quote them at anyone as a live requirement.',
+};
+
+/**
+ * The successor. It was reported to this tool, then supplied, then read.
+ *
+ * js/esassp.js holds what it actually says, quoted and tested. This entry
+ * exists so a reader of THIS module is sent there rather than left with a
+ * 1997 document and no idea whether it still stands.
+ */
+export const SUPERSEDED = {
+  by: 'EUROCONTROL Specification for ATM Surveillance System Performance (ESASSP), '
+    + 'EUROCONTROL-SPEC-0147, Edition 1.3, 21 March 2024',
+  status: 'read',
+  readByThisTool: true,
+  module: 'js/esassp.js',
+  evidence: 'docs/evidence/eurocontrol-esassp-spec-0147-ed1.3-2024.txt',
+
+  // The word matters, and the document does not use it.
+  precise: 'The ESASSP does not say it supersedes this Standard. Neither volume of Edition 1.3 '
+    + 'uses the word supersede, replace or withdraw. This Standard is a referenced document '
+    + 'there, [RD 2], whose lessons learnt the ESASSP took into account, and its Annex D '
+    + 'derives the non-cooperative requirements from this Standard\u2019s PSR requirements. It is '
+    + 'the successor in substance; it is not a withdrawal.',
+
+  // The consequence for the one figure this tool cares about.
+  effectOnThisTool: 'The 90% survives. The 2024 specification requires a probability of update '
+    + 'of horizontal position greater than 90% for a non-cooperative system at both 5 NM and '
+    + '3 NM separation, so the figure this Standard gave in 1997 is carried into a current '
+    + 'document. The metric is not identical, and js/esassp.js says how it differs.',
+
+  // A correction, because the figure was stated to this tool and the document
+  // says otherwise.
+  correction: 'This Standard\u2019s PSR detection figure is "> 90 %" at 6.4.2.1. There is no 95% '
+    + 'PSR detection figure in it. The only 95% is at 6.5, "Overall probability of '
+    + 'association : \u2021 95%", the PSR/SSR data combining function, which is a different '
+    + 'quantity. Checked against the stored extract.',
 };
 
 // The answer to "is there a defined test target". There is not, and the reason

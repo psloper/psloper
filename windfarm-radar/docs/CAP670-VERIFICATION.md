@@ -321,13 +321,75 @@ Two further conditions worth carrying:
 - **8.1.3** — re-assess at regular intervals, by permanent monitoring or annual
   measurement campaigns.
 
-### The caution on all of it
+### The successor: ESASSP, and it is not a withdrawal
 
-Edition 1.0 is dated **March 1997**. EUROCONTROL has since published a
-Specification for ATM Surveillance System Performance which may supersede this
-Standard in whole or in part. **That has not been checked**: eurocontrol.int is
-unreachable from here and the later document was not supplied. Treat these as
-the 1997 Standard's figures, not as current EUROCONTROL policy.
+Edition 1.0 is dated March 1997, and the current specification was then
+supplied and read:
+
+> EUROCONTROL Specification for ATM Surveillance System Performance (ESASSP),
+> **EUROCONTROL-SPEC-0147, Edition 1.3, 21 March 2024**, Released Issue
+
+It was put to me that the ESASSP "explicitly states" it supersedes the 1997
+Standard. **It does not.** Neither volume of Edition 1.3 uses the word
+supersede, replace or withdraw. What it says is more precise, and more useful:
+
+> **Volume 1, section 2** — "This document takes into account the lessons
+> learnt from the application of the EUROCONTROL Standard Document for Radar
+> Surveillance in En-route Airspace and Major Terminal Areas [RD 2]"
+
+and then lists four: requirements hard to assess in practice, technology
+specific requirements that do not transpose to Mode S, WAM, ADS-B or MSPSR,
+design requirements imposing sensor counts, and a lack of traceability from
+user needs to technical requirements.
+
+And then, decisively for a primary radar tool:
+
+> **Volume 1, Annex D - 3** — "The performance requirements defined in this
+> annex are provided to support legacy noncooperative surveillance system and
+> are derived from PSR sensor requirements provided in [RD 2]."
+
+So the 1997 primary radar requirements are not discarded. They are carried
+forward. "Superseded" overstates it; "restructured and carried forward" is what
+the document does.
+
+### The live primary radar requirements
+
+ESASSP calls a primary radar a *non-cooperative* surveillance system. Annex D
+is the only part of the specification that addresses one, and everything in it
+is mandatory:
+
+| Req. | Quality of service | 5 NM (Table 9) | 3 NM (Table 10) |
+|---|---|---|---|
+| R1 | Measurement interval for probability of update assessment | ≤ 8 seconds | ≤ 5 seconds |
+| R2 | Probability of update of horizontal position within that interval | **> 90% global** | **> 90% global** |
+| R3 | Horizontal position RMS error | ≤ 500 m global | ≤ 300 m global |
+
+**The 90 survives from 1997 into 2024.** The tool's default probability of
+detection of 0.9 now has three documents behind it: CAP 670 SUR 02.40, the 1997
+Standard at 6.4.2.1, and this specification at 5N_N-R2 and 3N_N-R2.
+
+**But the metric is not the same.** ESASSP's 90% is a probability that the
+horizontal position is *updated* within a stated interval, assessed end to end
+across a whole surveillance chain. What this tool computes is a single-look
+detection probability from the radar range equation. The agreement is in the
+number, not in the definition, and the tool says so rather than letting the
+coincidence do work it cannot do.
+
+**Annex D covers 5 NM and 3 NM only.** The 2.5 NM case in the specification is
+for succeeding aircraft on the same final approach track, and has no
+non-cooperative table. ESASSP sets no primary radar requirement for 2.5 NM.
+
+### Corrections to what was reported before the document arrived
+
+| Reported | What the document says |
+|---|---|
+| ESASSP explicitly states it supersedes the 1997 Standard | Neither volume uses the word. The 1997 Standard is [RD 2], a referenced document, and Annex D derives its PSR requirements from it. |
+| The 1997 Standard gave a PSR detection probability of "90% or 95%" | One PSR detection figure, "> 90 %" at 6.4.2.1. The only 95% is at 6.5, the PSR/SSR data combining probability of association, a different quantity. |
+| Requirements are structured around 5, 3 and 2.5 NM | True of the specification as a whole, not of primary radar. Annex D has 5 NM and 3 NM. |
+| Developed to support Commission Regulation (EU) No 1207/2011 | Confirmed, in the Volume 2 abstract. Volume 1 references Commission Implementing Regulation (EU) 2017/373 instead. |
+
+Volume 2 Appendices and the archived earlier editions of SPEC-0147 in the same
+bundle were not read.
 
 ## What was not checked
 
