@@ -134,11 +134,11 @@ export const REFERENCES = [
       + 'Standard is a referenced document, [RD 2], whose lessons learnt the ESASSP took into '
       + 'account, and Annex D states that its own non-cooperative requirements "are derived '
       + 'from PSR sensor requirements provided in [RD 2]". For a primary radar, Annex D is the '
-      + 'live requirement set: at 5 NM separation a measurement interval of 8 seconds or less, '
-      + 'probability of update of horizontal position greater than 90% global, and horizontal '
-      + 'position RMS error of 500 m or less; at 3 NM, 5 seconds, the same 90%, and 300 m. All '
-      + 'mandatory. Annex D covers 5 NM and 3 NM only: there is no 2.5 NM non-cooperative '
-      + 'case.',
+      + 'live requirement set, every line of it mandatory. At 5 NM separation: '
+      + ES_PSR.fiveNm.requirements.map((r) => `${r.id} ${r.performance.toLowerCase()}`).join('; ')
+      + '. At 3 NM separation: '
+      + ES_PSR.threeNm.requirements.map((r) => `${r.id} ${r.performance.toLowerCase()}`).join('; ')
+      + `. ${ES_PSR.noTwoPointFiveNm}`,
     validation: 'Read from the published PDFs of Volumes 1 and 2 supplied by the user. The '
       + 'relevant sections are stored at '
       + 'docs/evidence/eurocontrol-esassp-spec-0147-ed1.3-2024.txt and every quote and figure '
