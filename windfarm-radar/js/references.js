@@ -1,6 +1,7 @@
 import { PROVENANCE as EC_STD, PSR as EC_PSR, SSR as EC_SSR } from './eurocontrol.js';
 import { PROVENANCE as DS_STD, APPLIES_TO_THIS_TOOL as DS_APPLIES } from './defencestandards.js';
 import { PROVENANCE as ES_SPEC, NON_COOPERATIVE as ES_PSR } from './esassp.js';
+import { REPORTED_CLAIMS as C764_CLAIMS, TO_CHECK_ON_ARRIVAL as C764_CHECK } from './cap764.js';
 // Evidence register.
 //
 // Every model component and every screening threshold in this tool traces to
@@ -80,7 +81,16 @@ export const REFERENCES = [
       + 'radar relevant to consider inside 10 km. That, given the number of factors affecting radar '
       + 'cross-section, no standard RCS can be identified for micro, medium or large turbines, and the '
       + 'CAA endorses no single radar modelling tool.',
-    caution: 'Edition not confirmed. Confirm the current edition and the figures before citing them.',
+    caution: 'Edition not confirmed. Confirm the current edition and the figures before citing '
+      + 'them. A third-party AI research summary of CAP 764 was shown to this project; its '
+      + `${C764_CLAIMS.length} claims are recorded in js/cap764.js as CLAIMS, not as facts, `
+      + 'each with what the documents this tool HAS read can say about it. One is flagged: the '
+      + 'summary describes "approved technical and operational mitigations", and CAP 670 SUR '
+      + '13A.107 says the mitigations it lists "must not be regarded as mitigations that are '
+      + 'recommended or endorsed by the CAA". CAP 670 is not speaking about CAP 764 there, so '
+      + 'it is not a direct contradiction, but describing a mitigation as CAA-approved in a '
+      + `planning submission is a claim worth being sure of. ${C764_CHECK.length} items are `
+      + 'listed to check the day a copy arrives.',
   },
   {
     id: 'defstan-00-56-part1-issue7',
