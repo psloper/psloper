@@ -522,9 +522,67 @@ export const TARGET_PRESETS = {
   'mil-transport':  { label: 'Military transport', group: 'Military', rcsDbsm: 24, speedKt: 260, altitudeFt: 8000, spanM: 40.4, lengthM: 45.0, planform: 'wing', wing: 'swept', engines: 4, enginesOn: 'wing' },
   'maritime-patrol':{ label: 'Maritime patrol aircraft', group: 'Military', rcsDbsm: 21, speedKt: 250, altitudeFt: 1000, spanM: 35.8, lengthM: 39.5, planform: 'wing', wing: 'swept', engines: 4, enginesOn: 'wing' },
   'aew':            { label: 'Airborne early warning', group: 'Military', rcsDbsm: 26, speedKt: 300, altitudeFt: 25000, spanM: 30.4, lengthM: 32.9, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
+
+  // ---- the one target with a document behind it
+  // CAP 670 SUR 12.35: "Detection at the edge of coverage shall be confirmed
+  // with a target of 1 m2 RCS." The clause fixes the radar cross section and
+  // nothing else: no type, no dimensions, no fluctuation model. The span and
+  // length below are a light single's, so the thing can be drawn; they are
+  // NOT part of the specification and the tool says so.
+  'cap670-test':    { label: 'CAP 670 test target, 1 m\u00b2', group: 'Standard test target', rcsDbsm: 0, speedKt: 120, altitudeFt: 2000, spanM: 11.0, lengthM: 8.3, planform: 'wing', wing: 'straight', engines: 1, enginesOn: 'nose' },
 };
 
-export const TARGET_GROUPS = ['Uncrewed', 'General aviation', 'Commercial', 'Military'];
+export const TARGET_GROUPS = ['Standard test target', 'Uncrewed', 'General aviation', 'Commercial', 'Military'];
+
+/**
+ * Where each target's numbers come from.
+ *
+ * Only one entry is anchored in a document. Everything else is a class-typical
+ * figure chosen for screening, and saying which is which is the point of this
+ * table: a radar cross section that looks like a specification, but is an
+ * estimate, is worse than no figure at all.
+ *
+ * `dimensions` is separate from `rcs` because they have different standing.
+ * Span and length are public figures for a representative type in the class and
+ * can be checked against a manufacturer's data. RCS cannot: it varies with
+ * aspect, frequency and polarisation, and a single number for a class is an
+ * order-of-magnitude placeholder.
+ */
+export const TARGET_PROVENANCE = {
+  'cap670-test': {
+    kind: 'standard',
+    rcs: {
+      source: 'CAP 670 SUR 12.35, Third Issue Amendment 1/2019',
+      quote: 'Detection at the edge of coverage shall be confirmed with a target of 1 m2 RCS.',
+      value: 0,
+      working: '1 m\u00b2 is 0 dBsm: 10 log10(1) = 0.',
+    },
+    dimensions: 'NOT specified by CAP 670. The clause names a radar cross section and no '
+      + 'airframe. The span and length here are a light single\u2019s so the target can be drawn, '
+      + 'and they feed nothing in the physics, which treats every target as a point.',
+    fluctuation: 'NOT specified. CAP 670 names no Swerling case for the 1 m\u00b2 target.',
+  },
+};
+
+/** Default provenance for the rest: honest about being an estimate. */
+export const TARGET_PROVENANCE_DEFAULT = {
+  kind: 'representative',
+  rcs: 'A class-typical order-of-magnitude figure chosen for screening. Not from a '
+    + 'measurement, a datasheet or a standard. Real RCS varies by tens of dB with aspect '
+    + 'angle, frequency and polarisation.',
+  dimensions: 'Span and length of a representative type in the class, to a tenth of a metre. '
+    + 'They set how the target is DRAWN and nothing else: the physics treats every target as '
+    + 'a point scatterer.',
+};
+
+/** What to print next to a target so nobody mistakes an estimate for a spec. */
+export function targetProvenanceNote(key) {
+  const p = TARGET_PROVENANCE[key];
+  if (!p) {
+    return `Representative figures, not a specification. ${TARGET_PROVENANCE_DEFAULT.rcs}`;
+  }
+  return `${p.rcs.source}: "${p.rcs.quote}" ${p.dimensions}`;
+}
 
 export function defaultScenario() {
   return {

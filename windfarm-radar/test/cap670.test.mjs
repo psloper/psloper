@@ -13,6 +13,7 @@ import {
   TABLE_3_CONTRADICTION, SCOPE, CI_THRESHOLDS, METHOD_2_BASELINE, RCS_DBSM,
   RCS_SCALING, TABLE_4_5_INCONSISTENCY, GEN01, GEN02_VHF_UHF_FRAME, SUR13,
   NOT_IMPLEMENTED, FLOWCHART_DISCREPANCY, SUR13_MITIGATION, OUT_OF_REACH,
+  TEST_TARGET, TEST_ALTITUDES, PD_REQUIREMENT, NO_ICAO_PSR_TARGET,
   classifyTurbine, hubElevationDeg, zonalCheck, outOfScopeCheck, routeToCI,
   checkCarrierToInterference, gen01Check, operationalImpactOutcome,
   scaledMonostaticRcsDbsm, rotorFromRcsM,
@@ -447,4 +448,72 @@ test('figures CAP 670 cannot adjudicate are listed, with the reason', () => {
   // RAM is described but never quantified.
   assert.ok(sur.includes('radar absorbing materials (RAM)'));
   assert.ok(OUT_OF_REACH.some((f) => /absorbent/i.test(f.figure)));
+});
+
+// ---------------------------------------------------------------------------
+// The target CAP 670 names for proving detection.
+// ---------------------------------------------------------------------------
+
+const surEvidence = squash(readFileSync(resolve(root, TEST_TARGET.evidence), 'utf8'));
+
+test('the 1 square metre test target is quoted from the document', () => {
+  assert.ok(surEvidence.includes(squash(TEST_TARGET.quote)),
+    'SUR 12.35 quote is not in the stored extract');
+  assert.equal(TEST_TARGET.rcsM2, 1);
+  // 1 m2 is 0 dBsm by definition: 10*log10(1) = 0.
+  assert.equal(TEST_TARGET.rcsDbsm, 10 * Math.log10(TEST_TARGET.rcsM2));
+});
+
+test('the wind turbine clause corroborates the same target size', () => {
+  assert.ok(surEvidence.includes(squash(TEST_TARGET.corroboration.quote))
+    || squash(readFileSync(resolve(root, SUR13.evidence), 'utf8'))
+      .includes(squash(TEST_TARGET.corroboration.quote)),
+    'SUR 13.44 quote is in neither extract');
+  // Both clauses must name the same size, or the tool is choosing between them.
+  assert.ok(/1\s?m2/.test(TEST_TARGET.corroboration.quote));
+});
+
+test('the recommended test altitudes are the ones the document lists', () => {
+  assert.ok(surEvidence.includes(squash(TEST_ALTITUDES.quote)),
+    'SUR 12.37 quote is not in the stored extract');
+  assert.deepEqual(TEST_ALTITUDES.feet, [1000, 2000, 4000, 6000, 10000, 20000]);
+  // Every figure in the list must appear in the sentence it came from, so a
+  // slice cannot be added to the array that the document does not recommend.
+  for (const ft of TEST_ALTITUDES.feet) {
+    assert.ok(TEST_ALTITUDES.quote.includes(ft.toLocaleString('en-US')),
+      `${ft} ft is in the array but not in the quote`);
+  }
+  assert.equal(TEST_ALTITUDES.status, 'Recommendation');
+});
+
+test('the probability of detection figures are quoted, and marked as a recommendation', () => {
+  assert.ok(surEvidence.includes(squash(PD_REQUIREMENT.recommended.quote)));
+  assert.ok(surEvidence.includes(squash(PD_REQUIREMENT.defined_by_operator.quote)));
+  assert.equal(PD_REQUIREMENT.recommended.status, 'Recommendation');
+  assert.ok(PD_REQUIREMENT.recommended.quote.includes('90%'));
+  assert.ok(PD_REQUIREMENT.recommended.quote.includes('97%'));
+  assert.equal(PD_REQUIREMENT.recommended.conventionalPd, 0.9);
+  assert.equal(PD_REQUIREMENT.recommended.cooperativePd, 0.97);
+});
+
+test('what the document does not specify is recorded rather than filled in', () => {
+  // The point of this list is that it stays a list. If someone later decides
+  // the test target is a particular aeroplane, this fails.
+  assert.ok(TEST_TARGET.notSpecified.length >= 4);
+  const joined = TEST_TARGET.notSpecified.join(' ').toLowerCase();
+  for (const missing of ['type', 'dimensions', 'swerling', 'polarisation']) {
+    assert.ok(joined.includes(missing), `${missing} is not declared as unspecified`);
+  }
+  // The document must not in fact name an aircraft type. If a later edition
+  // does, this test is the thing that should stop the module saying otherwise.
+  for (const word of ['Cessna', 'Piper', 'Beechcraft', 'King Air', 'Diamond DA']) {
+    assert.ok(!surEvidence.includes(word),
+      `the extract names ${word}: TEST_TARGET.notSpecified is now wrong`);
+  }
+});
+
+test('the ICAO gap is declared as unchecked, not as an absence', () => {
+  assert.ok(/NOT been checked/i.test(NO_ICAO_PSR_TARGET.unverified),
+    'the Annex 10 gap must say it was not checked, not that nothing exists');
+  assert.ok(NO_ICAO_PSR_TARGET.finding.includes('no ICAO provision'));
 });

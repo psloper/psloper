@@ -8,7 +8,7 @@ import {
   RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS, REFRACTION_PRESETS,
   RADAR_MOUNTS, antennaHeightAgl,
   radarPresetProvenanceNote,
-  TARGET_GROUPS, tipHeightOf, groundClearanceOf, setTipHeight,
+  TARGET_GROUPS, TARGET_PROVENANCE, tipHeightOf, groundClearanceOf, setTipHeight,
   BLADE_CONSTRUCTIONS, TOWER_MATERIALS, DRIVETRAINS,
 } from './model.js';
 import { WIND_ROSE_PRESETS, operatingState as windState } from './wind.js';
@@ -1095,10 +1095,18 @@ export function updateNotes(noteEls, result, extra = {}) {
     : 'Not swept yet. The single-direction view can easily land on a benign case.');
 
   const tp = TARGET_PRESETS[sc.target.preset];
+  // A radar cross section that looks like a specification but is an estimate is
+  // worse than no figure, so the note says which of the two this is.
+  const tprov = TARGET_PROVENANCE[sc.target.preset];
   set('target-note', tp
-    ? `${tp.group}. Representative RCS for the class, not a figure for any particular aircraft: real `
-      + 'values swing by tens of decibels with aspect and frequency, and figures for specific military '
-      + 'platforms are controlled. Use it to explore sensitivity, not to assert performance.'
+    ? (tprov
+      ? `${esc(tprov.rcs.source)}. "${esc(tprov.rcs.quote)}" ${esc(tprov.rcs.working)} `
+        + `${esc(tprov.dimensions)} ${esc(tprov.fluctuation)}`
+      : `${esc(tp.group)}. Representative RCS for the class, not a figure for any particular `
+        + 'aircraft: real values swing by tens of decibels with aspect and frequency, and figures '
+        + 'for specific military platforms are controlled. Use it to explore sensitivity, not to '
+        + 'assert performance. The one target here with a document behind it is the CAP 670 test '
+        + 'target, 1 m\u00b2.')
     : '');
 
   const first = result.points[0];

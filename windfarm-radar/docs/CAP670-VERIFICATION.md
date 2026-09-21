@@ -179,7 +179,57 @@ Listed rather than filled in:
 - **Turbine curtailment.** Not mentioned in CAP 670 anywhere. It is in the tool as a theoretical best case, not a recognised mitigation.
 - **Turbine RCS at microwave frequencies.** Tables 4 and 5 are calculated at 127 and 368 MHz. This tool models 1.25 to 9.4 GHz. The scaling formula is linear in frequency and would extrapolate, but a factor of seven beyond the highest frequency the document states is outside what it supports, and turbine RCS does not scale that simply once the wavelength is short against the blade chord. Nothing was extrapolated.
 
+## The target used for proving detection
+
+Asked directly: is there a defined aircraft used for testing radar detection?
+No. CAP 670 specifies a **radar cross section**, not an airframe.
+
+| What the document says | Clause | Status |
+|---|---|---|
+| "Detection at the edge of coverage shall be confirmed with a target of 1 m2 RCS." | SUR 12.35 | **Shall.** Now a selectable target in the tool: "CAP 670 test target, 1 m²", 0 dBsm. |
+| "The threshold set shall take in to account ... a 1m2 target likely to fly within the area of interest." | SUR 13.44 | **Shall.** Same size, reached independently in the wind turbine material. |
+| "The test should include slices at 1,000, 2,000, 4,000, 6,000, 10,000, and 20,000 ft above the aerodrome reference point" | SUR 12.37 | **Recommendation.** Recorded as `TEST_ALTITUDES`. Datum is the aerodrome reference point, not sea level. |
+| "Probability of detection shall be defined for the intended application." | SUR 02.37 | **Shall.** The number belongs to the operator, so no tool can assert it for a site. |
+| "Probability of detection should be at least 90% for conventional radars and exceed 97% for Monopulse and Mode S radars" | SUR 02.40 | **Recommendation.** The tool's default Pd of 0.9 matches the conventional figure. |
+
+Every quote above is checked verbatim against
+`docs/evidence/cap670-partC-s3-sur02-sur12-2019.txt` by `test/cap670.test.mjs`.
+Changing the quoted size from 1 m² to 2 m², or adding an altitude slice the
+document does not list, both fail the suite; that was tested rather than
+assumed.
+
+### What SUR 12.35 does not say
+
+Recorded in `TEST_TARGET.notSpecified` so the gaps stay gaps:
+
+- No aircraft type, model or manufacturer.
+- No airframe dimensions. The span and length the tool draws for this target
+  are a light single's, chosen so it can be drawn, and they feed nothing in the
+  physics, which treats every target as a point.
+- No Swerling case or other fluctuation model for the 1 m² target.
+- No polarisation, aspect angle or frequency band at which the 1 m² applies.
+  Real RCS varies by tens of decibels with all three, so 1 m² is nominal.
+- No separate figure for en-route as against terminal radars.
+
+### Every other target in the tool is an estimate
+
+This is now stated in the tool itself, next to the selector, rather than left
+to be inferred. `TARGET_PROVENANCE` marks the CAP 670 target as `standard` and
+everything else as `representative`: class-typical, order-of-magnitude, not
+from a measurement, a datasheet or a standard.
+
 ## What was not checked
 
 Whether a Supplementary Amendment supersedes the 1 August 2019 edition. The CAA
 is unreachable from the environment this was built in.
+
+Whether **ICAO Annex 10 Volume IV** itself defines a primary radar reference
+target. Every Annex 10 citation inside CAP 670 is about SSR Mode A/C, Mode S,
+extended squitter or multilateration, and none carries a primary radar target
+size; but Annex 10 was not available here, so its absence of a PSR target is
+unverified rather than established.
+
+The **EUROCONTROL Standard for Radar Surveillance in En-Route Airspace and
+Major Terminal Areas**, which is the document most likely to carry a different
+reference target figure. `eurocontrol.int` is blocked by the network policy of
+the environment this was built in. Nothing from it is asserted here.

@@ -694,6 +694,95 @@ export const SUR13_MITIGATION = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// SUR 02 and SUR 12: the target CAP 670 names for proving detection.
+// ---------------------------------------------------------------------------
+//
+// The question this answers is whether there is a defined aircraft used for
+// testing radar detection. There is not. CAP 670 specifies a RADAR CROSS
+// SECTION, not an airframe: a target of 1 square metre. No type, no
+// manufacturer, no dimensions, no Swerling fluctuation model. Anything with a
+// 1 m2 RCS satisfies the clause, and in practice that is a light single or a
+// small twin flown as a calibration sortie.
+//
+// Quoted verbatim from docs/evidence/cap670-partC-s3-sur02-sur12-2019.txt and
+// checked against it by test/cap670.test.mjs, so a quote cannot drift from the
+// document.
+export const TEST_TARGET = {
+  read: true,
+  evidence: 'docs/evidence/cap670-partC-s3-sur02-sur12-2019.txt',
+  rcsM2: 1,
+  rcsDbsm: 0,
+  ref: 'CAP 670 SUR 12.35',
+  quote: 'Detection at the edge of coverage shall be confirmed with a target of 1 m2 RCS.',
+  // The same size appears again in the wind turbine material, which is what
+  // makes it the right target for a screening tool to default to.
+  corroboration: {
+    ref: 'CAP 670 SUR 13.44',
+    quote: 'The threshold set shall take in to account the RCS of the largest wind turbine in '
+      + 'the area affected, the largest fixed clutter (other than turbine), and a 1m2 target '
+      + 'likely to fly within the area of interest.',
+  },
+  // What the document does NOT say. Listed so the absence is on the record
+  // rather than filled in from somewhere else.
+  notSpecified: [
+    'No aircraft type, model or manufacturer.',
+    'No airframe dimensions: span, length and shape are left open.',
+    'No Swerling case or other fluctuation model for the 1 m2 target.',
+    'No polarisation, aspect angle or frequency band at which the 1 m2 applies. '
+      + 'RCS varies strongly with all three, so "1 m2" is a nominal figure.',
+    'No separate figure for en-route as against terminal radars.',
+  ],
+};
+
+// The altitudes CAP 670 recommends for the coverage test. A recommendation,
+// not a requirement, and the document says so with the word "should".
+export const TEST_ALTITUDES = {
+  ref: 'CAP 670 SUR 12.37',
+  status: 'Recommendation',
+  quote: 'Recommendation: The test should include slices at 1,000, 2,000, 4,000, 6,000, '
+    + '10,000, and 20,000 ft above the aerodrome reference point and as appropriate to the OR (811).',
+  datum: 'above the aerodrome reference point',
+  feet: [1000, 2000, 4000, 6000, 10000, 20000],
+};
+
+// What CAP 670 says about how good detection has to be. SUR02.37 puts the
+// number on the operator, not on the document, so a tool cannot assert a
+// required probability of detection for a site it knows nothing about.
+export const PD_REQUIREMENT = {
+  ref: 'CAP 670 SUR 02.37 and SUR 02.40',
+  defined_by_operator: {
+    ref: 'CAP 670 SUR 02.37',
+    quote: 'Probability of detection shall be defined for the intended application. The '
+      + 'probability of detection shall meet the operational requirement throughout the '
+      + 'required coverage volume, i.e. up to the maximum range and at all operational altitudes.',
+  },
+  recommended: {
+    ref: 'CAP 670 SUR 02.40',
+    status: 'Recommendation',
+    conventionalPd: 0.90,
+    cooperativePd: 0.97,
+    quote: 'Recommendation: Probability of detection should be at least 90% for conventional '
+      + 'radars and exceed 97% for Monopulse and Mode S radars and other co-operative techniques.',
+  },
+  note: 'The 0.9 this tool uses by default matches the SUR 02.40 recommendation for a '
+    + 'conventional radar. It is a recommendation in the document, and the operational '
+    + 'requirement for a given site may be higher.',
+};
+
+// Checked and found absent, so that "ICAO must specify it" does not get
+// assumed. CAP 670 cites ICAO Annex 10 Volume IV repeatedly, and every citation
+// is about SSR, Mode S, extended squitter or multilateration. None of them
+// carries a primary radar target size.
+export const NO_ICAO_PSR_TARGET = {
+  checked: 'Every "Annex 10" reference in the CAP 670 text supplied.',
+  finding: 'CAP 670 cites ICAO Annex 10 Volume IV for SSR Mode A/C, Mode S, Mode S extended '
+    + 'squitter and multilateration. It cites no ICAO provision for a primary radar test '
+    + 'target size.',
+  unverified: 'Whether ICAO Annex 10 Volume IV itself defines a primary radar reference target '
+    + 'has NOT been checked against Annex 10. That document was not available here.',
+};
+
 // Figures the tool uses that CAP 670 CANNOT adjudicate, and why. Recorded so
 // that reading the document is not mistaken for having verified everything.
 export const OUT_OF_REACH = [
