@@ -218,6 +218,44 @@ to be inferred. `TARGET_PROVENANCE` marks the CAP 670 target as `standard` and
 everything else as `representative`: class-typical, order-of-magnitude, not
 from a measurement, a datasheet or a standard.
 
+## Is there a known flight check for wind farms?
+
+No. CAP 670 defines no wind farm flight check: no named profile, no orbit
+pattern, no prescribed radial, no pass mark. What it defines is a **duty to
+assess performance**, with a flight trial as one of two acceptable methods.
+
+| What the document says | Clause | Status |
+|---|---|---|
+| "...shall be assessed by a suitable performance assessment method (e.g. targets of opportunity study, flight trial)." | SUR 13.47, and SUR 13.69 for adaptive MTI | **Shall assess.** A flight trial is an example, not a requirement. A targets-of-opportunity study is equally acceptable. |
+| "Where antenna beam tilt is adjusted ... flight trials or targets of opportunity traffic analysis shall confirm the performance of the radar meets the operational requirement." | SUR 13.28 | **Shall confirm.** Still either method. |
+| "The likelihood of loss of target detection shall be assessed by a comparison of targets detected prior to and after the threshold implementation." | SUR 13.46 | **Shall.** This is a before-and-after of switching a *mitigation* on, not of a wind farm being built. |
+| "The assessment period shall be agreed with the relevant CAA Regional Inspector." | SUR 13.48, SUR 13.70 | **Shall.** Scope and duration are settled case by case, not by the document. |
+
+If a trial is flown, the geometry comes from SUR 12, which is about proving a
+surveillance system generally and says nothing about wind turbines:
+
+- **SUR 12.22** assess inside the coverage volume where the service is provided, using the system's own data
+- **SUR 12.35** confirm detection at the edge of coverage with a 1 m² target
+- **SUR 12.38** inbound (centripetal), outbound (centrifugal) and tangential motion
+- **SUR 12.39** at least one climb or descent, ideally bottom to top of coverage
+- **SUR 12.40** a 360° horizontal profile at the base, the top and a middle level
+
+This tool's own profiles map onto three of those: a level transit is the
+inbound and outbound case, a holding orbit is the tangential case, and the 3°
+approach is a descent, though SUR 12.39 wants one running the full depth of
+coverage. **The tool does not fly the 360° profile of SUR 12.40.** The wind
+rose sweep covers every direction statistically, which is not the same thing.
+
+Two things worth not confusing:
+
+- **CAP 670 sets no requirement to fly a baseline before a wind farm is built
+  and repeat it afterwards.** The before-and-after in SUR 13.46 is about a
+  mitigation being switched on.
+- **"Flight inspection" in CAP 670 is not this.** The term appears 169 times,
+  almost all in the FLI section about navigation aids such as ILS and VOR,
+  citing ICAO Doc 8071 **Volume II**. A surveillance radar flight trial is a
+  different activity and none of the FLI requirements carry across.
+
 ## What was not checked
 
 Whether a Supplementary Amendment supersedes the 1 August 2019 edition. The CAA
@@ -233,3 +271,9 @@ The **EUROCONTROL Standard for Radar Surveillance in En-Route Airspace and
 Major Terminal Areas**, which is the document most likely to carry a different
 reference target figure. `eurocontrol.int` is blocked by the network policy of
 the environment this was built in. Nothing from it is asserted here.
+
+**ICAO Doc 8071 Volume 3, Testing of Surveillance Radar Systems.** CAP 670
+points at it twice as where radar testing methods live (SUR 13A.246, and a note
+under SUR 04). It was not available here, so nothing in this tool says what it
+specifies for a radar flight trial. If you need the actual method rather than
+the duty, that is the document to get.

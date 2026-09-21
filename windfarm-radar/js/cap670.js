@@ -783,6 +783,118 @@ export const NO_ICAO_PSR_TARGET = {
     + 'has NOT been checked against Annex 10. That document was not available here.',
 };
 
+// ---------------------------------------------------------------------------
+// Is there a known flight check for wind farms?
+// ---------------------------------------------------------------------------
+//
+// No. CAP 670 defines no wind farm flight check: no named profile, no orbit
+// pattern, no prescribed radial, no pass mark. What it defines is a DUTY to
+// assess performance, with a flight trial as one of two acceptable methods,
+// the other being a study of targets of opportunity. Which one is used, and
+// over what period, is agreed with the CAA Regional Inspector case by case.
+//
+// Where a flight trial IS flown, the geometry rules live in SUR 12, not in the
+// wind turbine section, and they are written for proving a surveillance system
+// generally.
+//
+// Quoted verbatim and checked against the stored extracts by
+// test/cap670.test.mjs.
+export const FLIGHT_CHECK = {
+  dedicatedWindFarmProcedure: false,
+  evidence: [
+    'docs/evidence/cap670-partC-s3-sur02-sur12-2019.txt',
+    'docs/evidence/cap670-partC-s3-sur13-2019.txt',
+  ],
+
+  // Either method is acceptable. A flight trial is not mandatory.
+  methodIsAChoice: {
+    ref: 'CAP 670 SUR 13.47',
+    quote: 'The probability of detection and false target rate and any effects on processing '
+      + 'shall be assessed by a suitable performance assessment method (e.g. targets of '
+      + 'opportunity study, flight trial).',
+    note: 'SUR 13.69 says the same thing for adaptive MTI, in almost the same words. Neither '
+      + 'clause requires a flight trial; both offer it as an example of a suitable method.',
+  },
+
+  // The one place in the wind turbine section where a trial is named as the
+  // confirming step rather than an example.
+  beamTilt: {
+    ref: 'CAP 670 SUR 13.28',
+    quote: 'Where antenna beam tilt is adjusted in order to mitigate wind turbine effects, '
+      + 'flight trials or targets of opportunity traffic analysis shall confirm the performance '
+      + 'of the radar meets the operational requirement.',
+  },
+
+  // The before-and-after comparison, which is the closest CAP 670 comes to a
+  // wind farm specific test.
+  beforeAndAfter: {
+    ref: 'CAP 670 SUR 13.46',
+    quote: 'The likelihood of loss of target detection shall be assessed by a comparison of '
+      + 'targets detected prior to and after the threshold implementation.',
+    note: 'Written about switching a mitigation ON, not about a wind farm being built. CAP 670 '
+      + 'sets no requirement anywhere to fly a baseline before construction and repeat it after.',
+  },
+
+  periodAgreedWithCaa: {
+    ref: 'CAP 670 SUR 13.48 and SUR 13.70',
+    quote: 'The assessment period shall be agreed with the relevant CAA Regional Inspector.',
+  },
+
+  // If a trial is flown, this is the shape of it. All from SUR 12, all general
+  // surveillance requirements rather than wind farm ones.
+  trialGeometry: [
+    { ref: 'CAP 670 SUR 12.22',
+      quote: 'Where ToP or Flight Trials are used for assessing performance of a surveillance '
+        + 'system, the performance shall be assessed within the coverage volume where the '
+        + 'service is provided using the data from the surveillance system.' },
+    { ref: 'CAP 670 SUR 12.35',
+      quote: 'Detection at the edge of coverage shall be confirmed with a target of 1 m2 RCS.' },
+    { ref: 'CAP 670 SUR 12.38',
+      quote: 'Test scenarios shall include target motion in inwards (centripetal) and outwards '
+        + '(centrifugal) directions from any system based on detection by a single sensor '
+        + '(e.g. radar/ADS-B) and scenarios including tangential motion.' },
+    { ref: 'CAP 670 SUR 12.39',
+      quote: 'In addition test scenarios shall also include at least one climb and/or descend '
+        + 'scenarios ideally from the bottom of coverage through to the top of coverage volume.' },
+    { ref: 'CAP 670 SUR 12.40',
+      quote: 'A suitable horizontal test profile covering 360\u00b0 horizontal coverage of the sensor '
+        + 'or the sensor network shall be performed at a level equivalent to the base of the '
+        + 'required coverage, the top of the required coverage and at a suitable medium level '
+        + 'in between.' },
+  ],
+
+  // How this tool’s own flight profiles line up with SUR 12.38. Stated so the
+  // mapping is a claim that can be argued with, not an implication.
+  toolProfileMapping: {
+    transit: 'A level transit inbound or outbound covers the centripetal and centrifugal '
+      + 'motion SUR 12.38 asks for.',
+    orbit: 'A holding orbit is the tangential case in SUR 12.38.',
+    approach: 'A 3 degree descent is a climb-or-descend scenario in the sense of SUR 12.39, '
+      + 'though SUR 12.39 asks for one running from the bottom of coverage to the top.',
+    notCovered: 'This tool does not fly the 360 degree horizontal profile of SUR 12.40. The '
+      + 'wind rose sweep covers every direction statistically, which is not the same thing as '
+      + 'a flown profile.',
+  },
+
+  // The method itself is in a document that was not available.
+  methodologyElsewhere: {
+    ref: 'CAP 670 SUR 13A.246',
+    quote: 'ICAO Doc 8071, Manual on testing radio navigation aids, Volume 3 (Testing of '
+      + 'Surveillance Radar Systems) provides further information and guidance on radar '
+      + 'testing methods.',
+    unverified: 'ICAO Doc 8071 Volume 3 has NOT been read. It was not available in the '
+      + 'environment this tool was built in, so nothing here is asserted about what it '
+      + 'specifies for a radar flight trial.',
+  },
+
+  // A trap worth naming: CAP 670 uses "flight inspection" many times, and none
+  // of it is about radar.
+  notTheSameAsFlightInspection: 'CAP 670 uses the term "flight inspection" extensively in its '
+    + 'FLI section, which is about navigation aids such as ILS and VOR and cites ICAO Doc 8071 '
+    + 'Volume II. That is a different activity from a surveillance radar flight trial and '
+    + 'carries none of these requirements across.',
+};
+
 // Figures the tool uses that CAP 670 CANNOT adjudicate, and why. Recorded so
 // that reading the document is not mistaken for having verified everything.
 export const OUT_OF_REACH = [

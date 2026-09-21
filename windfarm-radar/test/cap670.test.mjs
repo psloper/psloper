@@ -13,7 +13,7 @@ import {
   TABLE_3_CONTRADICTION, SCOPE, CI_THRESHOLDS, METHOD_2_BASELINE, RCS_DBSM,
   RCS_SCALING, TABLE_4_5_INCONSISTENCY, GEN01, GEN02_VHF_UHF_FRAME, SUR13,
   NOT_IMPLEMENTED, FLOWCHART_DISCREPANCY, SUR13_MITIGATION, OUT_OF_REACH,
-  TEST_TARGET, TEST_ALTITUDES, PD_REQUIREMENT, NO_ICAO_PSR_TARGET,
+  TEST_TARGET, TEST_ALTITUDES, PD_REQUIREMENT, NO_ICAO_PSR_TARGET, FLIGHT_CHECK,
   classifyTurbine, hubElevationDeg, zonalCheck, outOfScopeCheck, routeToCI,
   checkCarrierToInterference, gen01Check, operationalImpactOutcome,
   scaledMonostaticRcsDbsm, rotorFromRcsM,
@@ -516,4 +516,56 @@ test('the ICAO gap is declared as unchecked, not as an absence', () => {
   assert.ok(/NOT been checked/i.test(NO_ICAO_PSR_TARGET.unverified),
     'the Annex 10 gap must say it was not checked, not that nothing exists');
   assert.ok(NO_ICAO_PSR_TARGET.finding.includes('no ICAO provision'));
+});
+
+// ---------------------------------------------------------------------------
+// The flight check question.
+// ---------------------------------------------------------------------------
+
+const allEvidence = FLIGHT_CHECK.evidence
+  .map((f) => squash(readFileSync(resolve(root, f), 'utf8')))
+  .join(' ');
+
+test('every flight trial quote is in the document', () => {
+  const quotes = [
+    FLIGHT_CHECK.methodIsAChoice.quote,
+    FLIGHT_CHECK.beamTilt.quote,
+    FLIGHT_CHECK.beforeAndAfter.quote,
+    FLIGHT_CHECK.periodAgreedWithCaa.quote,
+    FLIGHT_CHECK.methodologyElsewhere.quote,
+    ...FLIGHT_CHECK.trialGeometry.map((t) => t.quote),
+  ];
+  const missing = quotes.filter((q) => !allEvidence.includes(squash(q)));
+  assert.deepEqual(missing, [], `quotes not found in the extracts: ${missing.length}`);
+});
+
+test('a flight trial is offered as one method, not required', () => {
+  // The clause says "e.g.", and it names a second method. If a future edition
+  // drops the alternative, this should fail rather than the tool quietly
+  // continuing to say a trial is optional.
+  assert.match(FLIGHT_CHECK.methodIsAChoice.quote, /e\.g\./);
+  assert.match(FLIGHT_CHECK.methodIsAChoice.quote, /targets of opportunity/i);
+  assert.equal(FLIGHT_CHECK.dedicatedWindFarmProcedure, false);
+});
+
+test('no wind farm flight check procedure is claimed that the document does not contain', () => {
+  // The claim is a negative, so test the negative: the wind turbine section
+  // must contain no flight profile of its own. If a later edition adds one,
+  // these strings appear and the module is then wrong.
+  const sur13 = squash(readFileSync(resolve(root, SUR13.evidence), 'utf8'));
+  for (const phrase of ['flight check procedure', 'flight inspection profile',
+    'wind farm flight trial procedure', 'standard flight profile']) {
+    assert.ok(!sur13.toLowerCase().includes(phrase),
+      `SUR 13 contains "${phrase}": dedicatedWindFarmProcedure is now wrong`);
+  }
+});
+
+test('the ICAO testing manual is declared unread rather than summarised', () => {
+  assert.match(FLIGHT_CHECK.methodologyElsewhere.unverified, /NOT been read/);
+  assert.match(FLIGHT_CHECK.methodologyElsewhere.quote, /Doc 8071/);
+});
+
+test('flight inspection is kept separate from a radar flight trial', () => {
+  assert.match(FLIGHT_CHECK.notTheSameAsFlightInspection, /navigation aids/i);
+  assert.match(FLIGHT_CHECK.notTheSameAsFlightInspection, /Volume II/);
 });
