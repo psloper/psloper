@@ -1,3 +1,4 @@
+import { PROVENANCE as EC_STD, PSR as EC_PSR, SSR as EC_SSR } from './eurocontrol.js';
 // Evidence register.
 //
 // Every model component and every screening threshold in this tool traces to
@@ -78,6 +79,45 @@ export const REFERENCES = [
       + 'cross-section, no standard RCS can be identified for micro, medium or large turbines, and the '
       + 'CAA endorses no single radar modelling tool.',
     caution: 'Edition not confirmed. Confirm the current edition and the figures before citing them.',
+  },
+  {
+    id: 'eurocontrol-radar-surveillance-1997',
+    // Taken from the module that holds the quotes, so the register and the
+    // document cannot drift apart.
+    title: `${EC_STD.title}, ${EC_STD.reference}, ${EC_STD.edition}`,
+    org: 'EUROCONTROL',
+    year: 1997,
+    type: 'Standard',
+    supports: ['The default probability of detection of 0.9'],
+    status: 'read',
+    reports: 'Named in this tool as the document most likely to carry a reference target '
+      + 'different from CAP 670\u2019s 1 square metre. It carries none. Section 6.2.1.3 requires the '
+      + 'measured sample to be representative of the whole aircraft population "irrespective of '
+      + 'radar cross sections", so performance is established against real traffic rather than a '
+      + 'defined target. The words Swerling, dBsm, echoing area, reference target and test target '
+      + 'do not appear in it. What it does set, both as Recommendations, is an overall probability '
+      + `of target position detection above ${EC_PSR.detection.pd * 100}% for PSR `
+      + `(${EC_PSR.detection.ref.replace('Section ', '')}) and above ${EC_SSR.detection.pd * 100}% for SSR `
+      + `(${EC_SSR.detection.ref.replace('Section ', '')}), `
+      + 'with fewer than 20 false target reports per antenna scan for PSR (6.4.2.2). On '
+      + 'verification, 8.2.2.1 allows opportunity traffic or special test flights, and its note '
+      + 'says test flights are normally used only where a special aircraft configuration is needed '
+      + 'or where opportunity traffic rarely passes.',
+    validation: 'Read from a .docx conversion of the published PDF supplied by the user. The '
+      + 'relevant sections are stored at '
+      + 'docs/evidence/eurocontrol-radar-surveillance-std-1997.txt and every quote in '
+      + 'js/eurocontrol.js is checked verbatim against that file by test/eurocontrol.test.mjs. '
+      + 'The absence of a reference target is tested as a negative: the test fails if the extract '
+      + 'ever contains Swerling, dBsm, echoing area, reference target or test target. Mutation '
+      + 'tested three ways, all caught: claiming a reference target exists, changing the PSR '
+      + 'figure from 90% to 95%, and calling the Recommendation a Requirement.',
+    caution: 'Edition 1.0 is dated March 1997. EUROCONTROL has since published a Specification '
+      + 'for ATM Surveillance System Performance which may supersede this Standard in whole or '
+      + 'in part, and that has NOT been checked: eurocontrol.int is unreachable from the '
+      + 'environment this tool was built in and the later document was not supplied. Both '
+      + 'headline figures are Recommendations in the document\u2019s own terms, not requirements. '
+      + 'Its accuracy and false target criteria are acceptance figures for a measured radar and '
+      + 'are not comparable with anything this tool predicts, so nothing here is gated on them.',
   },
   {
     id: 'cap670-sur13',

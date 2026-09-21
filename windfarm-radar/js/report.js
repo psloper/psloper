@@ -186,10 +186,14 @@ to assert the performance of any aircraft.</p>
       is primary radar only.</li>
   <li>Real terrain, unless you import it. The default surface is synthetic and controlled by the
       terrain panel; masking conclusions from synthetic terrain mean nothing for a real site.</li>
-  <li><strong>Regulatory conformance.</strong> Nothing here has been checked against ICAO, EUROCONTROL
-      or any national requirement, and no such document was retrieved or read. The tool computes
-      physics. It does not know what any authority requires. Do not present any output as showing
-      conformance with anything.</li>
+  <li><strong>Regulatory conformance.</strong> Two documents have now been read and their figures
+      recorded with the quotes they came from: CAA CAP 670 (Third Issue, Amendment 1/2019) and the
+      EUROCONTROL Standard for Radar Surveillance in En-Route Airspace and Major Terminal Areas
+      (SUR.ET1.ST01.1000-STD-01-01, Edition 1.0, March 1997). Exactly one figure this tool uses is
+      supported by them: the default probability of detection of 0.9, which both recommend for a
+      conventional primary radar. Nothing else here has been checked against any requirement, and no
+      ICAO document has been read at all. The tool computes physics. It does not know what any
+      authority requires. Do not present any output as showing conformance with anything.</li>
   <li><strong>Where the real UK sites come from.</strong> The site picker places a real wind
       farm against a real civil radar. Farm positions are facility centroids from the UK
       Renewable Energy Planning Database by way of WRI's Global Power Plant Database v1.3.0

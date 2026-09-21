@@ -256,6 +256,79 @@ Two things worth not confusing:
   citing ICAO Doc 8071 **Volume II**. A surveillance radar flight trial is a
   different activity and none of the FLI requirements carry across.
 
+## Cross-check: the EUROCONTROL standard
+
+I named this as the document most likely to carry a reference target different
+from CAP 670's 1 m². It was then supplied, and read:
+
+> EUROCONTROL Standard Document for Radar Surveillance in En-Route Airspace and
+> Major Terminal Areas, **SUR.ET1.ST01.1000-STD-01-01, Edition 1.0, March 1997**
+
+**It carries no reference target at all, and it says why.**
+
+> **6.2.1.3** — "The sample taken shall be representative of the whole
+> population of aircraft to which air traffic services are provided,
+> **irrespective of radar cross sections** and clutter environments for PSR
+> sensors, and irrespective of transponder deficiencies for SSR sensors."
+
+Where CAP 670 names a 1 m² target to confirm the edge of coverage, this
+Standard measures the radar against whatever is actually flying. The words
+*Swerling*, *dBsm*, *echoing area*, *reference target* and *test target* do not
+appear anywhere in it, and no radar cross section figure is given in any units.
+That is tested as a negative: the suite fails if the stored extract ever
+contains one of those words.
+
+So neither document defines a test aeroplane. If you have heard that
+EUROCONTROL specifies a 2 m² target, it is not in this Standard.
+
+### What it does set, and it agrees with CAP 670
+
+| Figure | Clause | Force |
+|---|---|---|
+| Overall probability of target position detection **> 90%**, PSR | 6.4.2.1 | **Recommendation** (6.4.1 says "should") |
+| Overall probability of detection **> 97%**, SSR | 6.3.2.1 | **Recommendation** (6.3.1) |
+| Average false target reports per antenna scan **< 20**, PSR | 6.4.2.2 | Recommendation |
+| PSR accuracy: range bias < 100 m, azimuth bias < 0.1°, random range < 120 m, azimuth < 0.15° | 6.4.3.1 | Recommendation |
+
+The 90 and 97 match **CAP 670 SUR 02.40** exactly. Two independent documents
+reaching the same pair means the tool's default probability of detection of 0.9
+is corroborated, not merely sourced. Both are recommendations in their own
+documents' terms, and the tool says so.
+
+### On flight checks, it agrees too, and is more explicit
+
+> **8.2.2.1** — "The data to be used for performance verification shall be live
+> radar data obtained from opportunity traffic or from special test flights."
+>
+> **Note** — "Special test flights will normally be used only in two cases:
+> to measure performance parameters which require special aircraft
+> configurations; to measure performances in parts of the airspace where
+> opportunity traffic rarely passes."
+
+A test flight is the **exception**, not the method. A wind farm case is usually
+the second one: the question is cover over a particular piece of airspace that
+ordinary traffic may not fly often enough to measure.
+
+Two further conditions worth carrying:
+
+- **8.2.2.2** — at least **50,000 data samples** over hour-long periods, during
+  peak traffic.
+- **8.2.2.2** — "Data collected during conditions of severe weather or
+  **anomalous propagation** should not be used to verify PSR performance."
+  This tool lets you run at k = 2 and in a surface duct, which *is* anomalous
+  propagation. Those runs explore sensitivity; they are not the conditions in
+  which measured performance should be established.
+- **8.1.3** — re-assess at regular intervals, by permanent monitoring or annual
+  measurement campaigns.
+
+### The caution on all of it
+
+Edition 1.0 is dated **March 1997**. EUROCONTROL has since published a
+Specification for ATM Surveillance System Performance which may supersede this
+Standard in whole or in part. **That has not been checked**: eurocontrol.int is
+unreachable from here and the later document was not supplied. Treat these as
+the 1997 Standard's figures, not as current EUROCONTROL policy.
+
 ## What was not checked
 
 Whether a Supplementary Amendment supersedes the 1 August 2019 edition. The CAA
@@ -267,10 +340,10 @@ extended squitter or multilateration, and none carries a primary radar target
 size; but Annex 10 was not available here, so its absence of a PSR target is
 unverified rather than established.
 
-The **EUROCONTROL Standard for Radar Surveillance in En-Route Airspace and
-Major Terminal Areas**, which is the document most likely to carry a different
-reference target figure. `eurocontrol.int` is blocked by the network policy of
-the environment this was built in. Nothing from it is asserted here.
+~~The EUROCONTROL Standard for Radar Surveillance in En-Route Airspace and
+Major Terminal Areas.~~ **Now read.** It was supplied directly after this was
+written. See the section below; it carries no reference target, and its
+detection figures corroborate CAP 670's.
 
 **ICAO Doc 8071 Volume 3, Testing of Surveillance Radar Systems.** CAP 670
 points at it twice as where radar testing methods live (SUR 13A.246, and a note

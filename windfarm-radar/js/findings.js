@@ -1112,7 +1112,10 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
     id: 'regulatory',
     severity: 'check',
     title: 'Regulatory conformance is NOT assessed by this tool',
-    detail: 'Nothing here has been checked against ICAO, EUROCONTROL, or any national requirement. '
+    detail: 'CAP 670 and the EUROCONTROL radar surveillance Standard have been read, and one '
+      + 'figure this tool uses is supported by both: the default probability of detection of 0.9 '
+      + 'for a conventional primary radar. Nothing ELSE here has been checked against any '
+      + 'requirement, and no ICAO document has been read. '
       + 'The tool computes physics; it does not know what any authority requires, what thresholds '
       + 'trigger an objection, what an aerodrome safeguarding case has to contain, or what evidence a '
       + 'planning submission needs. Do not present any output of this tool as showing conformance with '

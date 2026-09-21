@@ -1,0 +1,822 @@
+EUROCONTROL Standard Document for Radar Surveillance in En-Route Airspace
+and Major Terminal Areas
+SUR.ET1.ST01.1000-STD-01-01, Edition 1.0, March 1997, Released Issue
+
+Extract: the measurement basis (6.2.1), SSR detection requirements (6.3),
+PSR detection and quality requirements (6.4), and performance verification (8).
+
+Taken from the .docx supplied by the user, text layer only. Tables and
+figures are not reproduced. This file exists so the quotes in
+js/eurocontrol.js can be checked against the document by
+test/eurocontrol.test.mjs.
+
+--- 6.2.1 measurement basis ---
+6.2.1.2 "Overall", when used, means that the measurement method shall be applied without geographical restrictions to the whole sample of the recorded data obtained from opportunity traffic.
+6.2.1.3 The sample taken shall be representative of the whole population of aircraft to which air traffic services are provided, irrespective of radar cross sections and clutter environments for PSR sensors, and irrespective of  transponder deficiencies for SSR sensors.
+6.2.2 	Detection
+6.2.2.1 	General
+For  the detection capability the following performance indicators shall be used:
+target detection;
+target horizontal position determination; • 	false target reports; also for SSR only:
+multiple target reports;
+code detection (identification and height).
+NOTE - Due to the design of current radar systems all surveillance target data output includes position information; there are no detected targets that do not have this information included. Therefore the performance indicators target  detection and target position when measured will yield identical results. They can therefore be considered to be replaced by a single performance indicator target position detection.
+6.2.2.2 	Target Position Detection
+6.2.2.2.1 The target position detection performance shall be expressed by the overall probability of detection.
+NOTE - Probability of detection is the probability that for a given aircraft, at each scan, a radar target report with positional data is produced.
+6.2.2.2.2 The probability of detection shall be determined by the ratio of the number of target reports to the total number of expected reports, as defined by the measurement method.
+
+--- 6.3 SSR ---
+6.3 	Performance Requirements for SSR Sensors
+6.3.1 	General
+Recommendation  The SSR sensors should satisfy the performance requirements detailed in 6.3.2 and 6.3.3 below.
+NOTE - The currently recommended figures are considered to be relevant to monopulse SSR systems.
+6.3.2 	Detection Requirements
+6.3.2.1 	Target Position Detection
+	 	Overall probability of detection:	> 97 %
+6.3.2.2 	False Target Reports
+	 	Overall false target report ratio:	< 0.1 %
+6.3.2.3 	Multiple SSR Target Reports
+ 	Overall multiple SSR target report ratio:	< 0.3 %  	Multiple SSR target report ratios:
+from reflections :	< 0.2 %
+from sidelobes :	< 0.1 %
+from splits :	< 0.1 %
+6.3.2.4 	Code Detection
+ 	Overall Mode A probability of code detection:	> 98 %  	Overall Mode C probability of code detection:	> 96 %
+
+--- 6.4 PSR ---
+6.4 Performance Requirements For PSR Sensors	PAGEREF _Toc152783 \h34
+6.4.1 General	PAGEREF _Toc152784 \h34
+6.4.2 Detection Requirements	PAGEREF _Toc152785 \h34
+6.4.3 Quality Requirements	PAGEREF _Toc152786 \h35
+6.4.4 Availability Requirements	PAGEREF _Toc152787 \h35
+6.5 PSR/SSR Data Combining	PAGEREF _Toc152788 \h36
+6.6 Transmission of Target Reports	PAGEREF _Toc152789 \h36
+6.7 On-Site Processing Delay	PAGEREF _Toc152790 \h36
+7. PERFORMANCE REQUIREMENTS FOR RADAR DATA PROCESSING	PAGEREF _Toc152791 \h37
+7.1 Radar Data Processing Performance Description	PAGEREF _Toc152792 \h37
+7.2 Tracking Performance Characteristics	PAGEREF _Toc152793 \h37
+7.2.1 General	PAGEREF _Toc152794 \h37
+7.2.2 Track Initiation	PAGEREF _Toc152795 \h38
+7.2.3 Track Continuity	PAGEREF _Toc152796 \h38
+7.2.4 Accuracy	PAGEREF _Toc152797 \h39
+7.3 Availability	PAGEREF _Toc152798 \h39
+7.4 Tracking Performance Requirements	PAGEREF _Toc152799 \h40
+7.5 Availability Requirements	PAGEREF _Toc152800 \h40
+8. PERFORMANCE  VERIFICATION REQUIREMENTS	PAGEREF _Toc152801 \h41
+8.1 General	PAGEREF _Toc152802 \h41
+8.2 Verification Process	PAGEREF _Toc152803 \h41
+8.2.1 General	PAGEREF _Toc152804 \h41
+8.2.2 Data	PAGEREF _Toc152805 \h42
+8.2.3 Measurement Methods	PAGEREF _Toc152806 \h42
+8.2.4 Tools	PAGEREF _Toc152807 \h42
+
+EXECUTIVE SUMMARY
+This document constitutes the Eurocontrol Standard concerning the requirements for independent (primary) and cooperative independent (secondary) radar surveillance for application in the provision of Air Traffic Services (ATS). The purpose of  this Standard is to contribute to the improvement of the capacity whilst maintaining, or improving, the present level of safety.
+As an integral part of Air Traffic Management (ATM), radar positional data constitutes the principal means of surveillance of aircraft for the efficient execution of air traffic control. This Standard details common criteria, with the aim of achieving the optimal use of the radar surveillance function and the harmonised application of radar separation minima, in line with the objectives for radar surveillance as contained in the European Civil Aviation Conference (ECAC) EnRoute Strategy for the 1990s adopted by Transport Ministers of ECAC States at Paris in April 1990 and in the  EWPD and the EATCHIP Convergence and Implementation Programme Document (CIPD).
+In accordance with the ECAC En-Route Strategy, comprehensive radar coverage is to be completed throughout the continental ECAC area, which includes the airspace of all ECAC Member States except for Iceland, by 1995 at the latest.   A common en-route radar separation of 5 nautical miles (NM) is to be implemented throughout high-density traffic areas.  Elsewhere, en-route radar separation of not more than 10 NM is to be implemented.
+In accordance with the ECAC Strategy and its related documents (EWPD and CIPD), a common radar separation standard of 3 NM is to be implemented in major terminal areas.
+In order to ensure the uninterrupted provision of radar services on as wide a scale as possible, and the application of specific radar separation standards, it is essential to have comprehensive and continuous radar coverage of high quality and reliability.  This may be achieved either by optimising the use of existing facilities, by installing new radar facilities or by sharing the use of radar stations.
+Air Traffic Control (ATC) radar facilities within Europe vary from the minimal to state-of-the-art systems, and hence a stepped implementation programme is required with priorities defined according to the most urgent air traffic service requirements. This Standard therefore serves as the basis for the planning and implementation of radar facilities, and for obtaining the required improvements to existing systems. The material deals with state-of-the-art radar systems, though mention is made in context, of future developments.
+Target dates for the implementation of new radar equipment or the upgrading of existing radar facilities in accordance with this Standard are provided within the current edition of the CIPD.
+The currently proposed overall implementation dates are given in the CIPD as follows:
+basic reference levels implementation by 1995;
+advanced reference levels implementation by 1998.
+	NOTE - 	The definitions of these reference levels are given in the CIPD.
+This page is intentionally left blank
+FOREWORD
+1.	Responsible Body
+This Standard has been developed jointly by the Radar Applications Specialist
+Panel (RASP) and the Radar Systems Specialist Panel (RSSP) of the European Organisation for the Safety of Air Navigation (Eurocontrol) and is maintained by the Surveillance Team (SURT) of the European Air Traffic Control (ATC) Harmonization and Integration Programme (EATCHIP).
+2.	EATCHIP Work Programme Document
+This Standard is identified as deliverable 01 in the EATCHIP Work Programme Document (EWPD), Surveillance Domain, Executive Task 01, Specialist Task 01.
+3.	Approval of the Standard
+3.1 The Eurocontrol Permanent Commission adopted this Standard in accordance with the procedures outlined in the Directives for Eurocontrol Standardisation Ref. 002 -2 -93.
+3.2	This Standard becomes effective from the adoption date of 28th January 1997.
+4.	Technical Corrigenda and Amendments
+This Standard is kept under review to ascertain required amendments or technical corrigenda.  The procedure for the maintenance of this Standard is laid down in Annex H of the Directives for the Uniform Drafting and Presentation of Eurocontrol Standard Documents Ref.  000 - 1- 92.
+5.	Editorial Conventions
+5.1 The format of this Standard complies with the Directives for the Uniform Drafting and Presentation of Eurocontrol Standard Documents.
+5.2 The following practice has been adhered to in order to indicate at a glance the status of each statement:
+Normative Elements have been printed in light face roman;
+Recommended Elements have been printed in light face italics, the status being indicated by the prefix Recommendation.
+5.3	The following editorial practice has been followed in the writing of specifications:
+for Normative Elements the operative verb "shall" is used;
+for Recommended Elements the operative verb "should" is used.
+6 	Relationship to Other Standard Documents
+This Standard is related to:
+6.1	Eurocontrol 	Standard 	for 	Radar 	Data 	Exchange 	(ASTERIX)
+Ref.:  005 - 93
+6.2	International Civil Aviation Organization (ICAO) :
+Annex 5
+"Units of Measurement to be used in Air and Ground Operations"
+Annex 10
+"Aeronautical Telecommunications, Volume I"
+Annex 11
+"Air Traffic Services"
+Doc 4444
+"Rules of the Air and Air Traffic Services"
+Doc 7030
+"Regional Supplementary Procedures"
+Doc 7754
+"Air Navigation Plan - European Region"
+7 	Status of Annexes to This Standard
+The Annexes to this Standard have the following status:
+Annex A - Informative
+Annex B - Informative
+Annex C - Informative
+Annex D - Informative.
+Annex E - Informative
+Annex F - Informative
+8	Language Used
+The English language has been used for the original text of this Standard.
+
+1. 	SCOPE
+1.1 This Eurocontrol Standard specifies the essential criteria for radar surveillance in en-route airspace and major terminal areas.
+The scope of the requirements pertains to the radar surveillance function for both en-route and major terminal areas, Secondary Surveillance Radar (SSR) code assignment and carriage of transponders.
+1.2 The specific requirements for radar surveillance in the final approach phase to aerodromes in major terminal areas are not covered by this Standard.
+1.3 This Standard applies to all aircraft except for the performance requirements of the tracker which are limited to the population defined in Annex A.
+1.4 Figure 1 shows the relationship between airspace types and services, operational requirements and the surveillance equipment that need to be specified.
+1.5 The illustration at Figure 2 gives a technical and functional overview of the radar chain.  These functions can be performed using different system layouts.  The radar station-to-centre transmission system is not shown.
+1.6 The technical performance requirements within this Standard are limited to elements of the radar chain.   The elements involved in the radar chain are SSR transponders, radar sensors, radar data transmission system, radar data processing system, radar data display system. Technical performance requirements for the radar data processing system are limited to the tracking parts only, furthermore, those for the radar data transmission and the radar data display systems are not covered by this Standard.
+1.7 The technical performance parameters laid down in this Standard are not intended to describe exhaustively the performance of a radar chain. Only those parameters which are measurable using Eurocontrol agreed analysis methods are included.
+1.8 In addition to radar surveillance, other functions make use of data derived from the radar chain, such as:
+flight plan processing;
+code call sign association;
+conflict detection and alert; • 	minimum safe altitude warning;
+flight profile calculation.
+Performance requirements for radar data to be used by such functions are not taken into account in this Standard.
+1.9 An indication of future developments in the field of radar surveillance is given in Annex B.
+
+Figure 1 -  Relationship between Airspace Types and Services, Operational Requirements and the Surveillance Equipment.
+
+Figure 2  -  Technical and Functional Overview of the Radar Chain
+2. 	REFERENCES
+2.1	The following documents and standards contain provisions which, through
+reference in this text, constitute provisions of this Eurocontrol Standard.
+At the time of publication of this Eurocontrol Standard Document, the editions indicated for the referenced documents and standards were valid.
+Any revision of the referenced ICAO Documents shall be immediately taken into account to revise this Eurocontrol Standard.
+Revisions of the other referenced documents shall not form part of the provisions of this Eurocontrol Standard until they are formally reviewed and incorporated into this Eurocontrol Standard Document.
+In the case of conflict between the requirements of this Eurocontrol Standard and the contents of the other referenced documents, this Eurocontrol Standard shall take precedence.
+2.2	CIPD	EATCHIP Convergence and Implementation Programme
+Document. Edition 1,  October 1993.
+	EWPD	EATCHIP 	Work 	Programme 	Document 	Level 	2.
+Edition 2, June 1994
+Directives for the Uniform Drafting and Presentation of Eurocontrol
+Standard Documents.  Edition 1.  Ref.  000 - 1 - 92
+Directives for Eurocontrol Standardisation.  Edition 1.  Ref.  000 - 2 -93
+Eurocontrol Standard for Radar Data Exchange (ASTERIX). Ref. SUR.ET1.ST05.2000-STD-01-01
+ICAO Annex 5 :	Units of Measurement to be used in Air and Ground Operations.  4th Edition, July 1979
+	ICAO Annex 10 :	Aeronautical Telecommunications - Volume 1. 4th Edition,
+April 1985. Amendment Level 69
+This page is intentionally left blank
+3. 	DEFINITIONS, SYMBOLS AND ABBREVIATIONS
+3.1 	Definitions
+For the purposes of  this Eurocontrol Standard Document, the following
+3.1.1 Duplicated SSR Coverage:  Duplicated SSR coverage means that for a given point in space, the radar data used by an ATS unit for the surveillance function are derived from at least two independent Secondary Surveillance Radar (SSR) sources working simultaneously.
+3.1.2	En-Route Airspace:  En-route airspace is the volume of airspace outside
+terminal areas, where  the climb, cruise and descent phases of flight take place and within which various types of air traffic services are provided.
+3.1.3 Major Terminal Area:   A major terminal area is the volume of airspace surrounding one or more principal  aerodromes.  The lateral extent will  vary, depending on the disposition of aerodromes within, or adjacent to the terminal area.  The vertical dimensions will vary with the way the airspace and the procedures for handling the air traffic flow are organised.
+3.2 	Symbols and Abbreviations
+For the purposes of this Eurocontrol Standard document, the following are used :
+	ACC	Area Control Centre
+	ADS	Automatic Dependent Surveillance
+	AENA	Aeropuertos Espanoles y Navegacion Aerea
+	AFTN	Aeronautical Fixed Telecommunications Network
+	ARTAS	ATC Radar Tracker and Server
+	ASR	Airport Surveillance Radar
+ASTERIX	All purpose STructured Eurocontrol Radar Information EXchange
+	ATARS	Automatic Traffic Avoidance and Resolution System
+	ATC	Air Traffic Control
+	ATCC	Air Traffic Control Centre
+ATM	Air Traffic Management ATS	Air Traffic Services
+bit	Binary Digit bps	bits per second
+	CAA	Civil Aviation Authority
+CIPD	EATCHIP Convergence and Implementation Programme Document
+	CWP	Controller Working Position
+
+dB
+Decibels
+DDE
+Dynamic Data Exchange
+Deg
+Degrees
+DGAC
+Director/Directorate General of Civil Aviation
+DOS
+Disk Operating System
+EASIE
+Enhanced ATM and Mode S Implementation in Europe
+EATCHIP
+European ATC Harmonization and Integration Programme
+ECAC
+European Civil Aviation Conference
+EEC
+Eurocontrol Experimental Centre
+EFP
+Spain, France, Portugal
+ETA
+Estimated Time of Arrival
+ETO
+Estimated Time Over Significant Point
+Eurocontrol
+European Organisation for the Safety of Air Navigation
+EWPD
+EATCHIP Work Programme Document
+FAA
+Federal Aviation Administration
+FDPS
+Flight Data Processing System
+FIR
+Flight Information Region
+FL
+Flight Level
+FPPS
+Flight Plan Processing System
+FTmn
+False Track Length Mean
+FTprob
+False Track Probability
+FTsd
+False Track Length Standard Deviation
+Gb
+Gigabyte ( equivalent to 1 073 741 824 bytes)
+GTr
+Ghost Track Rate
+h
+Hours
+HSM
+High Speed Modem
+Hz
+Hertz
+ICAO
+International Civil Aviation Organization
+IFR
+Instrument Flight Rules
+IOSS
+Input-Output Sub-System
+IRF
+Interrogation Repetition Frequency
+IRT
+Interrogation Repetition Time
+KARLDAP
+Karlsruhe Automatic Data Processing System
+km 
+Kilometres
+kt
+Knots
+LAN
+Local Area Network
+
+m
+Metres
+MADAP
+Maastricht Automatic Data Processing System
+MB
+Megabyte ( equivalent to 1 048 576 bytes)
+MHz
+Megahertz  (equivalent to 1 million hertz)
+min
+Minutes
+MOF
+Mode-of-Flight
+ms
+Milliseconds
+MSAW
+Minimum Safe Altitude Warning
+MSSR
+Monopulse Secondary Surveillance Radar
+MURATREC
+Multi Radar Trajectory Reconstitution Programme
+NM
+Nautical Mile
+OAT
+Operational Air Traffic
+OC
+Object Correlator
+OLDI
+On-Line Data Interchange
+OM
+Ministerial Order
+ORCAM
+Originating Region Code Assignment Method
+PATs
+PHARE Advanced Tools
+PD
+Probability of Detection
+PDP
+Polar Plot Diagram
+PHARE
+Programme for the Harmonisation of ATM Research in Eurocontrol
+PSR
+Primary Surveillance Radar
+RADNET
+RAdar Data NETwork
+RASCAL
+Radar Sharing Calculation
+RASP
+Radar Applications Specialist Panel
+RASS-C
+Radar Analysis Support System for ATC Centres
+RASS-S
+Radar Analysis Support System for ATC Sensors
+RDPS
+Radar Data Processing System
+RF
+Radio Frequency
+RMS
+Root Mean Square
+RSS
+Radar Sub-System
+RSSP
+Radar Systems Specialist Panel
+RTQC
+Real Time Quality Control
+s
+Seconds
+SSR
+Secondary Surveillance Radar
+STCA
+Short-Term Conflict Alert
+STNA
+Service Technique de la Navigation Aerienne
+SURT
+EATCHIP Surveillance Team
+tau Greek letter representing time TAR Terminal Area  Surveillance Radar
+	TCAS	Traffic Alert and Collision Avoidance System
+	TDr	Track Drop Rate
+	TIDmn	Track Initiation Delay Mean
+	TIDsd	Track Initiation Delay Standard Deviation
+	TMA	Terminal Control Area
+	TSr	Track Swop Rate
+	TSS	Traffic Sub-System
+	TTL	Transistor-Transistor Logic
+	UAC	Upper Area Control Centre
+	UNIX	UNiplexed Information and Computing Service
+	UTC	Coordinated Universal Time
+	VFR	Visual Flight Rules
+4. 	GENERAL REQUIREMENTS
+4.1 	Radar Services
+4.1.1 Radar services shall be provided for the separation of aircraft throughout European en-route airspace and  in major terminal areas to ensure the efficient handling of increasing traffic volumes in a safe, orderly and expeditious manner.
+4.1.2	The performance of the radar surveillance system shall enable the controller to
+provide a horizontal separation minimum of 5 NM in high density en-route airspace, 10 NM in other en-route airspace and 3 NM in major terminal areas.
+NOTE - 	High density areas and major terminal areas are identified in the CIPD.
+4.1.3 Areas where the volume or characteristics of the traffic do not warrant the provision of radar services to the level of this Standard are eligible for exemptions and shall be identified.
+	NOTE - 	The CIPD is the instrument for the endorsement of the exemptions.
+4.1.4 Recommendation   The provisions of this Standard should apply for services to Operational Air Traffic (OAT) to the extent necessary for the flexible use of airspace and the joint use of radar facilities in accordance with arrangements agreed between the authorities concerned.
+4.2 	Coverage
+4.2.1. In accordance with the ECAC Implementation Objective 1, the radar coverage required to support both terminal and en-route air traffic services shall be:
+EN-ROUTE AIRSPACE :
+DUPLICATED SECONDARY SURVEILLANCE RADAR COVERAGE
+MAJOR TERMINAL AREA :
+DUPLICATED SECONDARY SURVEILLANCE RADAR
+COVERAGE;
+SINGLE  PRIMARY  SURVEILLANCE  RADAR  COVERAGE
+	NOTE -	The definitions for the above will be found in paragraph 3.1,
+Definitions. 
+Areas of low traffic density where different coverage meets the specific local operational requirements for radar services could be eligible for exemption from 4.2.1 and shall be identified.
+Areas where duplicated or even single SSR coverage is impossible to achieve due to geophysical limitations are eligible for exemption from 4.2.1 and shall be identified.
+NOTES
+Examples of geophysical limitations are over the high seas and in the vicinity of mountainous terrain.
+The CIPD is the instrument for the endorsement of exemptions.
+4.2.4	In implementing 4.2.1, radar data shall be shared to the maximum practicable extent.
+4.3 	Monopulse SSR
+4.3.1 SSR equipment installed in order to fulfil  the radar surveillance requirements of this Standard or to replace existing equipment shall be of the monopulse type.
+4.3.2 Recommendation  New Monopulse SSR (MSSR) systems should be capable of upgrading to Mode S enhanced surveillance functions.
+NOTE - The requirements for Mode S enhanced surveillance functions of a MSSR system are developed in the frame of the Eurocontrol programme " Initial Implementation of Mode S Enhanced
+Surveillance".
+4.4 	Radar Data Processing
+Recommendation  The Radar Data Processing System (RDPS), if necessary in conjunction with the Flight Plan Processing System (FPPS) should provide:
+Information to enable the complete display of aircraft trajectories to the controllers, (plot information, track information, vertical position, predicted position, vectors and speed).
+Data to support conflict detection and alert and minimum safe altitude warning functions.
+The ability to automatically link aircraft positional data, derived from the use of four digit Mode A SSR codes, with current flight plan data, for display to the controller.
+Updating of the current flight plan data based on the continual comparison of the aircraft's measured position by radar, and the calculated position based on the flight plan data, for example, to provide an updated estimated time over significant point (ETO) or an estimated time of arrival (ETA). It may also provide warnings of any deviation between the calculated and measured positions.
+NOTE - This list is not exhaustive.
+4.5 	SSR Code Assignment
+4.5.1 In order to utilise the radar service provided to the maximum, an efficient and unambiguous code assignment function shall be provided, by which individual Mode A SSR codes are assigned to aircraft, as prescribed in the ICAO Regional Plan.
+4.5.2 Recommendation  An automated code assignment system should be provided in order to support the management and efficient utilisation of Mode A codes according to the Originating Region Code Assignment Method (ORCAM).
+4.6 	SSR Transponders
+4.6.1 For the provision of air traffic control, the surveillance function depends upon the acquisition of the SSR information transmitted by aircraft. The radar chain performances specified in this Standard depend upon correctly functioning transponders. The transponders shall operate within the limits specified in ICAO Annex 10 Volume 1.
+4.6.2	Recommendations
+Airborne SSR equipment performance should be regularly verified and systematically monitored to ensure that the required functional standards are maintained.
+The conformity of the technical performance of the transponder to ICAO specifications should be verified at the time of  renewal of the aircraft Certificate of Airworthiness.
+4.6.3 The carriage and operation by aircraft of a transponder with Mode A 4096 Codes and automatic Mode C Pressure Altitude reporting capabilities shall be required for all flights conducted under  instrument flight rules (IFR), in accordance with the ICAO European Regional Supplementary Procedures as implemented by National regulations.
+4.6.4	Recommendations
+The carriage and operation of transponders by aircraft engaged in flights conducted in accordance with the visual flight rules (VFR) is recommended. National  regulations should be framed to cater for all the various interests involved, allow for adequate flexibility in application and avoid the imposition of unwarrantable requirements on certain categories of airspace users.
+In the interest of harmonization, regulations governing the carriage and operation of transponders should be decided and implemented, on a wide regional basis, in consultation with operators.
+4.7 	Common Time Reference
+4.7.1 Coordinated universal time (UTC) as specified in ICAO Annex 5 shall be used to time stamp radar data.
+4.7.2	Recommendation    Time Systems used for time stamping radar data should be synchronised to a common standard UTC source operating to an accuracy of +/5ms.
+5. 	OPERATIONAL REQUIREMENTS
+5.1 	Coverage Requirements
+5.1.1 	General
+5.1.1.1 Comprehensive and continuous radar coverage of high quality and reliability shall be constantly available in order to achieve radar operational separations of 3 NM, 5 NM and 10 NM.
+NOTE - Those defects in the radar coverage which do not hinder the provision of radar services are acceptable, e.g. gaps.
+5.1.1.2 	Radar stations shall be sited so that the zenithal gap in the radar coverage is
+either contained within the coverage of an adjacent radar, or is located so that the zenithal gap does not reduce the operational effectiveness of the radar service.
+5.1.2 	Major Terminal Areas
+5.1.2.1 Duplicated secondary and single primary surveillance radar coverage shall be provided within major terminal areas.  This combination assures the continuous availability of radar position information and enables provision of air traffic services to aircraft unable to respond to SSR interrogations.
+5.1.2.1 The coverage within major terminal areas shall extend from the lowest altitudes of the intermediate approach segments for the principal aerodromes concerned. Coverage elsewhere will extend from the minimum levels at which radar services are required to be provided, up to the upper limit of the terminal area.
+NOTE - The coverage requirements below the lowest altitudes of the intermediate approach segments can be met in accordance with local aerodrome conditions, provided  continuity of services for the major terminal area is ensured.
+5.1.2.3 Provision shall be made for the continuity of radar coverage in the areas interfacing with en-route airspace.
+5.1.3 	En-Route Airspace
+5.1.3.1 Except as provided for in 4.2.2 and 4.2.3, in en-route airspace, duplicated SSR coverage shall extend both from the minimum cruising levels up to the highest IFR cruising levels, and where radar services are required to be provided. Exemptions  are detailed in  sub-paragraphs 4.2.2 and 4.2.3.
+5.1.3.2 The horizontal extent of the coverage shall be to at least 30 NM beyond the area of responsibility of the relevant Area Control Centre (ACC), except where this is impossible to achieve due to geographical limitations.
+NOTE - Overlapping radar coverage in the areas of responsibility of adjacent air traffic control centres, or radar sharing, is a prerequisite for the systematic transfer of radar control of aircraft from one ACC to another while maintaining the required level of separation.
+5.1.4 	Shared Use of Radar Data
+5.1.4.1 Radar surveillance data from existing or new radar equipment shall be shared wherever it is practically possible and advantageous, in particular across neighbouring Flight Information Regions (FIR) boundaries.
+NOTES
+Sharing of radar data can be done on two levels, either at the level of target reports or at the level of processed data.
+Radar sharing will not only limit the costs of implementation, but will also avoid technical problems such as over interrogation. This will also enable the provision of coherent data for transfer between adjacent units.
+5.1.4.2 Recommendation   Some ATS units may have access to more comprehensive data processing systems than neighbouring subsidiary civil or military units. Where such a situation exists, means of providing the processed data from the main to the subsidiary units should be considered.
+5.1.4.3 Establishment of an Agreement for the sharing of radar data shall be made using the Eurocontrol agreed guidelines.
+NOTES
+A requirement for Eurocontrol guidelines has been identified.
+These guidelines could also be used on a national basis for the shared use of civil and military radars.
+Two examples of  International Administrative Agreements relative to the shared use of radar coverage are shown in Annex C.
+5.2 	Radar Surveillance Data Requirements
+5.2.1	The radar surveillance system shall provide the following information to be
+available for display to air traffic controllers:
+aircraft horizontal position and history;
+aircraft identification;
+aircraft vertical position;
+specific indication of Mode A special  codes (i.e.  7500,7600,7700);
+ground speed;
+status of the Track whether it is primary, secondary, combined or extrapolated.
+NOTE - Aircraft are identified  by the code/callsign association using flight plan related data. Only when the code/callsign association is not possible will the SSR Mode A code be used.
+5.2.2	Recommendations
+Although map information is not radar surveillance derived data it should be available for display at all times to the controller for the proper provision of radar services.
+The following additional information should be available  for display  to the controller:
+– recognition of additional special purpose Mode A codes; – track prediction vectors.
+NOTES
+Additional flight information such as aircraft type, wake turbulence category, departure/destination  aerodrome and routing may be displayed to the controller.
+An indication of significant weather may be displayed to the controller.
+The display of this data depends upon the specific requirements of the appropriate authority.
+When Short-Term Conflict Alert (STCA) and  Minimum Safe Altitude Warning (MSAW) are in operational use, it is expected that the relevant warnings are displayed to the controller.
+5.2.3 The positional accuracy of the surveillance radar data available, at the control position, shall have an error distribution with a root mean square (RMS) value equal to or less than 500 metres (m) for en-route airspace and equal to or less than 300 metres (m) for major terminal areas.
+5.2.4 Surveillance information updates shall enable the display updates to  be no more than 5 seconds (s) for major terminal areas, and no more than 8 seconds (s) in en-route airspace. A maximum of 2 successive updates by extrapolation is acceptable for positional data.
+5.2.5	Mode C shall not be extrapolated for display.
+5.2.6	The radar surveillance infrastructure shall support the requirements in 5.2.
+	NOTE -	This can be achieved in a variety of ways:
+high performance sensors;
+the combination of information from co-located sensors
+(combined secondary and primary radar target reports);
+the combination of the information from sensors in different locations (independent of the terminal area or en-route function) by the processing of multiple radar inputs; – 	high performance multi-radar tracking.
+5.3 	Radar Surveillance Data Availability Requirements
+5.3.1 The following data are categorised as full and essential for the purposes of specifying the data availability requirements.
+5.3.1.1	Full data are :
+aircraft horizontal position and history;
+aircraft identification;
+aircraft vertical position;
+specific indication of Mode A special  codes (i.e.  7500,7600,7700);
+ground speed;
+status of the Track whether it is primary, secondary, combined or extrapolated.
+5.3.1.2	Essential data are:
+aircraft horizontal position and history;
+aircraft identification or Mode A code;
+aircraft vertical position.
+NOTE - Essential data for major terminal areas may not necessarily require the availability of Primary Surveillance Radar (PSR) data.
+5.3.2	The radar surveillance  data availability requirements are:
+full data availability shall be not less than 0.995, excluding periods of scheduled  maintenance;
+essential data availability shall be not less than 0.99999;
+PSR data availability for major terminal areas shall be not less than 0.995.
+5.3.3 The availability of radar surveillance data in full and reduced system performance status and maximum outage times shall be as given in Table 1.
+NOTES
+Full performance means that all elements and functions of the radar chain are operating normally to the performance requirements of this Standard.
+Reduced performance means that the performance of some element of the radar chain is below full performance. Depending on the circumstances, the provision of a radar service may or may not be affected.
+Table 1 - Radar Surveillance Data Availability
+System Status
+Availability
+(Equivalent Annual  Outage* Time)
+Maximum
+Instantaneous
+Outage* Time
+Full Data / Full Performance
+0.995 (44 h)
+4 h
+Full Data / Reduced Performance
+0.999 (9 h)
+10 min
+Essential Data
+0.99999 (6 min)
+10 s
+ NOTES
+The availability figures given above exclude all scheduled maintenance, all scheduled non-operational hours and "force majeure" events.
+The availability of the display system is not taken into account.
+*	Outage time means the time that the system  is not available. That means, for example, that the maximum allowed time for there to be no essential data is 6min per year and 10 seconds instantaneous.
+5.3.4	Recommendation   Technical measures should be employed to ensure
+graceful degradation of the system from full to reduced performance.
+NOTE -  Graceful degradation at the radar sensor level can be achieved by using e.g. parallel transmitter power amplifiers and distributed processing techniques.
+5.3.5 The performance of the display system shall be such that it will not degrade the quality of the surveillance data to the point of having an effect on the provision of a radar service.
+5.3.6 Warnings of significant failures within the radar chain, which may have an impact on flight safety and provision of air traffic services, shall be provided at the relevant control positions.
+5.3.7	Scheduled maintenance programmes which affect the provision of air traffic
+services shall be agreed and coordinated between ATS unit operational and technical staff and, when relevant, between adjacent ATS units.
+5.3.8 Recommendation   Scheduled maintenance should not exceed 24 hours over a period of 3 months.
+5.3.9	The radar surveillance infrastructure shall support the availability requirements in
+5.3
+	NOTE - 	This can be achieved in a variety of ways:
+duplicating the sensors;
+automatic switch-over facilities to an autonomous (back-up) radar station;
+the introduction of additional radar stations;
+"back-up" facilities;
+direct access radar channels;
+use of processed radar data from another source (e.g. a central server).
+5.3.10 The system architecture shall ensure that the failure of a single element in the radar chain will not seriously reduce ATC system capacity.
+5.4 	System Recording and Replay Facilities
+5.4.1	Radar surveillance data supplied to the display system shall be recorded continuously.
+NOTE - Recording and replay facilities are required for incident and accident investigation, search and rescue support, noise abatement, training, technical analysis and statistics.
+5.4.2 Recommendation The recording medium and mechanism should be such that a complete reconstruction of the surveillance data presentation, display settings and selections can be produced at the controller's display position.
+5.4.3 Administrative procedures shall be established for the retention and utilisation  of these recordings for analysis.
+5.4.4	Recommendation  Radar data recordings should be retained for at least 30 days.
+This page is intentionally left blank
+6. 	PERFORMANCE REQUIREMENTS FOR INDIVIDUAL RADAR SENSORS
+6.1 	Sensor Performance Description
+6.1.1 Radar coverage within a specified airspace shall be defined as being achieved when the detection, quality and availability performance requirements are satisfied.
+NOTES
+The performance requirements set out below are based on experience in the evaluation of existing radars on various sites, in different European countries, with different configurations, with different types of opportunity traffic and with different measurement methods. Full details of all the source material used in the determination and derivation of the performance requirements in this section are given in Annex D -  Supporting Documentation.
+The performance requirements stated in  6.3.2, 6.3.3, 6.4.2, 6.4.3 and 6.5 are currently recommended figures as commonly agreed measurement methods and tools are not yet available. When methods and tools have been agreed, normative figures will be specified.
+It is expected that the normative figures will differ only slightly from the currently recommended figures.
+The performances stated are related to target reports at the output of the radar station providing measured radar data after reduction of false data using mono-radar processing techniques (see Section 1, Figure 2: polished/filtered primary/secondary/combined target reports).
+It is accepted that the performance requirements for PSR may not be satisfied in case of very severe weather conditions or anomalous propagation conditions.
+6.1.2 Maximum range requirements, antenna turning rate and location of the installation shall be determined by the required main operational use (major terminal area or en-route) of the facility.
+NOTE - Coverage is mainly dependent upon the siting, the antenna type, the transmitted power, the pulse repetition frequency, the  receiver/ extractor/ processing, and for SSR sensors, the interrogation rate and the performance of aircraft transponders.
+6.2 	Sensor Performance Characteristics
+6.2.1 	General
+6.2.1.1 The characteristics hereafter shall apply to both PSR and SSR except where specifically mentioned otherwise.
+NOTES
+For each characteristic the parameter(s) to be used is(are) given as well as the practical method used to measure this(these) parameter(s).
+The principle on which these measurement methods are based is that for  a given aircraft trajectory a reference trajectory using track continuity properties is reconstituted a posteriori from recorded target reports. The recorded reports are assessed against the expected reports of the reference trajectory, as defined by the measurement method.
+6.2.1.2 "Overall", when used, means that the measurement method shall be applied without geographical restrictions to the whole sample of the recorded data obtained from opportunity traffic.
+6.2.1.3 The sample taken shall be representative of the whole population of aircraft to which air traffic services are provided, irrespective of radar cross sections and clutter environments for PSR sensors, and irrespective of  transponder deficiencies for SSR sensors.
+6.2.2 	Detection
+6.2.2.1 	General
+For  the detection capability the following performance indicators shall be used:
+target detection;
+target horizontal position determination; • 	false target reports; also for SSR only:
+multiple target reports;
+code detection (identification and height).
+NOTE - Due to the design of current radar systems all surveillance target data output includes position information; there are no detected targets that do not have this information included. Therefore the performance indicators target  detection and target position when measured will yield identical results. They can therefore be considered to be replaced by a single performance indicator target position detection.
+6.2.2.2 	Target Position Detection
+6.2.2.2.1 The target position detection performance shall be expressed by the overall probability of detection.
+NOTE - Probability of detection is the probability that for a given aircraft, at each scan, a radar target report with positional data is produced.
+6.2.2.2.2 The probability of detection shall be determined by the ratio of the number of target reports to the total number of expected reports, as defined by the measurement method.
+6.2.2.3 	False Target Reports
+6.2.2.3.1 SSR target reports generated by one or more of the following shall be classified as false target reports:
+asynchronous fruit;
+synchronous fruit;
+second time around replies.
+NOTES
+"Fruit" are replies received by a radar station generated by an aircraft transponder replying to an interrogation from a different radar station;
+asynchronous fruit is generated if the interrogation repetition times (IRT) of the two stations are different;
+synchronous fruit is generated if the IRT are identical;
+"Second time around replies" are generated by an aircraft situated at a distance beyond the maximum range defined by the IRT of the receiving radar station.
+6.2.2.3.2	The performance shall be expressed by the overall false target report ratio.
+NOTE - The false target report ratio is the number of false target reports in relation to the number of detected target reports.
+6.2.2.3.3	False PSR target reports shall  include those reports generated by:
+aircraft returns received through sidelobes of the antenna pattern;
+aircraft returns received during one scan of the antenna main beam through the target and split in several sequences either in azimuth or in distance;
+aircraft returns with large positional errors.
+NOTE - False PSR target reports may also be generated by weather, terrain, noise, clutter and other reflecting objects
+6.2.2.3.4 The performance shall be expressed by the average number of false target reports per antenna scan.
+6.2.2.4 	Multiple SSR Target Reports
+6.2.2.4.1	Multiple SSR target reports shall include all those reports generated by:
+replies from an aircraft interrogated by the radar station via an indirect path ( reflection);
+replies from an aircraft interrogated through a sidelobe of the directional antenna pattern and which are not inhibited by the sidelobe suppression antenna pattern (sidelobes);
+replies from an aircraft received during one scan of  the antenna main beam through the target and split in several sequences, either in azimuth or in distance (splits).
+6.2.2.4.2 Performance shall be expressed by overall multiple SSR  target report ratio and multiple SSR target report ratio classified by type, as shown in 6.2.2.4.1.
+6.2.2.4.3 The multiple target report ratio shall be the number of multiple target reports in relation to the number of detected target reports.
+6.2.2.5 	Code Detection
+6.2.2.5.1	The code detection performance shall be expressed by:
+overall Mode A probability of code detection;
+overall Mode C probability of code detection.
+6.2.2.5.2 Probability of code detection shall be the probability that, at each scan, for a given aircraft, a radar target report with correct validated code data, corresponding to the interrogation modes, is produced.
+6.2.2.5.3 The probability of Mode A/Mode C code detection shall be determined by the ratio of the number of target reports with correct Mode A/Mode C code data to the number of target reports used to calculate the target position detection.
+6.2.3 	Quality
+6.2.3.1 	General
+The quality of the data provided shall be expressed by the following characteristics:
+positional accuracy; • 	false code information;
+resolution.
+6.2.3.2 	Positional Accuracy
+6.2.3.2.1 The positional accuracy performances shall be expressed in terms of positional errors categorised as follows:
+systematic errors;
+random errors;
+jumps.
+NOTES
+Positional accuracy is the measure of the difference between the position of a target as reported by the sensor and the true position of the target at the time of detection.
+"Jumps" are target reports with positional errors higher than 1° in azimuth or 700 m in range.
+6.2.3.2.2	Performance for systematic errors shall be expressed by:
+slant range bias;
+slant range gain error;
+azimuth bias;
+time stamp error.
+NOTE - Time stamp error is the constant time difference between the time system used for plot detection time stamping and a common reference time.
+6.2.3.2.3	Performance for random errors shall be expressed by:
+slant range error standard deviation;
+azimuth error standard deviation.
+NOTE - Performance for height errors is provided by performance for false Mode C code information.
+6.2.3.2.4	Performance for jumps shall be expressed by the overall ratio of jumps.
+NOTES
+The ratio of jumps is the number of jumps in relation to the number of detected target reports.
+PSR jumps are considered within false target reports (see  6.2.2.3)
+6.2.3.3 	False Code Information
+Performance for false code information shall be expressed by:
+overall false codes ratio;
+validated false Mode A codes ratio;
+validated false Mode C codes ratio.
+NOTES
+Code information is considered as false, if in a target report, code information is provided which has been wrongly accepted as correct by the system (validated data).
+The false code information ratio is the number of target reports with false codes in relation to the number of detected target reports with code information.
+6.2.3.4 	Resolution
+6.2.3.4.1 The resolution performance shall be expressed by the probability of target position detection and in addition, for SSR the probability of code detection.
+	NOTE - 	The resolution is the capability of the sensor to discriminate between
+two aircraft in close proximity and to produce target reports for both. The probability of detection is applicable to each individual aircraft.
+6.2.3.4.2 Aircraft shall be considered in close proximity when their distance in slant range and azimuth is within the following limits:
+SSR:
+	slant range:	≤ 2 NM
+	azimuth:	≤ 2 x nominal 3 dB interrogation beamwidth
+PSR:
+	slant range corresponding to:	≤ 2 x nominal (compressed) pulse width
+	azimuth:	≤ 3 x nominal 3 dB beamwidth
+NOTE - The 3 dB beamwidth is the azimuth extent of the horizontal main beam pattern for the antenna, PSR or SSR,  as measured between the two points that are 3 dB below the peak of the horizontal main beam pattern. The measurement of the horizontal pattern being made at the elevation angle that corresponds to the vertical main beam peak.
+6.2.4 	Availability
+6.2.4.1	The availability of the data shall be expressed by the following characteristics:
+maximum outage time due to any given failure;
+cumulative outage time due to all failures over a period of one year;
+outage times due to scheduled actions.
+6.2.4.2 A sensor shall be considered unavailable if no radar target reports, including field monitor(s) are produced for more than 2 antenna scans.
+6.2.4.3 Recommendation   The assessment of the sensor availability should be made using means to obtain confirmation of system status and operation to the level of performance required by this Standard.
+NOTES
+Non availability due to "force majeure" events (e.g. lightning strike, exceptional winds, fire), or due to a major antenna system breakdown (e.g. replacement of the antenna), is not considered.
+The availability performance requirements stated in this part of the document apply if  the minimum number of radar stations necessary to fulfil the overall operational requirements are used for the radar surveillance function. Lower availability may be acceptable where a greater number of radar stations contribute, provided the overall operational availability requirements are satisfied.
+6.2.5 	PSR/SSR Data Combining
+Performance for PSR/SSR data combining shall be defined by:
+overall probability of association;
+overall false association rate.
+NOTES
+PSR/SSR data combining is the capability of the radar system to associate at each antenna scan the target reports of the same aircraft detected by the two sensors and to combine these reports into a single target report.
+The probability of association is determined by the ratio of the number of combined target reports in relation to the number of total expected combined reports, as defined by the measurement method.
+The association is defined as false, if the target reports from two unrelated targets detected by the two sensors have been associated.
+The false association rate is  the number of combined target reports resulting from a false association in relation to the total number of combined target reports.
+If this function is performed at the centre level, the same performance requirements apply.
+6.2.6 	On-Site Processing Delay
+The target report on-site processing delay shall be the time expressed in seconds between the moment a radar target for a given aircraft is detected and the moment when the corresponding report starts to be transmitted (see  6.1.1 note 4).
+6.3 	Performance Requirements for SSR Sensors
+6.3.1 	General
+Recommendation  The SSR sensors should satisfy the performance requirements detailed in 6.3.2 and 6.3.3 below.
+NOTE - The currently recommended figures are considered to be relevant to monopulse SSR systems.
+6.3.2 	Detection Requirements
+6.3.2.1 	Target Position Detection
+	 	Overall probability of detection:	> 97 %
+6.3.2.2 	False Target Reports
+	 	Overall false target report ratio:	< 0.1 %
+6.3.2.3 	Multiple SSR Target Reports
+ 	Overall multiple SSR target report ratio:	< 0.3 %  	Multiple SSR target report ratios:
+from reflections :	< 0.2 %
+from sidelobes :	< 0.1 %
+from splits :	< 0.1 %
+6.3.2.4 	Code Detection
+ 	Overall Mode A probability of code detection:	> 98 %  	Overall Mode C probability of code detection:	> 96 %
+6.3.3 	Quality Requirements
+6.3.3.1 	Positional Accuracy
+	 	Systematic errors:
+slant range bias:	< 100 m
+azimuth bias (degree):	< 0.1°
+slant range gain error:	< 1 m/NM
+time stamp error:	< 100 ms.
+	 	Random errors (standard deviation values):
+slant range:	< 70 m
+azimuth (degree):	< 0.08°
+	 	Jumps:
+overall ratio of jumps:	< 0.05 %
+6.3.3.2 	False Code Information
+Overall false codes ratio:	< 0.2 %
+Validated false Mode A codes:	< 0.1 %
+Validated false Mode C codes:	< 0.1 %
+6.3.3.3 	Resolution
+	 	The resolution requirements are given in Table 2.
+Table 2 - Resolution Requirements
+Area
+1
+2
+3
+Probability of target position detection
+>98%
+> 98%
+> 60%
+Probability of correct code detection
+>98%
+> 90%
+> 30%
+	 	The different areas are shown below:
+Dr (NM)
+±2
+
+2
+±0.05
+1
+
+3
+
+
+	   ± ∆θ1	  ± ∆θ2	∆θ (Deg)
+∆ρ, ∆θ are the differences of the two aircraft true positions in slant range and azimuth.
+∆θ2   =2 x  nominal 3 dB interrogation beamwidth.
+NOTES
+The figures of Table 2 correspond to performances averaged over the whole considered area.
+These figures can be achieved when operating under the following conditions:
+– 
+number of SSR interrogation mode (n) :
+2
+– 
+interrogation repetition frequency (f) :
+240Hz
+– 
+antenna rotation time (t) :
+10s
+– 
+100% reply detection
+
+– 
+same azimuthal extension for both aircraft.
+
+– 
+a typical value of ∆θ1 is to be expected at 0.6o
+
+– 
+∆θ1 is obtained by the following formula: 
+∆θ1  =  2 x n x 360 f x t
+Improved performances independent from operating conditions are expected when making full use of monopulse derived data.
+6.3.4 	Availability Requirements
+6.3.4.1	The requirements for outage time availability shall be as follows:
+Maximum outage time 	 ≤ 4 hours
+Cumulative outage time 	 ≤10 hours / year.
+6.3.4.2 Outage times due to scheduled actions shall be agreed with the users on a case by case basis.
+6.3.4.3	Recommendation  Although different station configurations and different maintenance strategies are possible to achieve the availability requirements, the following should be applied as a minimum:
+a single highly reliable antenna system with a mean time between major breakdowns of at least 40 000 hours;
+duplicated electronics including extractors and processing units with automatic failure detection and switch-over to be achieved within 2 seconds;
+a local or remote monitoring and control unit for localising of the failing subunit within 0.5 hours and replacing failed duplicated units, if possible, within 24 hours;
+at least one field monitor equipment to be used for failure detection and permanent alignment monitoring.
+6.3.5 	SSR Interrogation Frequency Plan
+6.3.5.1 The Interrogation Repetition Frequencies (IRF) used shall be coordinated, for all users, between the responsible authorities, both within States and between adjoining States to at least the following standards.
+6.3.5.2	An SSR shall be based on the following rules:
+stagger to be applied to the nominal IRF;
+any two stations with adjoining or partially overlapping cover to use IRF's that are separated by at least one Hertz (Hz);
+no stations to use an IRF which is either a multiple or submultiple of the
+IRF used by any other station with adjoining or partially overlapping cover.
+	NOTE -	Application of the above rules reduce the risk of:
+false targets from synchronous fruit and second time around replies;
+loss of detection through synchronous capture.
+6.4 	Performance Requirements For PSR Sensors
+6.4.1 	General
+Recommendation    PSR sensors should satisfy the performance requirements detailed in 6.4.2 and 6.4.3 below.
+6.4.2 	Detection Requirements
+6.4.2.1 	Target Position Detection
+	 	Overall probability of target position detection:	 > 90 %
+6.4.2.2 	False Target Reports
+	 	Average number of false target reports per antenna scan:	 < 20
+6.4.3 	Quality Requirements
+6.4.3.1 	Positional Accuracy  	Systematic errors:
+slant range bias:	< 100 m
+azimuth bias:	< 0.1°
+slant range gain error:	< 1 m/NM
+time stamp error:	< 100 ms.
+	 	Random errors (standard deviation values):
+slant range (m):	< 120 m
+azimuth (degree):	< 0.15°
+
+--- 8 verification ---
+8. 	PERFORMANCE  VERIFICATION REQUIREMENTS
+8.1 	General
+8.1.1	Performance verification of the various elements of the radar chain shall be made using procedures and analysis methods agreed within the Eurocontrol organisation.
+	NOTE -	A requirement for comprehensive Eurocontrol Standards for radar
+data performance analysis has been identified. Account will be taken of the latest issue of all ICAO Documents relevant to this subject.
+8.1.2 The performances of the radar chain shall be verified prior to making operational use of the radar data.
+8.1.3 The performances of the radar chain shall be re-assessed at regular intervals. This re-assessment can be made either by permanent monitoring (real-time quality control) or by annual performance measurements campaigns.
+NOTE - Performances may alter over time, for example, due to changing environmental conditions or ageing of equipment.
+8.1.4 Changes in operational requirements or replacement of any element of the radar chain, which may have an impact on radar data quality shall require re-verification of performance.
+8.2 	Verification Process
+8.2.1 	General
+The following three elements shall be specified for the verification process:
+the data to be used;
+the measurement methods to be used;
+the tools to be used.
+8.2.2 	Data
+8.2.2.1 The data to be used for performance verification shall be live radar data obtained from opportunity traffic or from special test flights.
+	NOTE - 	Special test flights will normally be used only in two cases:
+to measure performance parameters which require special
+aircraft configurations;
+to measure performances in parts of the airspace where opportunity traffic rarely passes.
+8.2.2.2	Recommendations
+In order to provide an adequate sample size for verifications using opportunity traffic, the collected data should cover a number of time periods of approximately one hour each and include at least 50 000 data samples.
+The data collection should be made during peak traffic hours.
+Data collected during conditions of severe weather or anomalous propagation should not be used to verify PSR performance.
+8.2.2.3 In some cases, it shall be possible to use simulated data for equipment tuning and verification of exceptional flight configurations (e.g. to test the resolution capabilities of extractors, or to tune the various tracking parameters of the tracker).
+8.2.3 	Measurement Methods
+8.2.3.1 The measurement methods defined in the Eurocontrol Standards for radar data performance analysis shall be used for each of the parameter in Sections 6 and 7.
+8.2.3.2 Each measurement method shall provide all necessary information to collect the data representative for the verification of the parameter.
+8.2.3.3 Each measurement method shall provide all necessary information to derive the performance values from the collected data.
+8.2.4 	Tools
+8.2.4.1	Only certified and accepted tools shall be used.
+8.2.4.2 Recommendation  The radar data analysis tools developed by Eurocontrol should be used.
+NOTE  - Information of radar data analysis tools developed by Eurocontrol are provided in Annex F.
+This page is intentionally left blank
