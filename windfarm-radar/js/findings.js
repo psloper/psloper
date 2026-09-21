@@ -348,14 +348,23 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
       add({
         id: 'cap764-30km',
         severity: 'minor',
-        title: `Farm is within the 30 km primary-radar assessment guide (${km(nearest)})`,
-        detail: 'CAP 764 gives 30 km as a guide distance for assessing radar impact, with the actual impact '
-          + 'depending on whether the operating turbines are detectable by the radar. Being inside the guide '
-          + 'distance triggers assessment; it does not by itself mean there is an effect.',
+        title: `Farm is within the 30 km radar consultation distance (${km(nearest)})`,
+        detail: 'CAP 764 anticipates that a development within 30 km of an aerodrome with a surveillance '
+          + 'radar facility MIGHT have an impact. Three things the document says about that figure are '
+          + 'easy to lose: it introduces the list as "not definitive"; it says the distance "can be far '
+          + 'greater than 30 km depending upon a number of factors including the type and coverage of the '
+          + 'radar and the particular operation at the aerodrome"; and it applies "unless otherwise '
+          + 'specified by the aerodrome or indicated on the aerodrome\u2019s published wind turbine '
+          + 'consultation map". So check the aerodrome\u2019s own map. Being inside 30 km triggers '
+          + 'consultation; being outside it does not mean there is no effect. The document lists further '
+          + 'tiers for aerodromes without radar: 17 km with a runway of 1100 m or more, 5 km with a '
+          + 'shorter runway, and 4 km for an unlicensed aerodrome with a runway over 800 m. This tool '
+          + 'does not model any of the non-radar cases.',
         basis: 'screening',
-        source: 'UK CAA CAP 764, Policy and Guidelines on Wind Turbines (30 km assessment guide; '
-          + 'retrieved via search summary, primary document not reachable from this environment)',
-        metrics: { 'Nearest turbine': km(nearest), 'Guide distance': '30 km' },
+        source: 'UK CAA CAP 764 paragraph 3.4, read from the Seventh Edition CONSULTATION DRAFT, which '
+          + 'is not published policy. The published Sixth Edition of January 2016 has not been read, so '
+          + 'confirm the figure against it before relying on it.',
+        metrics: { 'Nearest turbine': km(nearest), 'Consultation distance': '30 km' },
       });
     }
     if (nearest < 10000) {
@@ -363,14 +372,16 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
         id: 'cap764-ssr',
         severity: 'minor',
         title: `Farm is within 10 km, so secondary radar effects are in scope as well (${km(nearest)})`,
-        detail: 'CAP 764 advises that effects on secondary surveillance radar are relevant to consider when '
+        detail: 'CAP 670 advises that effects on secondary surveillance radar are only a consideration when '
           + 'turbines are less than 10 km from the SSR. This tool models primary radar only: SSR reflection '
           + 'and multipath effects are NOT assessed here and need separate work.',
         basis: 'screening',
         source: 'UK CAA CAP 670 SUR 13A.75, read in full: "These effects are only a consideration '
-          + 'when the turbines are located very close to the SSR, i.e less than 10 km." Corroborates '
-          + 'the same figure in CAP 764 (10 km SSR consideration distance; retrieved via search summary, '
-          + 'primary document not reachable from this environment)',
+          + 'when the turbines are located very close to the SSR, i.e less than 10 km." This figure was '
+          + 'previously also attributed to CAP 764. That attribution was wrong: the CAP 764 Seventh '
+          + 'Edition draft contains no SSR proximity distance, and its only 10 km figure is about '
+          + 'consulting the British Gliding Association near a charted glider launch site. CAP 670 is '
+          + 'the sole source for this finding.',
         metrics: { 'Nearest turbine': km(nearest), 'SSR consideration distance': '10 km' },
       });
     }
@@ -1112,9 +1123,17 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
     id: 'regulatory',
     severity: 'check',
     title: 'Regulatory conformance is NOT assessed by this tool',
-    detail: 'CAP 670 and the EUROCONTROL radar surveillance Standard have been read, and one '
-      + 'figure this tool uses is supported by both: the default probability of detection of 0.9 '
-      + 'for a conventional primary radar. Nothing ELSE here has been checked against any '
+    detail: 'CAP 670, the EUROCONTROL radar surveillance Standard, the current EUROCONTROL '
+      + 'specification and a CONSULTATION DRAFT of CAP 764 have been read. One figure this tool '
+      + 'uses is supported by them: the default probability of detection of 0.9 for a '
+      + 'conventional primary radar. Two statements in CAP 764 apply to this tool directly and '
+      + 'are quoted rather than paraphrased: "The CAA does not endorse any one specific radar '
+      + 'modelling tool" and, of turbine radar cross section, "given the multitude of factors '
+      + 'affecting RCS, can a \u2018standard\u2019 RCS be identified for micro, medium and large wind '
+      + 'turbines" \u2014 it cannot. The turbine RCS values this tool ships are therefore a starting '
+      + 'point for exploring sensitivity, not figures to assert. CAP 764 also says to engage the '
+      + 'relevant air navigation service provider before commissioning a propagation assessment; '
+      + 'this tool does not replace that step. Nothing ELSE here has been checked against any '
       + 'requirement, and no ICAO document has been read. '
       + 'The tool computes physics; it does not know what any authority requires, what thresholds '
       + 'trigger an objection, what an aerodrome safeguarding case has to contain, or what evidence a '

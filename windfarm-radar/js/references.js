@@ -1,7 +1,8 @@
 import { PROVENANCE as EC_STD, PSR as EC_PSR, SSR as EC_SSR } from './eurocontrol.js';
 import { PROVENANCE as DS_STD, APPLIES_TO_THIS_TOOL as DS_APPLIES } from './defencestandards.js';
 import { PROVENANCE as ES_SPEC, NON_COOPERATIVE as ES_PSR } from './esassp.js';
-import { REPORTED_CLAIMS as C764_CLAIMS, TO_CHECK_ON_ARRIVAL as C764_CHECK } from './cap764.js';
+import { PROVENANCE as C764, CONSULTATION as C764_DIST, ON_MODELLING as C764_MODEL,
+  MITIGATION_STATUS as C764_MIT, LIGHTING as C764_LIGHT, ADLS as C764_ADLS } from './cap764.js';
 // Evidence register.
 //
 // Every model component and every screening threshold in this tool traces to
@@ -71,26 +72,41 @@ export const REFERENCES = [
   // ------------------------------------------------ regulation and guidance
   {
     id: 'cap764',
-    title: 'CAP 764: CAA Policy and Guidelines on Wind Turbines',
+    title: `${C764.title} — ${C764.editionRead}`,
     org: 'UK Civil Aviation Authority',
-    type: 'Regulatory guidance',
-    status: 'search-summary',
-    supports: ['cap764-30km', 'cap764-ssr', 'RCS defaults and their caveat'],
-    reports: 'A 30 km guide distance for assessing radar impact, with actual impact depending on '
-      + 'whether the operating turbines are detectable by the radar. Effects on secondary surveillance '
-      + 'radar relevant to consider inside 10 km. That, given the number of factors affecting radar '
-      + 'cross-section, no standard RCS can be identified for micro, medium or large turbines, and the '
-      + 'CAA endorses no single radar modelling tool.',
-    caution: 'Edition not confirmed. Confirm the current edition and the figures before citing '
-      + 'them. A third-party AI research summary of CAP 764 was shown to this project; its '
-      + `${C764_CLAIMS.length} claims are recorded in js/cap764.js as CLAIMS, not as facts, `
-      + 'each with what the documents this tool HAS read can say about it. One is flagged: the '
-      + 'summary describes "approved technical and operational mitigations", and CAP 670 SUR '
-      + '13A.107 says the mitigations it lists "must not be regarded as mitigations that are '
-      + 'recommended or endorsed by the CAA". CAP 670 is not speaking about CAP 764 there, so '
-      + 'it is not a direct contradiction, but describing a mitigation as CAA-approved in a '
-      + `planning submission is a claim worth being sure of. ${C764_CHECK.length} items are `
-      + 'listed to check the day a copy arrives.',
+    type: 'Policy and guidance',
+    // The 10 km SSR figure used to be listed here. The draft does not contain
+    // it; the finding that uses it cites CAP 670 SUR 13A.75, which does.
+    supports: ['cap764-30km', 'The caveat on turbine RCS defaults'],
+    status: 'read',
+    reports: 'The consultation distances this tool leans on, now quoted rather than inferred. '
+      + `Paragraph 3.4 lists four tiers: ${C764_DIST.tiers.map((t) => `${t.km} km from `
+        + t.of).join('; ')}. Its preamble calls them "not definitive" and the radar entry adds `
+      + 'that the distance "can be far greater than 30 km", and is subject to the aerodrome\u2019s '
+      + `own published consultation map. A ${C764_DIST.offshore.nm} NM radius round an offshore `
+      + 'helicopter installation appears separately, in the offshore chapter, phrased as an '
+      + 'impact statement rather than a consultation trigger. Paragraph 2.17 speaks directly to '
+      + `a tool like this one: "${C764_MODEL.quote.split('. ').slice(0, 2).join('. ')}." `
+      + 'Obstacle lighting is not CAP 764\u2019s duty to impose and the document says so: it comes '
+      + `from ${C764_LIGHT.dutyFrom}, with ${C764_LIGHT.thresholdM} m AGL the threshold and the `
+      + 'trigger measured to the blade tip. The draft also names a 1 m\u00b2 target for detection '
+      + `lighting systems: "${C764_ADLS.oneSquareMetreTarget.quote}" `
+      + `(${C764_ADLS.oneSquareMetreTarget.ref}), the third document to use that size after `
+      + 'CAP 670 SUR 12.35 and SUR 13.44. Detection lighting itself is optional: '
+      + `"${C764_ADLS.quote.replace(/ red$/, ' red...')}"`,
+    validation: 'Read from the .docx conversion of the red-underline consultation draft '
+      + 'supplied by the user. The relevant paragraphs are stored at '
+      + 'docs/evidence/cap764-ed7-draft-consultation.txt and every quote in js/cap764.js is '
+      + 'checked verbatim against it by test/cap764.test.mjs, including the negative that the '
+      + 'document never calls a mitigation approved. Mutation tested three ways, all caught: '
+      + 'hiding the draft status, claiming mitigations are approved, and changing a '
+      + 'consultation tier distance.',
+    caution: 'THIS IS A CONSULTATION DRAFT, NOT PUBLISHED POLICY. Its cover reads "Seventh '
+      + 'Edition [publication date to be inserted]". The published edition is the Sixth, '
+      + 'January 2016, and it has NOT been read, so where the draft changes something the '
+      + 'published text may still say the old thing. The perimeter-only lighting rule is '
+      + 'explicitly such a change. Never cite this as CAP 764 without saying which edition. '
+      + `Separately: ${C764_MIT.reading}`,
   },
   {
     id: 'defstan-00-56-part1-issue7',

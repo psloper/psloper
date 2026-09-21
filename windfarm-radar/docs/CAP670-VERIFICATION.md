@@ -391,6 +391,130 @@ non-cooperative table. ESASSP sets no primary radar requirement for 2.5 NM.
 Volume 2 Appendices and the archived earlier editions of SPEC-0147 in the same
 bundle were not read.
 
+## CAP 764, read as a consultation draft
+
+CAP 764 was the largest gap in this tool: three figures traced to it and none
+had been read from it. The Seventh Edition **red-underline consultation draft**
+has now been read.
+
+> **This is a draft, not policy.** Its cover reads "Published by the Civil
+> Aviation Authority, YYYY" and "Seventh Edition [publication date to be
+> inserted]". The published edition is the **Sixth, January 2016**, and it has
+> not been read. Where the draft changes something, the published text may
+> still say the old thing.
+
+### The consultation distances, in full
+
+Paragraph 3.4, introduced as **"Whilst not definitive"**:
+
+| Distance | From |
+|---|---|
+| **30 km** | an aerodrome with a surveillance radar facility |
+| 17 km | a non-radar equipped licensed aerodrome with a runway of **1100 m or more** |
+| 5 km | a non-radar equipped licensed aerodrome with a runway of less than 1100 m |
+| 4 km | a non-radar equipped unlicensed aerodrome with a runway of more than 800 m |
+
+Plus any airspace coincidental with a published Instrument Flight Procedure.
+
+Two qualifications on the 30 km that a summary loses:
+
+> "**Unless otherwise specified by the aerodrome or indicated on the
+> aerodrome's published wind turbine consultation map**, within 30 km of an
+> aerodrome with a surveillance radar facility. **The distance can be far
+> greater than 30 km** depending upon a number of factors including the type
+> and coverage of the radar and the particular operation at the aerodrome"
+
+So: check the aerodrome's own map, and do not treat 30 km as an outer bound.
+The tool's finding now carries both, and no longer calls it an "assessment
+guide" — it is a consultation distance.
+
+**9 NM** appears separately, at paragraph 5.2 in the offshore chapter, as an
+impact statement about offshore helicopter installations rather than as a
+consultation trigger.
+
+### The paragraph aimed squarely at a tool like this one
+
+> **2.17** — "The CAA does not endorse any one specific radar modelling tool.
+> Nor, given the multitude of factors affecting RCS, can a 'standard' RCS be
+> identified for micro, medium and large wind turbines. It is strongly
+> suggested that developers engage with the appropriate ANSP prior to
+> commissioning a propagation assessment in order to ensure that the proposed
+> model is suitable."
+
+Both halves are now in the tool's own regulatory finding. The turbine radar
+cross sections this tool ships are a starting point for exploring sensitivity,
+not figures to assert, and engaging the ANSP is a step the tool does not
+replace.
+
+### "Approved mitigations" — the document does not say it
+
+The word **approved** appears in the draft only of instrument flight procedures
+and of planning applications. The word **endorsed** appears nowhere in it. What
+it says is:
+
+> **2.21** — "most mitigation methods would be subject to a standard safety
+> assessment process by the ANSP who, in turn, would need to demonstrate that
+> the system is safe in order to gain CAA approval (where applicable)."
+>
+> **2.22** — "Mitigation techniques can be categorised into several key types.
+> This section provides a summary of each category. More detailed explanation
+> is available in the CAP 670."
+
+What can be approved is a particular operator's system change, case by case,
+after a safety assessment. Not a technique in the abstract. And CAP 764 sends
+you to CAP 670 for the detail, where **SUR 13A.107** says the listed mechanisms
+"must not be regarded as mitigations that are recommended or endorsed by the
+CAA". Calling a mitigation CAA-approved in a planning submission is supported
+by neither document.
+
+### Obstacle lighting: the duty is not CAP 764's
+
+> **4.5** — "**Article 222 of the ANO (2016) as amended**, regarding onshore
+> obstacle lighting requirements, states that for structures away from the
+> immediate vicinity of an aerodrome, which have a height of **150 m (492 ft)
+> or more AGL** are fitted with medium intensity steady red lights..."
+
+CAP 764 describes the duty; the Air Navigation Order imposes it. For turbines
+specifically, at 4.6:
+
+- The requirement to fit lights is based on **the maximum height from the
+  ground to the tip of the blades**; positioning is based on the nacelle and
+  tower. This tool already measures tip height for safeguarding, which the
+  document confirms is the right quantity.
+- One medium intensity **2000 candela** red light on the nacelle, plus a second
+  as an alternate.
+- At least three low-intensity **32 candela** Type B lights at half nacelle
+  height ± 10 m.
+- The draft lights the **perimeter** of a wind farm rather than every turbine
+  above 150 m, and says that previously all turbines above 150 m AGL were lit.
+  That is a change the draft proposes, so it is exactly what may differ in the
+  published Sixth Edition.
+
+### Detection lighting, and a third 1 m² target
+
+ADLS is **not mandatory** (4.17), is **not permitted within the obstacle
+limitation surfaces of a licensed aerodrome** (4.18), and fails safe: the
+default is lights on, with the system switching them off (4.19).
+
+Its surveillance requirement names the same target size as CAP 670:
+
+> **4.29** — "The required Pd shall be achieved for a target with a radar cross
+> section of 1m2."
+
+That is the third document to name 1 m², after CAP 670 SUR 12.35 and SUR 13.44.
+Different application — lighting activation rather than air traffic
+surveillance — but the same size, and the same size the tool offers as its
+CAP 670 test target.
+
+### A wrong attribution this fixed
+
+The tool listed CAP 764 as a source for its **10 km secondary radar** figure.
+The draft contains no SSR proximity distance at all; its only 10 km figure is
+about consulting the British Gliding Association near a charted glider launch
+site. The finding cites **CAP 670 SUR 13A.75**, which was read in full and does
+carry the figure, so the finding stands. The attribution did not, and has been
+removed.
+
 ## What was not checked
 
 Whether a Supplementary Amendment supersedes the 1 August 2019 edition. The CAA
