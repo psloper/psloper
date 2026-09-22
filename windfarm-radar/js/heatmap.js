@@ -81,6 +81,10 @@ const fmtAxis = (v) => (Math.abs(v) >= 100 || Number.isInteger(v) ? String(Math.
  * @param {object} opts {width, height, hover:{i,j}|null, title, subtitle}
  */
 export function drawSweep(ctx, sweep, opts = {}) {
+  // Mark the canvas as carrying a real sweep, so the export knows whether
+  // there is anything on it worth putting in a report. It is reached through
+  // the context, because that is what this is handed.
+  if (ctx && ctx.canvas && ctx.canvas.dataset) ctx.canvas.dataset.drawn = '1';
   const w = opts.width;
   const h = opts.height;
   const px = SWEEP_PARAMS[sweep.xParam];

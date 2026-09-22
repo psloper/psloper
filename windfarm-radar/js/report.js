@@ -638,7 +638,8 @@ export const EXPORTS = {
     extension: 'docx',
     mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     binary: true,
-    build: async (result, delta) => buildDocx(reportToBlocks(buildReportMarkdown(result, delta))),
+    build: async (result, delta, figures) => buildDocx(
+      appendFigureBlocks(reportToBlocks(buildReportMarkdown(result, delta)), figures)),
   },
   excel: {
     label: 'All tables (Excel)',
@@ -646,7 +647,8 @@ export const EXPORTS = {
     extension: 'xlsx',
     mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     binary: true,
-    build: async (result) => buildXlsx(buildWorkbookSheets(result)),
+    build: async (result, delta, figures) => buildXlsx(
+      buildWorkbookSheets(result, figures)),
   },
 };
 
@@ -660,6 +662,62 @@ export const EXPORTS = {
  * of the report's content, so Word and PDF are renderings of it rather than
  * separate documents that can drift from it.
  */
+/**
+ * A figure: a canvas the tool has already drawn, carried into the exports.
+ *
+ *   { name, caption, dataUrl, widthPx, heightPx }
+ *
+ * The SAME pixels go into the Word file, the spreadsheet and the print view.
+ * Re-rendering a chart separately for each format is how a report ends up
+ * showing something the screen does not, and this tool's whole argument is
+ * that what you see is what it computed.
+ */
+export function dataUrlToBytes(dataUrl) {
+  const comma = String(dataUrl || '').indexOf(',');
+  if (comma < 0) return null;
+  const b64 = dataUrl.slice(comma + 1);
+  const bin = typeof atob === 'function'
+    ? atob(b64)
+    : Buffer.from(b64, 'base64').toString('binary');
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/**
+ * Append the figures to a block list as their own section.
+ *
+ * They go at the END rather than being threaded through the text. A figure
+ * dropped mid-argument has to be referred to by number to be worth anything,
+ * and numbering them here would mean numbering them in the Markdown, the Word
+ * file and the print view identically or not at all.
+ */
+export function appendFigureBlocks(blocks, figures) {
+  const usable = (figures || []).filter((f) => f && f.dataUrl);
+  if (!usable.length) return blocks;
+  const out = blocks.slice();
+  out.push({ type: 'heading', level: 2, text: 'Figures' });
+  out.push({
+    type: 'para',
+    text: 'Each of these is the picture the tool drew for this scenario, not a '
+      + 'redrawing of it. The heat map and the area map carry their own scale and '
+      + 'legend, because a map without either is a picture rather than evidence.',
+  });
+  for (const f of usable) {
+    const png = dataUrlToBytes(f.dataUrl);
+    out.push({
+      type: 'image',
+      png,
+      widthPx: f.widthPx,
+      heightPx: f.heightPx,
+      name: f.name,
+      caption: f.caption || f.name,
+      dataUrl: f.dataUrl,
+    });
+  }
+  return out;
+}
+
 export function reportToBlocks(md) {
   const blocks = [];
   const lines = md.split('\n');
@@ -708,7 +766,7 @@ export function reportToBlocks(md) {
 }
 
 /** Every table the assessment produces, as sheets for one workbook. */
-export function buildWorkbookSheets(result) {
+export function buildWorkbookSheets(result, figures) {
   const toRows = (text) => text.split('\n').filter(Boolean).map((line) => {
     const cells = [];
     let cur = '';
@@ -753,7 +811,38 @@ export function buildWorkbookSheets(result) {
       ...REFERENCES.map((r) => [r.title, STATUS_LABELS[r.status] || r.status,
         r.reports || '', r.caution || '']),
     ] },
+    // Figures go on their own sheet rather than being dropped over the data.
+    // A picture anchored across the turbine table hides the rows underneath
+    // it, and a reader who sorts that table then finds the picture has not
+    // moved with it.
+    ...figureSheet(figures),
   ];
+}
+
+/** The figures as one sheet, each under its caption, or nothing if there are none. */
+function figureSheet(figures) {
+  const usable = (figures || []).filter((f) => f && f.dataUrl);
+  if (!usable.length) return [];
+  const rows = [['Figure', 'What it shows']];
+  const images = [];
+  // Each picture is anchored below its own caption row, with enough rows left
+  // between them that a 400 px image does not sit on top of the next caption.
+  let row = 2;
+  for (const f of usable) {
+    rows[row] = [f.name || 'Figure', f.caption || ''];
+    const png = dataUrlToBytes(f.dataUrl);
+    const h = Math.max(1, f.heightPx || 360);
+    const w = Math.max(1, f.widthPx || 640);
+    const drawnH = w > 900 ? Math.round((h * 900) / w) : h;
+    images.push({
+      png, widthPx: w, heightPx: h, anchorRow: row + 1, anchorCol: 0,
+      name: f.name, caption: f.caption,
+    });
+    // 20 px a row is Excel's default height, so this leaves the picture room.
+    row += Math.ceil(drawnH / 20) + 3;
+  }
+  for (let i = 0; i < row; i += 1) if (!rows[i]) rows[i] = [''];
+  return [{ name: 'Figures', rows, images }];
 }
 
 /**
@@ -761,9 +850,9 @@ export function buildWorkbookSheets(result) {
  * writes the PDF, which means real pagination, real fonts and selectable text
  * rather than a hand-rolled PDF that would do none of those things well.
  */
-export function printReport(result, delta) {
+export function printReport(result, delta, figures) {
   const md = buildReportMarkdown(result, delta);
-  const blocks = reportToBlocks(md);
+  const blocks = appendFigureBlocks(reportToBlocks(md), figures);
   const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const bold = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   const body = blocks.map((b) => {
@@ -771,6 +860,12 @@ export function printReport(result, delta) {
     if (b.type === 'table') {
       return '<table>' + b.rows.map((row, i) => '<tr>' + row.map((c) => (i === 0
         ? `<th>${bold(c)}</th>` : `<td>${bold(c)}</td>`)).join('') + '</tr>').join('') + '</table>';
+    }
+    if (b.type === 'image') {
+      // The data URL goes straight in. A print view has no server to fetch
+      // from, and the browser's own print-to-PDF then embeds the picture.
+      return `<figure><img src="${b.dataUrl}" alt="${esc(b.caption || '')}">`
+        + `<figcaption>${esc(b.caption || '')}</figcaption></figure>`;
     }
     return `<p>${bold(b.text)}</p>`;
   }).join('\n');
@@ -792,6 +887,9 @@ export function printReport(result, delta) {
   th { background: #eef1f4; }
   h2, h3, table { break-after: avoid; page-break-after: avoid; }
   tr { break-inside: avoid; page-break-inside: avoid; }
+  figure { margin: 8pt 0 12pt; break-inside: avoid; page-break-inside: avoid; text-align: center; }
+  figure img { max-width: 100%; height: auto; border: 1px solid #ccc; }
+  figcaption { font-size: 9pt; color: #555; font-style: italic; margin-top: 3pt; }
 </style></head><body>${body}</body></html>`);
   win.document.close();
   // Give the new document a moment to lay out before the print dialog opens,
@@ -800,10 +898,10 @@ export function printReport(result, delta) {
   return true;
 }
 
-export async function downloadExport(kind, result, delta) {
+export async function downloadExport(kind, result, delta, figures) {
   const e = EXPORTS[kind];
   if (!e) return;
-  const data = await e.build(result, delta);
+  const data = await e.build(result, delta, figures);
   download(`${e.filename}-${stamp()}.${e.extension}`, data, e.mime);
 }
 

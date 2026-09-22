@@ -159,7 +159,27 @@ function colName(i) {
   return s;
 }
 
-function sheetXml(rows) {
+/**
+ * A picture in an Office document is four things in different places: the
+ * bytes as a package part, a relationship pointing at them, a content type for
+ * the extension, and a drawing element in the document that references the
+ * relationship. Miss any one and the file opens with a broken-image box or
+ * fails to open at all, so the helpers below keep the four together.
+ *
+ * Office measures pictures in EMU, 914400 to the inch. At the 96 dpi a browser
+ * canvas reports, one pixel is 9525 EMU.
+ */
+const EMU_PER_PX = 9525;
+
+/** Fit an image inside a width in pixels, keeping its aspect ratio. */
+function fitPx(img, maxWidthPx) {
+  const w = Math.max(1, img.widthPx || 640);
+  const h = Math.max(1, img.heightPx || 360);
+  if (w <= maxWidthPx) return { w, h };
+  return { w: maxWidthPx, h: Math.max(1, Math.round((h * maxWidthPx) / w)) };
+}
+
+function sheetXml(rows, hasDrawing) {
   const body = rows.map((row, r) => {
     const cells = row.map((v, c) => {
       const ref = colName(c) + (r + 1);
@@ -170,8 +190,12 @@ function sheetXml(rows) {
     }).join('');
     return `<row r="${r + 1}">${cells}</row>`;
   }).join('');
+  const rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  // <drawing> must come AFTER <sheetData>; the schema is a sequence and Excel
+  // refuses a file that puts it first.
+  const drawing = hasDrawing ? `<drawing xmlns:r="${rel}" r:id="rIdDraw"/>` : '';
   return XML + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-    + `<sheetData>${body}</sheetData></worksheet>`;
+    + `<sheetData>${body}</sheetData>${drawing}</worksheet>`;
 }
 
 /**
@@ -184,7 +208,18 @@ export async function buildXlsx(sheets) {
     // Excel rejects these characters in a sheet name and truncates past 31.
     name: (s.name || `Sheet${i + 1}`).replace(/[\\/?*[\]:]/g, ' ').slice(0, 31),
     rows: s.rows,
+    images: (s.images || []).filter((im) => im && im.png && im.png.length),
   }));
+  // One flat media list across the workbook, because a package part name has
+  // to be unique whatever sheet points at it.
+  const media = [];
+  for (const sh of safe) {
+    sh.rels = sh.images.map((im) => {
+      media.push(im.png);
+      return { file: `image${media.length}.png`, im };
+    });
+  }
+  const anyImages = media.length > 0;
   const rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   const ct = 'application/vnd.openxmlformats-officedocument.spreadsheetml';
 
@@ -195,8 +230,13 @@ export async function buildXlsx(sheets) {
         + '<Default Extension="xml" ContentType="application/xml"/>'
         + `<Override PartName="/xl/workbook.xml" ContentType="${ct}.sheet.main+xml"/>`
         + `<Override PartName="/xl/styles.xml" ContentType="${ct}.styles+xml"/>`
+        + (anyImages ? '<Default Extension="png" ContentType="image/png"/>' : '')
         + safe.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" `
           + `ContentType="${ct}.worksheet+xml"/>`).join('')
+        + safe.map((sh, i) => (sh.rels.length
+          ? `<Override PartName="/xl/drawings/drawing${i + 1}.xml" ContentType="application/`
+            + 'vnd.openxmlformats-officedocument.drawing+xml"/>'
+          : '')).join('')
         + CORE_CT + '</Types>' },
     { name: '_rels/.rels',
       data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
@@ -227,8 +267,60 @@ export async function buildXlsx(sheets) {
         // Without a declared default style, readers warn and substitute their own.
         + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
         + '</styleSheet>' },
-    ...safe.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: sheetXml(s.rows) })),
+    ...safe.map((s, i) => ({
+      name: `xl/worksheets/sheet${i + 1}.xml`, data: sheetXml(s.rows, s.rels.length > 0),
+    })),
+    // A sheet that carries pictures needs its own rels file pointing at its
+    // drawing, and the drawing needs rels pointing at the media.
+    ...safe.flatMap((sh, i) => (sh.rels.length ? [
+      { name: `xl/worksheets/_rels/sheet${i + 1}.xml.rels`,
+        data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/'
+          + 'relationships">'
+          + `<Relationship Id="rIdDraw" Type="${rel}/drawing" `
+          + `Target="../drawings/drawing${i + 1}.xml"/></Relationships>` },
+      { name: `xl/drawings/drawing${i + 1}.xml`, data: drawingXml(sh.rels) },
+      { name: `xl/drawings/_rels/drawing${i + 1}.xml.rels`,
+        data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/'
+          + 'relationships">'
+          + sh.rels.map((r, k) => `<Relationship Id="rId${k + 1}" Type="${rel}/image" `
+            + `Target="../media/${r.file}"/>`).join('')
+          + '</Relationships>' },
+    ] : [])),
+    ...media.map((png, i) => ({ name: `xl/media/image${i + 1}.png`, data: png })),
   ]);
+}
+
+/**
+ * A spreadsheet drawing, one picture per anchor.
+ *
+ * oneCellAnchor pins the top-left to a cell and then gives an absolute size,
+ * which is what keeps a chart image the shape it was rendered at. twoCellAnchor
+ * would stretch it to whatever the column widths happen to be.
+ */
+function drawingXml(rels) {
+  const a = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+  const xdr = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
+  const rns = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const body = rels.map((r, k) => {
+    const { w, h } = fitPx(r.im, 900);
+    const row = Math.max(0, r.im.anchorRow || 0);
+    const col = Math.max(0, r.im.anchorCol || 0);
+    return '<xdr:oneCellAnchor>'
+      + `<xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff>`
+      + `<xdr:row>${row}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>`
+      + `<xdr:ext cx="${w * EMU_PER_PX}" cy="${h * EMU_PER_PX}"/>`
+      + '<xdr:pic><xdr:nvPicPr>'
+      + `<xdr:cNvPr id="${k + 2}" name="${esc(r.im.name || `Picture ${k + 1}`)}"`
+      + `${r.im.caption ? ` descr="${esc(r.im.caption)}"` : ''}/>`
+      + '<xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>'
+      + `<xdr:blipFill><a:blip xmlns:r="${rns}" r:embed="rId${k + 1}"/>`
+      + '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+      + '<xdr:spPr><a:xfrm><a:off x="0" y="0"/>'
+      + `<a:ext cx="${w * EMU_PER_PX}" cy="${h * EMU_PER_PX}"/></a:xfrm>`
+      + '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>'
+      + '</xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
+  }).join('');
+  return XML + `<xdr:wsDr xmlns:xdr="${xdr}" xmlns:a="${a}">${body}</xdr:wsDr>`;
 }
 
 // ------------------------------------------------------------------- docx
@@ -276,16 +368,66 @@ function table(rows) {
 }
 
 /**
+ * One picture, inline in its own paragraph, with the caption beneath it.
+ *
+ * An A4 page here has 800 twentieths-of-a-point of margin each side, leaving
+ * about 6.6 inches of text width, so pictures are fitted to 630 px at 96 dpi
+ * rather than overflowing the page.
+ */
+function imagePara(b) {
+  const a = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+  const pic = 'http://schemas.openxmlformats.org/drawingml/2006/picture';
+  const wp = 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing';
+  const rns = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const { w, h } = fitPx(b, 630);
+  const cx = w * EMU_PER_PX;
+  const cy = h * EMU_PER_PX;
+  const name = esc(b.name || 'Figure');
+  const drawing = '<w:drawing>'
+    + `<wp:inline xmlns:wp="${wp}" distT="0" distB="0" distL="0" distR="0">`
+    + `<wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/>`
+    + `<wp:docPr id="${(b.__rel.file.match(/\d+/) || [1])[0]}" name="${name}"`
+    + `${b.caption ? ` descr="${esc(b.caption)}"` : ''}/>`
+    + `<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="${a}" noChangeAspect="1"/>`
+    + '</wp:cNvGraphicFramePr>'
+    + `<a:graphic xmlns:a="${a}"><a:graphicData uri="${pic}">`
+    + `<pic:pic xmlns:pic="${pic}"><pic:nvPicPr>`
+    + `<pic:cNvPr id="0" name="${name}"/><pic:cNvPicPr/></pic:nvPicPr>`
+    + `<pic:blipFill><a:blip xmlns:r="${rns}" r:embed="${b.__rel.id}"/>`
+    + '<a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+    + `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>`
+    + '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'
+    + '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>';
+  const figure = `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${drawing}</w:r></w:p>`;
+  if (!b.caption) return figure;
+  return figure + '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>'
+    + `<w:r><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="555555"/></w:rPr>`
+    + `<w:t xml:space="preserve">${esc(b.caption)}</w:t></w:r></w:p>`;
+}
+
+/**
  * Build a .docx from blocks:
  *   { type: 'heading', level: 1..3, text }
  *   { type: 'para', text }              (**bold** is honoured)
  *   { type: 'table', rows: [[...]] }    (first row is the header)
  *   { type: 'rule' }
+ *   { type: 'image', png: Uint8Array, widthPx, heightPx, caption, name }
  */
 export async function buildDocx(blocks) {
+  // Pictures are collected first so each gets a stable part name and
+  // relationship id before the body that references them is written.
+  const media = [];
+  for (const b of blocks) {
+    if (b.type === 'image' && b.png && b.png.length) {
+      media.push({ png: b.png, file: `image${media.length + 1}.png`, id: `rIdImg${media.length + 1}` });
+      b.__rel = media[media.length - 1];
+    }
+  }
+
   const body = blocks.map((b) => {
     if (b.type === 'heading') return para(b.text, 'Heading' + Math.min(b.level || 1, 3));
     if (b.type === 'table') return table(b.rows) + '<w:p/>';
+    if (b.type === 'image') return b.__rel ? imagePara(b) : para(b.caption || '');
     if (b.type === 'rule') {
       return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:color="BBBBBB"/>'
         + '</w:pBdr></w:pPr></w:p>';
@@ -316,6 +458,7 @@ export async function buildDocx(blocks) {
         + '<Default Extension="xml" ContentType="application/xml"/>'
         + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
         + '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+        + (media.length ? '<Default Extension="png" ContentType="image/png"/>' : '')
         + CORE_CT + '</Types>' },
     { name: '_rels/.rels',
       data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
@@ -325,8 +468,11 @@ export async function buildDocx(blocks) {
     { name: 'word/_rels/document.xml.rels',
       data: XML + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + `<Relationship Id="rId1" Type="${rel}/styles" Target="styles.xml"/>`
+        + media.map((m) => `<Relationship Id="${m.id}" Type="${rel}/image" `
+          + `Target="media/${m.file}"/>`).join('')
         + '</Relationships>' },
     { name: 'word/styles.xml', data: styles },
+    ...media.map((m) => ({ name: `word/media/${m.file}`, data: m.png })),
     { name: 'word/document.xml',
       data: XML + `<w:document xmlns:w="${wns}"><w:body>${body}`
         + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>'

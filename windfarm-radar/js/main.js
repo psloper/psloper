@@ -14,6 +14,7 @@ import { deriveWindRoseFindings } from './findings.js';
 import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
 import { loadTerrain, createRealTerrain } from './terrain.js';
 import { profileTable, headingConflicts, reconcileFarms } from './profile.js';
+import { areaBox, sitesInBox, drawAreaMap, KM_PER_MILE } from './areamap.js';
 import { WIND_ROSE_PRESETS } from './wind.js';
 import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
 import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
@@ -402,15 +403,15 @@ function clearImportedSites() {
  * headers and a browser cannot read it directly. These fetches are to this
  * tool's own files, not to any third party, and nothing leaves the page.
  */
-async function loadRealTerrain() {
+async function loadRealTerrain(say = importStatus) {
   const lat = scenario.site.radarLat;
   const lon = scenario.site.radarLon;
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    importStatus('Place a UK pairing first. Real elevation is anchored on the radar, and this '
+    say('Place a UK pairing first. Real elevation is anchored on the radar, and this '
       + 'scenario has no radar position.');
-    return;
+    return false;
   }
-  importStatus('Loading elevation data...');
+  say('Loading elevation data...');
   try {
     const extent = result ? result.extent : 40000;
     const loaded = await loadTerrain({ lat, lon, halfExtentM: extent });
@@ -433,12 +434,14 @@ async function loadRealTerrain() {
     const spacing = loaded.blockMeta.length
       ? `${loaded.blockMeta[0].spacingM} m`
       : `${loaded.manifest.coarse.spacingM} m, no finer block in this build`;
-    importStatus(`${loaded.manifest.source}, ${spacing}. Real data for `
+    say(`${loaded.manifest.source}, ${spacing}. Real data for `
       + `${(cov * 100).toFixed(0)}% of the modelled area. SURFACE model: includes trees and `
       + 'buildings. Sampled at the radar position you placed, whose own error this does not fix.');
+    return true;
   } catch (err) {
     realTerrain = null;
-    importStatus(`Could not load the elevation data: ${err.message}`);
+    say(`Could not load the elevation data: ${err.message}`);
+    return false;
   }
 }
 
@@ -1023,7 +1026,36 @@ function loadPairingFromMap(radarIndex) {
   run(false);
   rebuildRail();
   $('#dlg-map').close();
+
+  // GROUND COMES WITH THE PAIRING. Dropping into an assessment from the map
+  // used to leave the scenario on flat ground until someone found the button
+  // on the Site tab, and terrain is the single biggest lever in this model:
+  // the national screen measures it at 99 per cent, larger than every
+  // assumption combined. A first-order screen on flat ground for a site in
+  // Scotland is not a conservative answer, it is a wrong one.
+  loadRealTerrain((msg) => {
+    const el = document.getElementById('import-status');
+    if (el) el.textContent = msg;
+    setGroundNote(msg);
+  }).then((ok) => {
+    if (ok) rebuildRail();
+  });
 }
+
+/**
+ * Where the automatic ground load reports to.
+ *
+ * It cannot use importStatus alone: that writes to an element the rail only
+ * builds while its data tab is open, so a load started from the map wrote to
+ * nothing and looked like it had not happened.
+ */
+let groundNote = '';
+function setGroundNote(msg) {
+  groundNote = msg;
+  const v = document.getElementById('verdict-text');
+  if (v && msg) v.textContent = msg;
+}
+export function lastGroundNote() { return groundNote; }
 
 // Uploaded sites have to reach the map without a trip back to the Site tab,
 // and the map has to rerun the screen to include them.
@@ -1089,6 +1121,99 @@ document.querySelectorAll('[data-image]').forEach((btn) => {
   });
 });
 
+/**
+ * The figures that go into the exports.
+ *
+ * Every one is the canvas the tool has ALREADY drawn for this scenario, read
+ * back as a PNG. Nothing is re-rendered for the report: a report that draws
+ * its own version of a chart can disagree with the screen, and this tool's
+ * whole argument is that what you see is what it computed.
+ *
+ * The 3D view has to be captured in the same tick as a render or the drawing
+ * buffer has already been cleared, which is why it renders immediately before
+ * reading the pixels.
+ */
+function collectFigures() {
+  const out = [];
+  const add = (canvas, name, caption) => {
+    if (!canvas || !canvas.width || !canvas.height) return;
+    try {
+      out.push({
+        name, caption,
+        dataUrl: canvas.toDataURL('image/png'),
+        widthPx: canvas.width,
+        heightPx: canvas.height,
+      });
+    } catch (err) {
+      // A tainted canvas cannot be read back. Skip it rather than failing the
+      // whole export for one picture.
+    }
+  };
+  try { view.render(0); add(view.renderer.domElement, '3D view', sceneCaption()); } catch (err) { /* no GL */ }
+  add(el.ppi, 'Plan position indicator', 'Turbine plots and the modelled flight track, one scan.');
+  add(el.profile, 'Vertical section',
+    'Ground between radar and farm, with earth curvature applied at the modelled k-factor.');
+  add(el.windrose, 'Wind rose',
+    'Exposure by wind direction. Blank until the wind sweep has been run.');
+  if (sweepCanvasHasContent()) {
+    add($('#sweep-canvas'), 'Parameter sweep heat map',
+      'Every cell is a complete re-analysis at that pair of parameters.');
+  }
+  const area = renderAreaFigure();
+  if (area) out.push(area);
+  return out;
+}
+
+function sceneCaption() {
+  const t = scenario.environment && scenario.environment.terrain;
+  const ground = t && t.source === 'real' ? 'real elevation data' : 'modelled ground';
+  return `The scenario in three dimensions, on ${ground}. Heights are exaggerated; `
+    + 'the readout above the view states by how much.';
+}
+
+function sweepCanvasHasContent() {
+  const c = $('#sweep-canvas');
+  return !!(c && c.width > 1 && c.dataset && c.dataset.drawn === '1');
+}
+
+/**
+ * The area map, drawn off-screen at report resolution.
+ *
+ * This one IS rendered on demand, because there is no on-screen canvas holding
+ * it: it is a report figure by nature. It uses the same drawAreaMap the
+ * on-screen view uses, so the two cannot drift.
+ */
+function renderAreaFigure() {
+  const lat = scenario.site.radarLat;
+  const lon = scenario.site.radarLon;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const widthKm = (scenario.report && scenario.report.areaWidthKm) || 100 * KM_PER_MILE;
+  const box = areaBox(lat, lon, widthKm);
+  const farms = mapFarms();
+  const radars = mapRadars();
+  const data = sitesInBox(box, farms, radars);
+  const c = document.createElement('canvas');
+  c.width = 1100;
+  c.height = 820;
+  const ctx = c.getContext('2d');
+  if (!ctx) return null;
+  drawAreaMap(ctx, box, data, {
+    width: c.width, height: c.height, dark: false,
+    title: `Area around ${scenario.farm.ukPairing ? scenario.farm.ukPairing.radar : 'the radar'}`
+      + ` \u2014 ${(widthKm / KM_PER_MILE).toFixed(0)} mile square`,
+  });
+  return {
+    name: 'Area map',
+    caption: `${(widthKm / KM_PER_MILE).toFixed(0)} mile square centred on the radar: `
+      + `${data.farms.length} wind farm planning records and ${data.radars.length} radars within `
+      + 'reach. Farm positions are planning references, about 1,100 m from the array in the '
+      + 'median case, so this locates projects and not turbines.',
+    dataUrl: c.toDataURL('image/png'),
+    widthPx: c.width,
+    heightPx: c.height,
+  };
+}
+
 document.querySelectorAll('[data-export]').forEach((btn) => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1097,7 +1222,7 @@ document.querySelectorAll('[data-export]').forEach((btn) => {
     if (kind === 'pdf') {
       // The browser writes the PDF, so the user gets real pagination and
       // selectable text. A blocked pop-up is the one way this fails.
-      const opened = printReport(result, currentDelta());
+      const opened = printReport(result, currentDelta(), collectFigures());
       if (!opened) {
         $('#text-title').textContent = 'PDF';
         $('#text-body').value = 'The print window was blocked by the browser.\n\n'
@@ -1112,7 +1237,7 @@ document.querySelectorAll('[data-export]').forEach((btn) => {
       const b = btn;
       const was = b.textContent;
       b.disabled = true; b.textContent = 'Building...';
-      downloadExport(kind, result, currentDelta())
+      downloadExport(kind, result, currentDelta(), collectFigures())
         .catch((err) => { b.textContent = 'Failed'; console.error(err); })
         .finally(() => { setTimeout(() => { b.disabled = false; b.textContent = was; }, 600); });
       return;
