@@ -32,7 +32,10 @@ for (const key of SHOW) {
 // Assert, don't just display. Span and length must equal the model figures,
 // and the girth factor must not move either of them.
 const fails = [];
-for (const key of SHOW) {
+// Assert over EVERY preset. The row below draws eight because eight fit; a
+// check that only covers what is on screen is a check that misses the rest.
+const ALL = Object.keys(TARGET_PRESETS);
+for (const key of ALL) {
   const p = TARGET_PRESETS[key];
   const dims = [1, 6].map((girth) => {
     const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth,
@@ -55,9 +58,98 @@ for (const key of SHOW) {
   if (Math.abs(dims[0].x - dims[1].x) > 1e-6) fails.push(`${key}: girth changed the SPAN`);
   if (Math.abs(dims[0].z - dims[1].z) > 1e-6) fails.push(`${key}: girth changed the LENGTH`);
 }
+
+// Shape checks, not just size checks. Everything above passed all the way
+// through the round where the fuselage was four times too fat and the fin was
+// buried inside it, because a bounding box in X and Z cannot see either. These
+// measure the parts against each other.
+const partBox = (g, name) => {
+  const bb = new THREE.Box3();
+  let found = false;
+  g.traverse((m) => {
+    if (!m.isMesh || m.userData.part !== name) return;
+    found = true;
+    bb.expandByObject(m);
+  });
+  return found ? bb : null;
+};
+for (const key of ALL) {
+  const p = TARGET_PRESETS[key];
+  if (p.planform !== 'wing') continue;
+  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing,
+    engines: p.engines, enginesOn: p.enginesOn });
+  g.updateMatrixWorld(true);
+  const fus = partBox(g, 'fuselage');
+  const fin = partBox(g, 'fin');
+
+  // 1. There is a fin, and it stands clear of the body. The fin used to clear
+  // an over-inflated fuselage by 0.6 m on an airliner, which is invisible.
+  if (!fin) { fails.push(`${key}: no fin`); } else {
+    const clear = fin.max.y - fus.max.y;
+    if (clear < p.lengthM * 0.06) {
+      fails.push(`${key}: fin clears the body by ${clear.toFixed(2)} m, `
+        + `under ${(p.lengthM * 0.06).toFixed(2)}`);
+    }
+  }
+
+  // 2. The fuselage is not a body of revolution. It was a lathe, so the side
+  // view and the plan view were the same shape and it read as a torpedo.
+  const fw = fus.max.x - fus.min.x;
+  const fh = fus.max.y - fus.min.y;
+  if (p.wing !== 'delta' && fh / fw < 1.05) {
+    fails.push(`${key}: fuselage is ${(fh / fw).toFixed(3)} as tall as wide, `
+      + 'so it is round in section');
+  }
+
+  // 3. The fuselage is slender, near a tenth of the length across. It was 0.40
+  // of the length across when the girth factor was double-counted.
+  const ratio = fw / p.lengthM;
+  if (ratio > 0.16 || ratio < 0.05) {
+    fails.push(`${key}: fuselage is ${ratio.toFixed(3)} of the length across`);
+  }
+
+  // 4. A propeller meets its aircraft. The spinner used to sit right up
+  // against the nose in Z and still look detached, because the nose tapered
+  // almost to a point and the spinner was three times wider than the thing it
+  // was supposedly bolted to. So the check is on WIDTH at the nose station,
+  // not on axial position: a bounding box cannot see the taper, which is
+  // exactly why the first version of this check passed the broken shape.
+  if (p.enginesOn === 'nose' || p.enginesOn === 'tail') {
+    const tail = p.enginesOn === 'tail';
+    const spin = partBox(g, 'spinner');
+    if (!spin) { fails.push(`${key}: propeller engine with no spinner`); } else {
+      // Only the frontmost (or rearmost) ring of the body counts, measured in
+      // the fuselage's OWN coordinates. Two things sank earlier versions of
+      // this check and both let a broken shape through: a window a couple of
+      // per cent of the length wide reaches back to where a pointed nose has
+      // already flared out, and `fus` is a WORLD box while the vertices are
+      // local, so comparing the two silently shifted the window by however far
+      // the body was offset to make room for the propeller.
+      const tol = p.lengthM * 0.005;
+      let halfWidth = 0;
+      g.traverse((m) => {
+        if (!m.isMesh || m.userData.part !== 'fuselage') return;
+        m.geometry.computeBoundingBox();
+        const at = tail ? m.geometry.boundingBox.min.z : m.geometry.boundingBox.max.z;
+        const pos = m.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i += 1) {
+          const z = pos.getZ(i);
+          if (tail ? z > at + tol : z < at - tol) continue;
+          halfWidth = Math.max(halfWidth, Math.abs(pos.getX(i)));
+        }
+      });
+      const spinHalfWidth = (spin.max.x - spin.min.x) / 2;
+      if (halfWidth < spinHalfWidth * 0.8) {
+        fails.push(`${key}: body is ${halfWidth.toFixed(2)} m half-width where the `
+          + `spinner is ${spinHalfWidth.toFixed(2)}, so the propeller is bolted to a point`);
+      }
+    }
+  }
+}
+
 lines.push('');
 lines.push(fails.length ? 'FAIL\n  ' + fails.join('\n  ')
-  : `PASS: ${SHOW.length} classes, span and length match the model, girth moves neither`);
+  : `PASS: ${ALL.length} classes, size matches the model and the shape checks hold`);
 document.getElementById('out').textContent = lines.join('\n');
 window.__measured = lines;
 window.__fails = fails;
@@ -76,7 +168,7 @@ cam.position.set(0, 58, 96); cam.lookAt(0, 0, 0);
 const mat = new THREE.MeshStandardMaterial({ color: 0xdbe7f0, roughness: 0.5, metalness: 0.1 });
 SHOW.forEach((key, i) => {
   const p = TARGET_PRESETS[key];
-  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth: 2,
+  const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth: 1,
     engines: p.engines, enginesOn: p.enginesOn });
   g.traverse((m) => { if (m.isMesh) m.material = mat; });
   const k = 20 / Math.max(p.lengthM, p.spanM);   // same drawn size for every one

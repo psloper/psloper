@@ -257,57 +257,85 @@ function panelGeometry({ semi, rootChord, tipChord, sweep, dihedral = 0, thick, 
 
 /**
  * A fuselage as one continuous surface: nose, constant-section barrel, tapered
- * tail cone. Built as a lathe about the body axis and then laid along +Z.
+ * tail cone. Built as a stack of rings laid along +Z.
  *
- * This replaces a capsule plus a separate nose cone. That pairing looked wrong
- * from every angle and it took a colour-coded render to see why: a capsule end
- * cap is a hemisphere that closes to a point, so the body pinched to nothing
- * and the cone then flared straight back out to full width. The join read as a
- * bulb stuck on a waist. A single profile cannot pinch, because the radius is
- * a function of position along the body.
+ * It was a lathe, which is a body of revolution, so the side view and the plan
+ * view were the same shape and the whole thing read as a torpedo. Rings let
+ * the section be taller than it is wide (`tallness`) and let the roof line run
+ * on over the nose (`crown`), which is the windscreen. Those two, with a nose
+ * that stops blunt instead of closing to a point, are what separate an
+ * aeroplane from a dart at a glance.
  *
- * The profile runs from the nose at +len/2 to the tail at -len/2 exactly, so
- * the fuselage alone sets the drawn length and no girth factor can change it.
+ * The rings run from the nose at +len/2 to the tail at -len/2 exactly, so the
+ * fuselage alone sets the drawn length and no girth factor can change it, and
+ * half-widths never exceed `radius`, so it cannot reach past the wing.
  */
-function fuselageGeometry(len, radius, { nose = 'round', tailUp = 0 } = {}) {
-  const noseFrac = nose === 'sharp' ? 0.28 : 0.13;
-  const tailFrac = nose === 'sharp' ? 0.26 : 0.34;
-  const tailR = nose === 'sharp' ? 0.42 : 0.16;
-  const N = 44;
-  const pts = [];
-  for (let i = 0; i <= N; i++) {
+function fuselageGeometry(len, radius, {
+  nose = 'round', tailUp = 0, tallness = 1, crown = 0, tailStub = null,
+} = {}) {
+  const sharp = nose === 'sharp';
+  const cowl = nose === 'cowl';
+  // How much of the length each region takes, and how blunt each end is.
+  //
+  // tipR is the half-width the nose still has at its very front, as a
+  // fraction of the body. It used to be zero, and a nose that closes to a
+  // point is the loudest thing that says dart rather than aeroplane: a 737
+  // radome is roughly a fifth of the fuselage diameter across where it meets
+  // the windscreen, and a propeller aircraft is blunter still because the
+  // engine cowl is nearly full width right up to the spinner.
+  const noseFrac = sharp ? 0.30 : cowl ? 0.13 : 0.17;
+  const tailFrac = sharp ? 0.24 : cowl ? 0.40 : 0.33;
+  // A pusher propeller needs something to bolt to at the BACK, for the same
+  // reason a tractor one does at the front, so its tail stops at a stub
+  // instead of tapering away.
+  const tailR = tailStub !== null ? tailStub : sharp ? 0.40 : cowl ? 0.15 : 0.13;
+  const tipR = sharp ? 0.07 : cowl ? 0.66 : 0.21;
+  const N = 40;
+  const SEG = 16;
+  const rings = [];
+  for (let i = 0; i <= N; i += 1) {
     const t = i / N;                       // 0 at the nose, 1 at the tail
     let r;
     if (t < noseFrac) {
       const u = t / noseFrac;
-      // A quarter ellipse gives a rounded transport nose; a power curve gives
-      // the long pointed nose of a fast jet.
-      r = nose === 'sharp' ? u ** 0.8 : Math.sqrt(Math.max(0, 1 - (1 - u) ** 2));
+      // An ellipse blunted at the tip, so r runs tipR to 1 and still meets the
+      // barrel with a horizontal tangent: no crease at the join, no point at
+      // the front. A power curve instead gives a fast jet its long nose.
+      r = sharp
+        ? tipR + (1 - tipR) * u ** 0.75
+        : Math.sqrt(Math.max(0, 1 - (1 - u) ** 2 * (1 - tipR * tipR)));
     } else if (t < 1 - tailFrac) {
       r = 1;
     } else {
       const u = (t - (1 - tailFrac)) / tailFrac;
-      r = 1 - (1 - tailR) * u ** 1.7;
+      r = 1 - (1 - tailR) * u ** 1.6;
     }
-    pts.push(new THREE.Vector2(Math.max(radius * 0.02, r * radius), (0.5 - t) * len));
-  }
-  const geo = new THREE.LatheGeometry(pts, 18);
-  geo.rotateX(Math.PI / 2);
-  if (tailUp > 0) {
-    // Transports sweep the rear fuselage upwards. This moves vertices in Y
-    // only, so the drawn length and width are untouched.
-    const zStart = (tailFrac - 0.5) * len;
-    const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const z = pos.getZ(i);
-      if (z >= zStart) continue;
-      const u = (zStart - z) / (tailFrac * len);
-      pos.setY(i, pos.getY(i) + tailUp * radius * u * u);
+    const w = Math.max(radius * 0.03, r * radius);
+    // The roof carries straight on over the cockpit while the nose narrows
+    // away below it. That step is the windscreen, and it is most of what
+    // makes a side view read as an aeroplane rather than a torpedo. It is
+    // full by the end of the nose and eases off along the tail cone.
+    const roof = 1 + crown
+      * Math.min(1, t / Math.max(1e-3, noseFrac * 0.85))
+      * (1 - Math.min(1, Math.max(0, (t - 0.55) / 0.45)) * 0.55);
+    const hTop = w * tallness * roof;
+    const hBot = w * tallness;
+    // Transports sweep the rear fuselage upwards. This is a Y offset only, so
+    // the drawn length and width are untouched.
+    const up = t > 1 - tailFrac
+      ? tailUp * radius * ((t - (1 - tailFrac)) / tailFrac) ** 2
+      : 0;
+    const z = (0.5 - t) * len;
+    const ring = [];
+    for (let s2 = 0; s2 < SEG; s2 += 1) {
+      const a = (s2 / SEG) * Math.PI * 2;
+      const sa = Math.sin(a);
+      ring.push(new THREE.Vector3(
+        Math.cos(a) * w, up + sa * (sa >= 0 ? hTop : hBot), z));
     }
-    pos.needsUpdate = true;
-    geo.computeVertexNormals();
+    rings.push(ring);
   }
-  return geo;
+  return loftRings(rings);
 }
 
 /** A nacelle: a barrel with an inlet lip at the front and a tapered exhaust. */
@@ -350,16 +378,21 @@ export function aircraftGeometry(spanM, lengthM, {
   const semi = span / 2;
   const delta = wing === 'delta';
   const swept = wing === 'swept';
-  // Clamped so that even at the top of the girth slider the body cannot grow
-  // wider than the wing it hangs under.
-  const bodyR = Math.min(len * 0.055 * girth, span * 0.075 * girth, semi * 0.42, len * 0.2);
+  // Fuselage radius from the real thing. Measured against actual aircraft, the
+  // diameter is close to a tenth of the length across the whole range: a 737
+  // is 3.76 m on 37.6 m, a 777 is 6.2 m on 63.7 m, a Cessna 172 is about 1.0 m
+  // on 8.3 m. Light aircraft are relatively fatter, fast jets slimmer.
+  const bodyFrac = delta ? 0.045 : swept ? 0.050 : 0.058;
+  const bodyR = Math.min(len * bodyFrac * girth, semi * 0.16);
 
   if (planform === 'rotor') {
     // A helicopter: cabin, tail boom, fin, tail rotor, and a main rotor drawn
     // as separate blades. The disc it sweeps used to be drawn as a solid
     // cylinder, which read as a flying saucer from every angle.
     const cabinLen = len * 0.52;
-    const cabin = new THREE.Mesh(fuselageGeometry(cabinLen, bodyR * 1.35, { nose: 'round' }), null);
+    const cabin = new THREE.Mesh(fuselageGeometry(cabinLen, bodyR * 1.35, {
+      nose: 'round', tallness: 1.15, crown: 0.22,
+    }), null);
     cabin.position.z = nz - cabinLen / 2;
     cabin.userData.part = 'fuselage';
     g.add(cabin);
@@ -421,9 +454,17 @@ export function aircraftGeometry(spanM, lengthM, {
   const bodyLen = len - propLen;
   const bodyZ = propAtNose ? -propLen / 2 : propAtTail ? propLen / 2 : 0;
 
+  // A propeller aircraft gets a blunt engine cowl, because that is what is in
+  // front of the cabin and it is what the spinner has to meet. With a tapered
+  // nose the propeller floated in space ahead of a point.
   const fus = new THREE.Mesh(fuselageGeometry(bodyLen, bodyR, {
-    nose: delta ? 'sharp' : 'round',
-    tailUp: delta ? 0 : 0.5,
+    nose: delta ? 'sharp' : propAtNose ? 'cowl' : 'round',
+    tailUp: delta ? 0 : propAtTail ? 0.2 : 0.5,
+    tailStub: propAtTail ? 0.62 : null,
+    // A cabin is taller than it is wide on everything but a fast jet, and most
+    // so on a light aircraft, where the occupants sit upright.
+    tallness: delta ? 0.90 : swept ? 1.06 : 1.20,
+    crown: delta ? 0.08 : swept ? 0.15 : 0.26,
   }), null);
   fus.position.z = bodyZ;
   fus.userData.part = 'fuselage';
@@ -440,10 +481,19 @@ export function aircraftGeometry(spanM, lengthM, {
         y: -bodyR * 0.45, z: -len * 0.02 }
       : { root: len * 0.155, taper: 0.62, sweep: semi * 0.05, dihedral: semi * 0.05,
         y: bodyR * 0.35, z: len * 0.10 };
+  // Same overhang rule as the tail surfaces, and for the same reason: sweep
+  // moves the whole tip section aft, so a big enough sweep carries the tip
+  // trailing edge past the tail. On a delta the sweep is a full semi-span, and
+  // on the widest-span delta in the table that put the wing 0.28 m behind the
+  // tail. It only showed up once the harness checked every preset rather than
+  // the eight it draws.
+  const tipChord = wingSpec.root * wingSpec.taper;
+  wingSpec.sweep = Math.min(wingSpec.sweep,
+    Math.max(0, wingSpec.z + nz - tipChord / 2));
   const wingThick = Math.max(len * 0.004, wingSpec.root * 0.09 * Math.min(girth, 3));
   for (const side of [-1, 1]) {
     const panel = new THREE.Mesh(panelGeometry({
-      semi, rootChord: wingSpec.root, tipChord: wingSpec.root * wingSpec.taper,
+      semi, rootChord: wingSpec.root, tipChord,
       sweep: wingSpec.sweep, dihedral: wingSpec.dihedral, thick: wingThick, side,
     }), null);
     panel.position.set(0, wingSpec.y, wingSpec.z);
@@ -451,17 +501,30 @@ export function aircraftGeometry(spanM, lengthM, {
     g.add(panel);
   }
 
-  // Fin. Height is a seventh of the length, which is what it is on a real
-  // aeroplane. The first version made it a third of the SPAN, so a widebody
-  // carried a twenty-metre fin and looked like a shark.
-  const finH = len * (delta ? 0.11 : 0.145);
-  const finRoot = len * (delta ? 0.20 : 0.165);
+  // Fin, sized so its TIP reaches the height a real one does above the
+  // fuselage centreline: about a quarter of the length on an airliner, less on
+  // a light aircraft. Sizing the panel itself rather than the tip was the
+  // second half of the missing-tail problem: with a fat body the panel was
+  // shorter than the fuselage radius and sat entirely inside it.
+  const finTipFrac = delta ? 0.22 : swept ? 0.26 : 0.20;
+  const finH = Math.max(len * 0.07, len * finTipFrac - bodyR * 0.35);
+  // The root chord is about the fin's own height on a real aeroplane, which is
+  // what gives the leading edge room to sweep while the trailing edge stays
+  // near vertical.
+  const finRoot = finH * 0.75;
+  const finTip = finRoot * 0.35;
   const finThick = Math.max(len * 0.004, finRoot * 0.07 * Math.min(girth, 3));
-  const finSweep = finH * 0.85;
-  const finTip = finRoot * 0.42;
-  // Placed so the rearmost point of the fin, its tip trailing edge, lands on
-  // the tail rather than somewhere past it.
-  const finZ = -nz + finSweep + finTip / 2;
+  // Real fin sweep: about 40 degrees on a swept-wing transport, less on a
+  // straight-wing light aircraft, more on a fast jet.
+  const finSweep = finH * (delta ? 0.85 : swept ? 0.72 : 0.45);
+  // Sweep moves the WHOLE tip section aft in this panel model, so an
+  // unplaced panel carries its tip trailing edge past the tail: the fast jet
+  // came out 17.4 m long against a 15.6 m model and the verifier caught it.
+  // The first fix capped the sweep at half the taper, which stopped the
+  // overhang but held an airliner fin to 14 degrees, so it read as a blade
+  // stuck on the spine. Placing the panel by whichever of its root and tip is
+  // actually rearmost fixes the overhang without touching the sweep.
+  const finZ = -nz + Math.max(finRoot / 2, finSweep + finTip / 2);
   const fin = new THREE.Mesh(panelGeometry({
     semi: finH, rootChord: finRoot, tipChord: finTip,
     sweep: finSweep, dihedral: 0, thick: finThick, side: 1,
@@ -471,19 +534,52 @@ export function aircraftGeometry(spanM, lengthM, {
   fin.userData.part = 'fin';
   g.add(fin);
 
+  // Dorsal fillet: the fairing that runs forward along the spine from the base
+  // of the fin. Every transport and most light aircraft have one, and without
+  // it the fin looks like a blade pushed into the body as an afterthought,
+  // which is exactly how it looked. It is a small triangle and it is one of
+  // the cheapest things that reads as aircraft.
+  if (!delta) {
+    const filletLen = Math.min(len * 0.15, (bodyLen * 0.5) - finRoot);
+    if (filletLen > len * 0.02) {
+      const fillet = new THREE.Mesh(panelGeometry({
+        semi: finH * 0.30,
+        rootChord: filletLen,
+        tipChord: filletLen * 0.22,
+        // Enough sweep to put the tip back at the fin's leading edge, so the
+        // two meet instead of leaving a notch.
+        sweep: filletLen * 0.40,
+        dihedral: 0,
+        thick: finThick * 0.9,
+        side: 1,
+      }), null);
+      fillet.rotation.z = Math.PI / 2;
+      // Its root TRAILING edge sits at the fin's root leading edge.
+      fillet.position.set(0, bodyR * 0.35, finZ + finRoot / 2 + filletLen / 2);
+      fillet.userData.part = 'fillet';
+      g.add(fillet);
+    }
+  }
+
   // Tailplane. On an aircraft with rear-fuselage engines it goes on top of the
   // fin, because that is where it goes and a T-tail is the clearest way to
   // tell a business jet from an airliner at a glance.
   const tTail = enginesOn === 'rear';
-  const tailSemi = semi * (delta ? 0.30 : 0.36);
+  const tailSemi = semi * (delta ? 0.30 : 0.40);
   const tailRoot = wingSpec.root * (delta ? 0.42 : 0.58);
-  const tailSweep = tailSemi * (swept || delta ? 0.55 : 0.12);
+  const tailTip = tailRoot * 0.5;
+  const tailSweep = tailSemi * (swept || delta ? 0.55 : 0.14);
   const tailThick = Math.max(len * 0.004, tailRoot * 0.09 * Math.min(girth, 3));
-  const tailZ = tTail ? finZ + finSweep * 0.25 : -nz + tailSweep + tailRoot * 0.5;
+  // Same placement rule as the fin. A T-tail rides the fin tip, but never far
+  // enough aft to overhang the fuselage.
+  const tailAft = Math.max(tailRoot / 2, tailSweep + tailTip / 2);
+  const tailZ = tTail
+    ? Math.max(finZ - finSweep, -nz + tailAft)
+    : -nz + tailAft;
   const tailY = tTail ? bodyR * 0.35 + finH : bodyR * 0.3;
   for (const side of [-1, 1]) {
     const tp = new THREE.Mesh(panelGeometry({
-      semi: tailSemi, rootChord: tailRoot, tipChord: tailRoot * 0.5,
+      semi: tailSemi, rootChord: tailRoot, tipChord: tailTip,
       sweep: tailSweep, dihedral: 0, thick: tailThick, side,
     }), null);
     tp.position.set(0, tailY, tailZ);
@@ -496,26 +592,63 @@ export function aircraftGeometry(spanM, lengthM, {
   // sits INSIDE the span and length the model carries.
   const podR = Math.min(len * 0.030, semi * 0.10) * Math.min(Math.max(1, girth * 0.6), 2.5);
   const podLen = len * 0.105;
-  if (engines > 0 && enginesOn === 'wing') {
+  // A turboprop hangs its engines off the wing like a jet does, but what is on
+  // the front is a propeller, and drawing it with a jet nacelle was why an
+  // ATR read as a small airliner. 'wing-prop' is the same placement with a
+  // spinner and blades in front and the nacelle set INTO the wing rather than
+  // slung under it, which is where a turboprop nacelle actually sits.
+  const wingProp = enginesOn === 'wing-prop';
+  if (engines > 0 && (enginesOn === 'wing' || wingProp)) {
     const pairs = Math.max(1, Math.round(engines / 2));
+    // Propeller radius from the real thing: an ATR 72 turns a 3.9 m disc on a
+    // 27.2 m airframe, an A400M a 5.3 m disc on 45.1 m.
+    const propR = wingProp ? Math.min(len * 0.065, semi * 0.28) : 0;
     for (let e = 0; e < pairs; e++) {
       const frac = pairs === 1 ? 0.34 : 0.28 + e * 0.29;
-      // Furthest out a nacelle may sit and still be inside the wingtip.
-      const x = Math.min(semi * frac, Math.max(0, semi - podR * 1.1));
+      // Furthest out an engine may sit and still be inside the wingtip, with
+      // the propeller disc counted when there is one.
+      const clear = Math.max(podR * 1.1, propR);
+      const x = Math.min(semi * frac, Math.max(0, semi - clear));
       const k = x / semi;
       const chord = wingSpec.root * (1 + (wingSpec.taper - 1) * k);
       const leZ = wingSpec.z - wingSpec.sweep * k + chord * 0.5;
-      const y = wingSpec.y + wingSpec.dihedral * k - wingThick * 0.5 - podR * 0.95;
+      const y = wingProp
+        ? wingSpec.y + wingSpec.dihedral * k
+        : wingSpec.y + wingSpec.dihedral * k - wingThick * 0.5 - podR * 0.95;
       for (const side of [-1, 1]) {
-        const pod = new THREE.Mesh(engineNacelleGeometry(podR, podLen), null);
-        pod.position.set(side * x, y, leZ + podLen * 0.16);
+        // A turboprop nacelle is long and straddles the wing, because the
+        // main gear folds into the back of it. Sitting it wholly ahead of the
+        // leading edge made the pair read as horns.
+        const nacLen = wingProp ? podLen * 1.45 : podLen;
+        const pod = new THREE.Mesh(engineNacelleGeometry(podR, nacLen), null);
+        pod.position.set(side * x, y, leZ + podLen * (wingProp ? 0.20 : 0.16));
         pod.userData.part = 'engine';
         g.add(pod);
-        const pylon = new THREE.Mesh(new THREE.BoxGeometry(
-          Math.max(0.02, podR * 0.22), podR * 1.1, podLen * 0.5), null);
-        pylon.position.set(side * x, y + podR * 0.8, leZ - podLen * 0.06);
-        pylon.userData.part = 'pylon';
-        g.add(pylon);
+        if (!wingProp) {
+          const pylon = new THREE.Mesh(new THREE.BoxGeometry(
+            Math.max(0.02, podR * 0.22), podR * 1.1, podLen * 0.5), null);
+          pylon.position.set(side * x, y + podR * 0.8, leZ - podLen * 0.06);
+          pylon.userData.part = 'pylon';
+          g.add(pylon);
+          continue;
+        }
+        const hubZ = leZ + podLen * 0.20 + nacLen * 0.5;
+        const spinner = new THREE.Mesh(
+          new THREE.ConeGeometry(podR * 0.55, podLen * 0.45, 10), null);
+        spinner.rotation.x = Math.PI / 2;
+        spinner.position.set(side * x, y, hubZ + podLen * 0.22);
+        spinner.userData.part = 'spinner';
+        g.add(spinner);
+        // Four blades: what a modern turboprop of this size turns, and enough
+        // to read as a disc rather than a pair of sticks.
+        for (let b = 0; b < 4; b += 1) {
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(
+            propR * 2, Math.max(0.03, podR * 0.20), Math.max(0.03, podLen * 0.14)), null);
+          blade.position.set(side * x, y, hubZ);
+          blade.rotation.z = (b / 4) * Math.PI + Math.PI / 8;
+          blade.userData.part = 'propeller';
+          g.add(blade);
+        }
       }
     }
   } else if (engines > 0 && enginesOn === 'rear') {
@@ -551,21 +684,31 @@ export function aircraftGeometry(spanM, lengthM, {
 
   // A propeller, drawn as blades and a spinner rather than a solid disc. The
   // disc version looked like a lollipop stuck on the nose at close range.
+  //
+  // The spinner has to sit ON the cowl. It used to be a thin cone of 0.42 body
+  // radii centred half a spinner-length ahead of a nose that tapered almost to
+  // a point, so on a light single there was visible daylight between the
+  // aircraft and its propeller and the blades read as a detached dart.
   if (propAtNose || propAtTail) {
     const dir = propAtNose ? 1 : -1;
     const propR = Math.min(len * 0.115, semi * 0.75);
-    const hubZ = dir * (nz - propLen * 0.45);
+    // Where the body actually ends on this side, so the spinner starts there.
+    const faceZ = nz - propLen;
     const spinner = new THREE.Mesh(
-      new THREE.ConeGeometry(bodyR * 0.42, propLen * 0.9, 10), null);
+      new THREE.ConeGeometry(bodyR * 0.62, propLen, 12), null);
     spinner.rotation.x = dir * Math.PI / 2;
-    spinner.position.z = dir * (nz - propLen * 0.5);
+    spinner.position.z = dir * (faceZ + propLen * 0.5);
     spinner.userData.part = 'spinner';
     g.add(spinner);
-    for (let b = 0; b < 2; b++) {
+    // Blades at the spinner's base, which is the plane a real propeller turns
+    // in, not halfway up its nose cone.
+    const hubZ = dir * (faceZ + propLen * 0.18);
+    const blades = engines >= 2 ? 3 : 2;
+    for (let b = 0; b < blades; b += 1) {
       const blade = new THREE.Mesh(new THREE.BoxGeometry(
-        propR * 2, Math.max(0.02, bodyR * 0.1), Math.max(0.02, propLen * 0.22)), null);
+        propR * 2, Math.max(0.03, bodyR * 0.12), Math.max(0.03, propLen * 0.30)), null);
       blade.position.z = hubZ;
-      blade.rotation.z = b ? Math.PI / 3 : -Math.PI / 3;
+      blade.rotation.z = (b / blades) * Math.PI + Math.PI / 6;
       blade.userData.part = 'propeller';
       g.add(blade);
     }
@@ -1622,7 +1765,13 @@ export class SceneView {
       wing: t.wing || 'straight',
       engines: t.engines || 0,
       enginesOn: t.enginesOn || 'none',
-      girth: Math.min(this.girthExag || 1, 6),
+      // NO girth exaggeration. The turbines need it because they are drawn at
+      // true size and a 5.5 m tower is a quarter of a pixel across a 40 km
+      // scene. The aircraft is already scaled up bodily by aircraftScale, so
+      // applying girth on top was double-counting: at the factor the tool
+      // picks by default, about five, an airliner fuselage came out 15 m
+      // across instead of 3.8, four times too fat, and the fin was so far
+      // inside it that only 0.6 m of it showed. That is why it had no tail.
     });
     this.aircraft.scale.setScalar(this.aircraftScale);
     const acMat = new THREE.MeshStandardMaterial({

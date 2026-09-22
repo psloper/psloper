@@ -490,6 +490,30 @@ export const REFRACTION_PRESETS = {
 // the class does. `planform` says whether the lift comes from a wing or a
 // rotor, which is what decides the shape.
 export const TARGET_PRESETS = {
+  // ---- named types, the traffic actually flown in UK and Irish airspace
+  //
+  // Span and length are the manufacturer's published figures to a hundredth of
+  // a metre where one is published, rounded here to a tenth. They set how the
+  // target is DRAWN and nothing else: the physics treats every target as a
+  // point scatterer, so the only number in here that changes a result is the
+  // radar cross section, and that one is an estimate. See TARGET_PROVENANCE.
+  'a320':           { label: 'Airbus A320', group: 'Commercial short-haul', role: 'UK to Europe trunk routes', rcsDbsm: 20, speedKt: 250, altitudeFt: 8000, spanM: 35.8, lengthM: 37.6, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
+  'b737-800':       { label: 'Boeing 737-800', group: 'Commercial short-haul', role: 'UK to Europe trunk routes', rcsDbsm: 20, speedKt: 250, altitudeFt: 8000, spanM: 35.8, lengthM: 39.5, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
+  'b787':           { label: 'Boeing 787-9', group: 'Commercial long-haul', role: 'Heathrow, Gatwick, Manchester', rcsDbsm: 25, speedKt: 290, altitudeFt: 15000, spanM: 60.1, lengthM: 62.8, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
+  'a350':           { label: 'Airbus A350-900', group: 'Commercial long-haul', role: 'Heathrow, Gatwick, Manchester', rcsDbsm: 25, speedKt: 290, altitudeFt: 15000, spanM: 64.8, lengthM: 66.8, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
+  'atr72':          { label: 'ATR 72-600', group: 'Regional', role: 'Scotland, Channel Islands, Ireland', rcsDbsm: 13, speedKt: 200, altitudeFt: 6000, spanM: 27.1, lengthM: 27.2, planform: 'wing', wing: 'straight', engines: 2, enginesOn: 'wing-prop' },
+  'e190':           { label: 'Embraer E190', group: 'Regional', role: 'Scotland, Channel Islands, Ireland', rcsDbsm: 17, speedKt: 250, altitudeFt: 9000, spanM: 28.7, lengthM: 36.2, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
+  'c172':           { label: 'Cessna 172', group: 'GA and business', role: 'Training', rcsDbsm: 0, speedKt: 110, altitudeFt: 2000, spanM: 11.0, lengthM: 8.3, planform: 'wing', wing: 'straight', engines: 1, enginesOn: 'nose' },
+  'pa28':           { label: 'Piper PA-28', group: 'GA and business', role: 'Training', rcsDbsm: 0, speedKt: 110, altitudeFt: 2000, spanM: 10.7, lengthM: 7.3, planform: 'wing', wing: 'straight', engines: 1, enginesOn: 'nose' },
+  'sr22':           { label: 'Cirrus SR22', group: 'GA and business', role: 'Training and touring', rcsDbsm: 0, speedKt: 155, altitudeFt: 3000, spanM: 11.7, lengthM: 7.9, planform: 'wing', wing: 'straight', engines: 1, enginesOn: 'nose' },
+  'ec135':          { label: 'Airbus H135 (EC135)', group: 'Helicopters', role: 'Air ambulance and police', rcsDbsm: 3, speedKt: 120, altitudeFt: 1500, spanM: 10.2, lengthM: 10.2, planform: 'rotor', engines: 2, enginesOn: 'none' },
+  'aw139':          { label: 'Leonardo AW139', group: 'Helicopters', role: 'Offshore transfer and search and rescue', rcsDbsm: 9, speedKt: 140, altitudeFt: 1000, spanM: 13.8, lengthM: 13.5, planform: 'rotor', engines: 2, enginesOn: 'none' },
+  'typhoon':        { label: 'Eurofighter Typhoon', group: 'Military types', role: 'Royal Air Force and NATO', rcsDbsm: -1, speedKt: 450, altitudeFt: 5000, spanM: 11.0, lengthM: 16.0, planform: 'wing', wing: 'delta', engines: 2, enginesOn: 'buried' },
+  'f35b':           { label: 'Lockheed Martin F-35B', group: 'Military types', role: 'Royal Air Force and Royal Navy', rcsDbsm: -15, speedKt: 400, altitudeFt: 20000, spanM: 10.7, lengthM: 15.6, planform: 'wing', wing: 'delta', engines: 1, enginesOn: 'buried' },
+  'a400m':          { label: 'Airbus A400M Atlas', group: 'Military types', role: 'Royal Air Force transport', rcsDbsm: 24, speedKt: 250, altitudeFt: 8000, spanM: 42.4, lengthM: 45.1, planform: 'wing', wing: 'straight', engines: 4, enginesOn: 'wing-prop' },
+  'mq9':            { label: 'General Atomics MQ-9', group: 'UAV', role: 'Royal Air Force', rcsDbsm: 5, speedKt: 150, altitudeFt: 15000, spanM: 20.1, lengthM: 11.0, planform: 'wing', wing: 'straight', engines: 1, enginesOn: 'tail' },
+  'quadcopter':     { label: 'Police quadcopter', group: 'UAV', role: 'Police and inspection', rcsDbsm: -20, speedKt: 35, altitudeFt: 400, spanM: 1.2, lengthM: 0.9, planform: 'rotor', engines: 4, enginesOn: 'rotor' },
+
   // ---- uncrewed
   'uas-micro':      { label: 'Small multirotor UAS', group: 'Uncrewed', rcsDbsm: -20, speedKt: 35, altitudeFt: 300, spanM: 0.6, lengthM: 0.5, planform: 'rotor', engines: 4, enginesOn: 'rotor' },
   'uas-fixed':      { label: 'Fixed-wing small UAS', group: 'Uncrewed', rcsDbsm: -10, speedKt: 60, altitudeFt: 400, spanM: 3.0, lengthM: 1.8, planform: 'wing', wing: 'straight', engines: 1, enginesOn: 'nose' },
@@ -507,7 +531,7 @@ export const TARGET_PRESETS = {
 
   // ---- commercial
   'bizjet':         { label: 'Business jet', group: 'Commercial', rcsDbsm: 8, speedKt: 250, altitudeFt: 12000, spanM: 17.2, lengthM: 19.5, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'rear' },
-  'turboprop':      { label: 'Regional turboprop', group: 'Commercial', rcsDbsm: 13, speedKt: 220, altitudeFt: 6000, spanM: 27.1, lengthM: 27.2, planform: 'wing', wing: 'straight', engines: 2, enginesOn: 'wing' },
+  'turboprop':      { label: 'Regional turboprop', group: 'Commercial', rcsDbsm: 13, speedKt: 220, altitudeFt: 6000, spanM: 27.1, lengthM: 27.2, planform: 'wing', wing: 'straight', engines: 2, enginesOn: 'wing-prop' },
   'regional-jet':   { label: 'Regional jet', group: 'Commercial', rcsDbsm: 16, speedKt: 260, altitudeFt: 9000, spanM: 26.0, lengthM: 31.7, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'rear' },
   'airliner':       { label: 'Narrowbody airliner', group: 'Commercial', rcsDbsm: 20, speedKt: 280, altitudeFt: 10000, spanM: 35.8, lengthM: 37.6, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
   'widebody':       { label: 'Widebody airliner', group: 'Commercial', rcsDbsm: 25, speedKt: 300, altitudeFt: 15000, spanM: 60.1, lengthM: 63.7, planform: 'wing', wing: 'swept', engines: 2, enginesOn: 'wing' },
@@ -532,7 +556,15 @@ export const TARGET_PRESETS = {
   'cap670-test':    { label: 'CAP 670 test target, 1 m\u00b2', group: 'Standard test target', rcsDbsm: 0, speedKt: 120, altitudeFt: 2000, spanM: 11.0, lengthM: 8.3, planform: 'wing', wing: 'straight', engines: 1, enginesOn: 'nose' },
 };
 
-export const TARGET_GROUPS = ['Standard test target', 'Uncrewed', 'General aviation', 'Commercial', 'Military'];
+export const TARGET_GROUPS = [
+  'Standard test target',
+  // Named types first: they are what actually flies here, and picking one is
+  // less of a guess than picking a class.
+  'Commercial short-haul', 'Commercial long-haul', 'Regional',
+  'GA and business', 'Helicopters', 'Military types', 'UAV',
+  // Then the generic classes, for traffic that is not one of the above.
+  'Uncrewed', 'General aviation', 'Commercial', 'Military',
+];
 
 /**
  * Where each target's numbers come from.
@@ -564,6 +596,40 @@ export const TARGET_PROVENANCE = {
   },
 };
 
+/**
+ * The named types carry manufacturer-published DIMENSIONS and an estimated
+ * radar cross section. Those two are not the same kind of number and the tool
+ * must not present them as if they were.
+ *
+ * Dimensions: span and length as the airframer publishes them, rounded to a
+ * tenth of a metre. For a helicopter, span is the main rotor diameter and
+ * length is the fuselage, not the overall length with rotors turning. They
+ * change only how the target is DRAWN.
+ *
+ * Radar cross section: NOT published by anyone for these airframes. Open
+ * figures for civil types are order-of-magnitude estimates and for combat
+ * types they are guesses repeated between secondary sources. The figure here
+ * is a class-typical screening value and it is the ONLY number in the preset
+ * that changes a result, so it is the one to replace with a customer figure
+ * before any of this is relied on.
+ *
+ * Speed and altitude: operationally typical for the role, not a limit or a
+ * performance figure.
+ */
+export const NAMED_TYPE_PROVENANCE = {
+  dimensions: 'Manufacturer-published span and length, to a tenth of a metre. For rotorcraft, '
+    + 'main rotor diameter and fuselage length.',
+  rcs: 'ESTIMATED. No airframer or authority publishes a radar cross section for these types. '
+    + 'The value is a class-typical screening figure, not a measurement, and real RCS swings by '
+    + 'tens of decibels with aspect angle, frequency and polarisation.',
+  lowObservable: 'For low-observable types such as the F-35B there is no credible open figure '
+    + 'at all. The value here is a placeholder that says "much smaller"; treat any result that '
+    + 'turns on it as unsupported.',
+  performance: 'Speed and altitude are typical for the role in UK airspace, not limits.',
+  keys: ['a320', 'b737-800', 'b787', 'a350', 'atr72', 'e190', 'c172', 'pa28', 'sr22',
+    'ec135', 'aw139', 'typhoon', 'f35b', 'a400m', 'mq9', 'quadcopter'],
+};
+
 /** Default provenance for the rest: honest about being an estimate. */
 export const TARGET_PROVENANCE_DEFAULT = {
   kind: 'representative',
@@ -578,10 +644,14 @@ export const TARGET_PROVENANCE_DEFAULT = {
 /** What to print next to a target so nobody mistakes an estimate for a spec. */
 export function targetProvenanceNote(key) {
   const p = TARGET_PROVENANCE[key];
-  if (!p) {
-    return `Representative figures, not a specification. ${TARGET_PROVENANCE_DEFAULT.rcs}`;
+  if (p) return `${p.rcs.source}: "${p.rcs.quote}" ${p.dimensions}`;
+  if (NAMED_TYPE_PROVENANCE.keys.includes(key)) {
+    const lo = key === 'f35b' ? ` ${NAMED_TYPE_PROVENANCE.lowObservable}` : '';
+    return `Dimensions: ${NAMED_TYPE_PROVENANCE.dimensions} `
+      + `Radar cross section: ${NAMED_TYPE_PROVENANCE.rcs}${lo} `
+      + `${NAMED_TYPE_PROVENANCE.performance}`;
   }
-  return `${p.rcs.source}: "${p.rcs.quote}" ${p.dimensions}`;
+  return `Representative figures, not a specification. ${TARGET_PROVENANCE_DEFAULT.rcs}`;
 }
 
 export function defaultScenario() {
