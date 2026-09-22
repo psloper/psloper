@@ -10,8 +10,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   osgb36ToGrid, gridToOsgb36, gridToWgs84, wgs84ToGrid, looksLikeNationalGrid,
-  NATIONAL_GRID, HELMERT_OSGB36_TO_WGS84, AIRY_1830,
+  ambiguousWithIrishGrid, NATIONAL_GRID, HELMERT_OSGB36_TO_WGS84, AIRY_1830,
+  VERTICAL_DATUM,
 } from '../js/osgb.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const osGuide = readFileSync(resolve(root, 'docs/evidence/os-coordinate-systems-guide.txt'), 'utf8')
+  .replace(/\s+/g, ' ');
 
 // The worked example from the Ordnance Survey guide to coordinate systems.
 // OSGB36 latitude and longitude, and the National Grid coordinates they
@@ -99,4 +107,60 @@ test('the constants and their provenance are stated', () => {
   // The accuracy claim must stay attached to the parameters that earn it.
   assert.match(HELMERT_OSGB36_TO_WGS84.accuracy, /few metres/);
   assert.match(HELMERT_OSGB36_TO_WGS84.accuracy, /OSTN15/);
+});
+
+// ------------------------------------------- what the OS guide does confirm
+
+test('the three-part structure implemented here is the one the OS guide states', () => {
+  // The page names the parts of the National Grid. If the implementation ever
+  // drifts from that structure, this is the statement it drifted from.
+  assert.ok(osGuide.includes('Airy 1830 ellipsoid'));
+  assert.ok(osGuide.includes('a TRF called OSGB36'));
+  assert.ok(osGuide.includes('Transverse Mercator map projection'));
+  assert.equal(AIRY_1830.a, 6377563.396);
+});
+
+test('the guide supports doing this by transformation rather than by survey', () => {
+  assert.ok(osGuide.includes('National Grid coordinates are nowadays determined by GNSS plus '
+    + 'a transformation rather than theodolite triangulation'));
+});
+
+test('the guide does NOT contain the numbers, and the module says so', () => {
+  // The honest half. This page gives the framework and none of the constants,
+  // so the module must not claim otherwise once the page is in the repository.
+  for (const n of ['0.9996012717', '400000', '446.448', '651409']) {
+    assert.ok(!osGuide.includes(n), `the OS page does contain ${n} after all`);
+  }
+  const src = readFileSync(resolve(root, 'js/osgb.js'), 'utf8');
+  assert.ok(src.includes('remain unverified against an OS'),
+    'the module no longer says the numbers are unverified');
+});
+
+test('ETRS89 is kept distinct from WGS84', () => {
+  // The OS page says OS Net uses ETRS89. Treating an ETRS89 position as WGS84
+  // is an approximation, and the module has to say so rather than conflate
+  // them silently.
+  assert.ok(osGuide.includes('ETRS89'));
+  const src = readFileSync(resolve(root, 'js/osgb.js'), 'utf8');
+  assert.match(src, /ETRS89 IS NOT WGS84/);
+});
+
+// --------------------------------------------------------- vertical datum
+
+test('the vertical datum mismatch is named, and scoped correctly', () => {
+  // The OS page is what surfaced this: British map heights are ODN, and the
+  // terrain this tool ships is EGM2008.
+  assert.ok(osGuide.includes('Ordnance Datum Newlyn'));
+  assert.ok(osGuide.includes('orthometric height only'));
+  assert.match(VERTICAL_DATUM.toolUses, /EGM2008/);
+  assert.match(VERTICAL_DATUM.britishMapsUse, /Ordnance Datum Newlyn/);
+  // The scoping is the useful part: AGL is unaffected, AMSL is not.
+  assert.equal(VERTICAL_DATUM.affectsAgl, false);
+  assert.equal(VERTICAL_DATUM.affectsAmsl, true);
+  assert.equal(VERTICAL_DATUM.corrected, false);
+  assert.match(VERTICAL_DATUM.aglNote, /datum cancels/);
+  // And it must not invent a figure it cannot support.
+  assert.match(VERTICAL_DATUM.amslNote, /NOT quantified/);
+  assert.ok(!/\d+(\.\d+)?\s*(m|metres|cm)\b/.test(VERTICAL_DATUM.amslNote.replace(/sub-metre/g, '')),
+    'the vertical datum note states a figure it cannot support');
 });

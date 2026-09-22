@@ -109,6 +109,39 @@ export const REFERENCES = [
       + `Separately: ${C764_MIT.reading}`,
   },
   {
+    id: 'os-coordinate-systems',
+    title: 'A guide to coordinate systems in Great Britain: Ordnance Survey coordinate systems',
+    org: 'Ordnance Survey',
+    year: 2020,
+    type: 'Technical guidance',
+    supports: ['The three-part structure of the National Grid conversion',
+      'The statement that this tool\u2019s heights and British map heights are different datums'],
+    status: 'read',
+    reports: 'One page of the OS guide, supplied as text. It confirms the framework this '
+      + 'tool implements: the National Grid "consists of: a traditional geodetic datum using '
+      + 'the Airy 1830 ellipsoid; a TRF called OSGB36 ... and a Transverse Mercator map '
+      + 'projection", and "National Grid coordinates are nowadays determined by GNSS plus a '
+      + 'transformation rather than theodolite triangulation", which is what js/osgb.js does. '
+      + 'It also names two distinctions the tool had been glossing over. OS Net uses ETRS89, '
+      + 'which is not WGS84: the two coincided in 1989 and have since drifted about a metre '
+      + 'apart. And British map heights are Ordnance Datum Newlyn, a tide-gauge datum whose '
+      + 'bench marks carry "an orthometric height only", where the elevation data this tool '
+      + 'ships is referenced to the EGM2008 geoid.',
+    validation: 'Stored at docs/evidence/os-coordinate-systems-guide.txt. The test suite '
+      + 'checks the three quoted structural statements against that file, and separately '
+      + 'checks that the page does NOT contain the projection constants, the Helmert '
+      + 'parameters or the worked example, so the module cannot start claiming they were '
+      + 'verified by it. Mutation tested three ways, all caught: claiming the page confirmed '
+      + 'the numbers, claiming the vertical datum affects heights above ground level, and '
+      + 'inventing a figure for the geoid separation.',
+    caution: 'This page carries NO numbers. The projection constants, the Helmert parameters '
+      + 'and the worked example js/osgb.js uses are still unverified against any Ordnance '
+      + 'Survey document, because every OS host is blocked from the environment this tool was '
+      + 'built in. The vertical datum difference is named and NOT corrected: correcting it '
+      + 'needs a geoid separation model this tool does not carry. Heights above ground level '
+      + 'are unaffected either way, because a datum cancels in a difference.',
+  },
+  {
     id: 'defstan-00-56-part1-issue7',
     title: `${DS_STD.reference}, ${DS_STD.title}`,
     org: 'UK Ministry of Defence (DStan)',

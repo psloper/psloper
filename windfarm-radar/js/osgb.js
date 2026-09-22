@@ -27,15 +27,40 @@
 // magnitude below the noise it sits in. It is NOT good enough to set out a
 // turbine foundation, and nothing here should be used for that.
 //
-// PROVENANCE. The projection constants and the worked example came from the
-// Ordnance Survey guide, reached through a search result rather than the
-// document itself: every Ordnance Survey host is blocked from the environment
-// this was built in, and the PDF could not be fetched. The Helmert parameters
-// are the widely published OSGB36 set and were NOT verified against an OS
-// document here. The test suite checks the projection against the worked
-// example and checks the datum shift lands in the band a GB point should move,
-// which catches a transposed sign but would not catch a wrong parameter in the
-// last decimal place.
+// PROVENANCE, and it is split because the two halves have different standing.
+//
+// The FRAMEWORK is confirmed by the Ordnance Survey's own guide to coordinate
+// systems, one page of which was supplied and is stored at
+// docs/evidence/os-coordinate-systems-guide.txt. It states that the National
+// Grid "consists of: a traditional geodetic datum using the Airy 1830
+// ellipsoid; a TRF called OSGB36 ... and a Transverse Mercator map
+// projection", which is exactly the three-part structure implemented here,
+// and that "National Grid coordinates are nowadays determined by GNSS plus a
+// transformation rather than theodolite triangulation", which is what this
+// module does.
+//
+// The NUMBERS are not on that page and remain unverified against an OS
+// document. The projection constants and the worked example came from a search
+// result; the Helmert parameters are the widely published OSGB36 set and were
+// not checked against a primary source. Every Ordnance Survey host is blocked
+// from the environment this was built in. The test suite checks the projection
+// against the worked example and checks the datum shift lands in the band a GB
+// point should move, which catches a transposed sign but would not catch a
+// wrong parameter in the last decimal place.
+//
+// ETRS89 IS NOT WGS84, and the OS page is explicit that OS Net uses ETRS89.
+// The two were coincident in 1989 and have drifted apart with the motion of
+// the Eurasian plate, by roughly a metre now. A GNSS position given as ETRS89
+// and used here as WGS84 carries that error. It is smaller than the few metres
+// the Helmert approximation already costs, so it is not corrected, but it is
+// not nothing and it is not the same thing.
+//
+// HEIGHTS ARE A SEPARATE PROBLEM AND THIS MODULE DOES NOT TOUCH THEM. British
+// map heights are Ordnance Datum Newlyn, which the OS page describes as a
+// tide-gauge datum levelled from Newlyn, where each bench mark carries "an
+// orthometric height only". The elevation data this tool ships is Copernicus,
+// referenced to the EGM2008 geoid. Those are different vertical datums. See
+// VERTICAL_DATUM below.
 
 const DEG = Math.PI / 180;
 
@@ -235,3 +260,38 @@ export function ambiguousWithIrishGrid(easting, northing) {
   return looksLikeNationalGrid(easting, northing)
     && easting <= 400000 && northing <= 500000;
 }
+
+/**
+ * The vertical datum mismatch, named rather than silently carried.
+ *
+ * Everything this tool computes from heights ABOVE GROUND LEVEL is unaffected:
+ * antenna height on its mast, turbine hub and tip above the pad. Those are
+ * differences, and a datum cancels in a difference.
+ *
+ * What is affected is any height ABOVE SEA LEVEL that crosses between the two
+ * worlds. The tool prints AMSL figures derived from Copernicus terrain, which
+ * is EGM2008. A height read off a British drawing, a spot height or a bench
+ * mark is Ordnance Datum Newlyn. Comparing one with the other carries the
+ * difference between the two geoids, which in Great Britain is a sub-metre
+ * quantity but is not zero.
+ *
+ * No correction is applied, because applying one would need a geoid separation
+ * model this tool does not have and cannot fetch. The point of this constant
+ * is that the mismatch is stated where someone comparing numbers will find it.
+ */
+export const VERTICAL_DATUM = {
+  toolUses: 'EGM2008, through Copernicus DEM GLO-30.',
+  britishMapsUse: 'Ordnance Datum Newlyn (ODN).',
+  corrected: false,
+  affectsAgl: false,
+  aglNote: 'Heights above ground level are differences, so the datum cancels. Antenna '
+    + 'height, hub height and tip height are all unaffected.',
+  affectsAmsl: true,
+  amslNote: 'Any height above sea level this tool prints is EGM2008-based. A spot height or '
+    + 'bench mark from a British drawing is ODN. The two differ by a sub-metre amount across '
+    + 'Great Britain, so do not treat them as interchangeable when checking one against the '
+    + 'other. The size of the difference is NOT quantified here: it needs a geoid separation '
+    + 'model this tool does not carry.',
+  ref: 'Ordnance Survey, A guide to coordinate systems in Great Britain, '
+    + 'docs/evidence/os-coordinate-systems-guide.txt',
+};
