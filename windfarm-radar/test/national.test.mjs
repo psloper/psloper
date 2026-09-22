@@ -19,14 +19,17 @@ import { decodeBlock } from '../js/terrain.js';
 import { METHOD_HTML } from '../js/report.js';
 import { COASTLINE, COASTLINE_SOURCE } from '../js/coastline.js';
 import { HEAT_RADIUS_KM } from '../js/ukmap.js';
-import { UK_WIND_FARMS, UK_RADAR_SITES } from '../js/uksites.js';
+import { UK_WIND_FARMS, UK_RADAR_SITES , farmRecord } from '../js/uksites.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // The same mapping main.js uses, restated here so a change to the row layout
 // breaks a test rather than the map.
-const farmObj = (r, i) => ({ index: i, name: r[0], lat: r[1], lon: r[2], mw: r[3],
-  status: r[4], offshore: r[5] === 1, repdRef: r[6] });
+// The SAME builder the application uses. A local copy of this mapping is how
+// the test came to screen every farm at the fallback tip height while the
+// measurement tool used the real ones, and the two disagreed by 108 pairings
+// with nothing to say which was right.
+const farmObj = (r, i) => farmRecord(i);
 const radarObj = (r, i) => ({ index: i, name: r[0], role: r[1], lat: r[2], lon: r[3] });
 
 test('the compact site rows map to the fields the screen reads', () => {

@@ -9,7 +9,7 @@ import {
   UK_WIND_FARMS, UK_RADAR_SITES, UK_MILITARY_RADAR_NOTE, LIVE_STATUSES,
   POSITION_UNCERTAINTY_M, STATED_PRECISION_M,
   greatCircleM, initialBearingDeg, nearestRadar, pairingGeometry, farmRecord, radarRecord,
-  liveFarmIndices,
+  liveFarmIndices, farmCapacityLabel, farmAttributeCoverage,
 } from '../js/uksites.js';
 
 test('every record sits inside the UK and Ireland bounding box', () => {
@@ -27,9 +27,22 @@ test('every record sits inside the UK and Ireland bounding box', () => {
 
 test('capacities and roles are plausible', () => {
   // Berwick Bank alone is consented at 4,100 MW, so the ceiling is not 2 GW.
+  // Zero is allowed and means NOT RECORDED: 46 records, nearly all
+  // single-turbine schemes, carry no installed capacity in the database. A
+  // negative or absurd figure is still a fault.
+  let unrecorded = 0;
   for (const [name, , , mw] of UK_WIND_FARMS) {
-    assert.ok(mw > 0 && mw <= 5000, `${name} capacity ${mw} MW`);
+    assert.ok(mw >= 0 && mw <= 5000, `${name} capacity ${mw} MW`);
+    if (mw === 0) unrecorded += 1;
   }
+  // If this ever runs away, the source has changed shape and the zeros are no
+  // longer a handful of small schemes.
+  assert.ok(unrecorded < UK_WIND_FARMS.length * 0.05,
+    `${unrecorded} records carry no capacity, which is too many to call an exception`);
+  // And an unrecorded capacity must never be PRINTED as zero.
+  const blank = UK_WIND_FARMS.findIndex((f) => f[3] === 0);
+  assert.match(farmCapacityLabel(farmRecord(blank)), /not recorded/);
+  assert.match(farmCapacityLabel(farmRecord(UK_WIND_FARMS.findIndex((f) => f[3] > 0))), /MW/);
   const roles = new Set(UK_RADAR_SITES.map((r) => r[1]));
   assert.deepEqual([...roles].sort(), ['aerodrome', 'en-route', 'unclassified']);
   assert.ok(UK_RADAR_SITES.filter((r) => r[1] === 'en-route').length >= 15);
@@ -197,4 +210,76 @@ test('the module never claims a position is better than measured', () => {
   for (const phrase of ['Kelmarsh', 'Penmanshiel', 'n = 2']) {
     assert.ok(block.includes(phrase), `the constant must cite ${phrase}`);
   }
+});
+
+test('the turbine attributes from the July 2024 extract are present and sane', () => {
+  const cov = farmAttributeCoverage();
+  // Counts, not assertions about what "most" means.
+  assert.ok(cov.withCount > cov.live * 0.85,
+    `turbine count on only ${cov.withCount} of ${cov.live} live farms`);
+  assert.ok(cov.turbines > 12000 && cov.turbines < 30000,
+    `${cov.turbines} turbines across the live fleet is outside a believable range`);
+  // Tip height is much thinner cover, and that is the point of reporting it.
+  assert.ok(cov.withHeight > cov.live * 0.25 && cov.withHeight < cov.live,
+    `tip height on ${cov.withHeight} of ${cov.live} live farms`);
+
+  // The coverage counter reads the raw rows; farmRecord builds the object the
+  // application actually screens. If those two disagree, the builder is
+  // dropping a field, which is silent: the missing value reads as undefined
+  // and the screen quietly falls back to its assumption. Counting both and
+  // comparing is the only way that shows up.
+  let recCount = 0, recHeight = 0, recTurbines = 0;
+  for (const i of liveFarmIndices()) {
+    const f = farmRecord(i);
+    if (f.turbines) { recCount += 1; recTurbines += f.turbines; }
+    if (f.tipHeightM) recHeight += 1;
+  }
+  assert.equal(recCount, cov.withCount, 'farmRecord drops turbine counts the table holds');
+  assert.equal(recTurbines, cov.turbines, 'farmRecord disagrees on the fleet total');
+  assert.equal(recHeight, cov.withHeight, 'farmRecord drops tip heights the table holds');
+
+  for (const i of liveFarmIndices()) {
+    const f = farmRecord(i);
+    // A zero must never survive into the record as a real figure: the fields
+    // are null when the database has nothing, because a farm with no recorded
+    // turbine count is not a farm with no turbines.
+    assert.ok(f.turbines === null || f.turbines >= 1, `${f.name} turbine count ${f.turbines}`);
+    assert.ok(f.tipHeightM === null || (f.tipHeightM >= 20 && f.tipHeightM <= 400),
+      `${f.name} tip height ${f.tipHeightM} m`);
+    assert.ok(f.turbineMw === null || f.turbineMw > 0, `${f.name} turbine MW ${f.turbineMw}`);
+    // A grid reference rounded to the kilometre cannot be better than that.
+    assert.ok(f.gridPrecisionM === null || [1, 10, 100, 500, 1000].includes(f.gridPrecisionM),
+      `${f.name} grid precision ${f.gridPrecisionM}`);
+  }
+});
+
+test('turbine counts and positions are not confused for one another', () => {
+  // The extract gives how MANY turbines a project has. It does not give where
+  // any of them is, and nothing in the table may imply otherwise.
+  const f = farmRecord(liveFarmIndices()[0]);
+  assert.equal(f.turbinePositions, undefined);
+  assert.ok(Object.keys(f).every((k) => !/positions?$/i.test(k)),
+    `farmRecord exposes a field that sounds like per-turbine positions: ${Object.keys(f)}`);
+  // And the header has to say so, because that is where someone looks first.
+  const src = readFileSync(new URL('../js/uksites.js', import.meta.url), 'utf8');
+  assert.match(src, /NO PER-TURBINE POSITIONS HERE/);
+});
+
+test('one row mapping, not three', () => {
+  // main.js, this file and uksites.js each had their own hand-written copy of
+  // the compact-row mapping. When the July 2024 extract added a turbine count
+  // and a tip height, only one copy was updated: the sensitivity tool saw the
+  // new heights, the test did not, and the application did not either, and the
+  // disagreement was 108 pairings with nothing to say which was right. A
+  // missing field reads as undefined and falls silently back to an assumption,
+  // so this checks there is one mapping and the others defer to it.
+  const main = readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
+  const body = main.slice(main.indexOf('export function farmRowToObject'),
+    main.indexOf('export function radarRowToObject'));
+  assert.match(body, /farmRecord\(/, 'main.js has its own copy of the row mapping again');
+  assert.ok(!/lat:\s*r\[1\]/.test(body), 'main.js is reading the row by index again');
+
+  const tool = readFileSync(new URL('../tools/measure_sensitivity.mjs', import.meta.url), 'utf8');
+  assert.match(tool, /farmRecord\(/,
+    'the sensitivity tool measures something other than what the app screens');
 });

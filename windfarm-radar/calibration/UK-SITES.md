@@ -88,6 +88,52 @@ is three orders of magnitude.
 | Stated precision | **±1.1 m** | five decimal places, as written in the table |
 | Measured accuracy | **±1,100 m** | what happens when you check against ground truth |
 
+### Turbine counts and heights: the WINDEL July 2024 extract
+
+Added from *UK Wind Energy Locations (July 2024) v1.0*, compiled by Datadaptive
+from the DESNZ Renewable Energy Planning Database and supplied under the Open
+Government Licence v3.0. Datadaptive waives any compilation rights. Required
+attribution:
+
+> Contains public sector information licensed under the Open Government Licence v3.0
+
+**What it added**, merged by REPD reference in `calibration/merge_windel.py`:
+
+| Field | Live-farm coverage |
+| --- | --- |
+| Number of turbines | 1,320 of 1,447 (91%), 15,846 machines |
+| Tip height | 554 of 1,447 (38%) |
+| Per-turbine capacity | about 80% |
+| Native British National Grid easting and northing | 100% |
+
+The record count rose from 2,489 to 2,694 and live farms from 1,275 to 1,447,
+because each source held live projects the other lacked: 115 live only in the
+mirror (applications submitted after July 2024) and 172 live only in WINDEL.
+
+`TURBHT` is documented only as "the height of the wind turbines". It is **tip
+height**, inferred from how it tracks per-turbine capacity: 2 MW records sit at
+a 115 m median and 6 to 7 MW records at 200 m, which are tip figures for those
+machines and far above their hub heights. A handful of records carry 1 m and
+15 m; those are dropped, because a height that cannot be true is worse than no
+height.
+
+**What it did NOT add: any positional improvement.** On the 2,371 REPD
+references both sources carry, the positions agree to a median of 1.7 m, which
+is transform rounding. Against the two ground-truth sites below, WINDEL gives
+**1,140 m at Kelmarsh and 1,121 m at Penmanshiel** — the same errors, to the
+metre, as the mirror. Both are planning-application grid references. **There
+are still no per-turbine positions for any farm in this table.**
+
+One caution on the counts. At Kelmarsh the extract records **5 turbines** where
+the ground truth has **6**. That is n = 1, but it is enough to say the count is
+a planning figure like everything else here, not an as-built inventory.
+
+**Measured effect on the national screen.** Real tip heights for 38% of live
+farms cut the tip-height sensitivity from −28/+55% to **−19/+33%**: a third of
+the farms no longer depend on the fallback, so moving the fallback moves less.
+Screening at the recorded heights gives 910 visible pairings against 918 at a
+flat 150 m, because the median recorded tip is 130 m, below the assumption.
+
 There are two UK sites where real turbine coordinates were obtainable.
 
 **Kelmarsh**, all six turbine positions known, from the Zenodo static table

@@ -16,11 +16,17 @@ HEADER = '''// Real UK wind farm and civil radar site positions.
 // calibration/UK-SITES.md. Four things matter before you use these numbers:
 //
 //  1. These are PLANNING RECORDS, not surveyed turbine positions. Each row is
-//     one project with one point, taken from the UK Renewable Energy Planning
-//     Database. Where this tool has ground truth to test against, at Kelmarsh,
-//     the recorded point is 1,141 m from the true centre of the array, which is
-//     2.4 times the radius of the whole array. The coordinates are written to
-//     five decimal places. That is PRECISION, NOT ACCURACY.
+//     one project with ONE point, taken from the UK Renewable Energy Planning
+//     Database. THERE ARE NO PER-TURBINE POSITIONS HERE, for any farm. Where
+//     this tool has ground truth to test against, at Kelmarsh, the recorded
+//     point is 1,141 m from the true centre of the array, which is 2.4 times
+//     the radius of the whole array. The coordinates are written to five
+//     decimal places. That is PRECISION, NOT ACCURACY.
+//  1b. The turbine COUNT, tip height and per-turbine rating do come from the
+//     database, via the WINDEL July 2024 extract. They say how many machines
+//     there are and how tall, not where any of them is. At Kelmarsh the count
+//     is recorded as 5 where the ground truth has 6, so it is not gospel
+//     either; that is n = 1.
 //  2. STATUS MATTERS AND IS CARRIED HERE. Most rows are not operating plant:
 //     of {n} wind records, {op} are operational and {dead} were refused,
 //     withdrawn, abandoned or expired. Filter on status before drawing any
@@ -56,12 +62,23 @@ def main():
               '// as recorded and must be filtered out of any capacity total.\n')
     out.write('export const LIVE_STATUSES = [%s];\n\n'
               % ', '.join("'%s'" % s for s in LIVE))
-    out.write('// [name, latitude, longitude, capacity_MW, status, offshore(0|1), REPD ref]\n')
+    out.write('// [name, latitude, longitude, capacity_MW, status, offshore(0|1), REPD ref,\n'
+              '//  turbine count|0, tip height m|0, per-turbine MW|0, grid precision m|0]\n'
+              '//\n'
+              '// The last four come from the WINDEL July 2024 extract via\n'
+              '// calibration/merge_windel.py and are 0 where that source has no figure.\n'
+              '// A ZERO MEANS UNKNOWN, NOT ZERO. Tip height is the height to the blade\n'
+              '// tip, not the hub. Grid precision is the coarsest round number the\n'
+              "// project's British National Grid reference sits on, which is a FLOOR on\n"
+              '// its uncertainty and not the uncertainty: a reference given to the metre\n'
+              '// is still about a kilometre out at both sites with ground truth.\n')
     out.write('export const UK_WIND_FARMS = [\n')
     for f in farms:
-        out.write('  [%s,%.5f,%.5f,%.1f,%s,%d,%s],\n' % (
+        out.write('  [%s,%.5f,%.5f,%.1f,%s,%d,%s,%d,%d,%g,%d],\n' % (
             json.dumps(f['name']), f['lat'], f['lon'], f['mw'],
-            json.dumps(f['status']), 1 if f['offshore'] else 0, json.dumps(f['ref'])))
+            json.dumps(f['status']), 1 if f['offshore'] else 0, json.dumps(f['ref']),
+            f.get('turbines') or 0, f.get('tipHeightM') or 0,
+            f.get('turbineMw') or 0, f.get('gridPrecisionM') or 0))
     out.write('];\n\n')
     out.write("// [name, role, latitude, longitude, sources, disagreement_m|0]\n"
               "// role: 'en-route' (NATS En Route surveillance), 'aerodrome' (airport\n"

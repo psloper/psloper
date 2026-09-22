@@ -10,9 +10,13 @@
 import { readFileSync } from 'node:fs';
 import { decodeBlock } from '../js/terrain.js';
 import { nationalScreen, STATUS_GROUPS } from '../js/national.js';
+import { UK_WIND_FARMS, farmRecord } from '../js/uksites.js';
 
 const root = new URL('..', import.meta.url).pathname;
-const allFarms = JSON.parse(readFileSync(root + 'data/uk-wind-farms.json', 'utf8'));
+// Measure what the APPLICATION screens, not the intermediate JSON it was
+// generated from. The two are the same data in two representations and they
+// can drift; the app reads uksites.js, so this does too.
+const allFarms = UK_WIND_FARMS.map((_, i) => farmRecord(i));
 const radars = JSON.parse(readFileSync(root + 'data/uk-radar-sites.json', 'utf8'));
 const manifest = JSON.parse(readFileSync(root + 'data/terrain/manifest.json', 'utf8'));
 const buf = readFileSync(root + 'data/terrain/' + manifest.coarse.file);

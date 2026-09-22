@@ -24,7 +24,10 @@ export const STATUS_GROUPS = {
   active: { label: 'Operational and under construction', match: ACTIVE_STATUSES },
   pipeline: {
     label: 'Consented or in planning',
-    match: ['Awaiting Construction', 'Application Submitted', 'Revised'],
+    // 'Appeal Lodged' arrived with the WINDEL July 2024 extract. An appeal
+    // against a refusal is still a live planning process, so it belongs here
+    // and not with the refused projects: the application has not finished.
+    match: ['Awaiting Construction', 'Application Submitted', 'Revised', 'Appeal Lodged'],
   },
   dead: {
     label: 'Refused, withdrawn or abandoned',
@@ -41,18 +44,22 @@ export const STATUS_GROUPS = {
  */
 export const ASSUMPTIONS = {
   tipHeightM: 150,
-  tipHeightNote: 'The planning database gives no turbine height, so the screen assumes a 150 m tip. '
-    + 'That is a modern onshore machine. MEASURED: a 100 m tip gives 28 per cent fewer '
-    + 'visible pairings, a 250 m tip 55 per cent more. The biggest lever of the '
-    + 'assumptions, though smaller than the effect of having terrain at all.',
+  tipHeightNote: 'The planning database records a turbine height for some projects and not '
+    + 'others. Where it does, the screen uses THAT height and this assumption does not '
+    + 'apply to that farm; where it does not, it falls back to a 150 m tip, which is a '
+    + 'modern onshore machine. MEASURED: a 100 m fallback gives 19 per cent fewer visible '
+    + 'pairings, a 250 m fallback 33 per cent more. The biggest lever of the assumptions, '
+    + 'though smaller than the effect of having terrain at all. The per-farm coverage is '
+    + 'counted and reported, so the fraction still resting on the fallback is visible '
+    + 'rather than assumed away.',
   antennaHeightM: 20,
   antennaHeightNote: 'No mounting is published for most of these sites. 20 m above ground is a typical '
-    + 'aerodrome arrangement and is a guess for every site here. MEASURED: 10 m gives 17 '
-    + 'per cent fewer visible pairings, a 50 m lattice tower 38 per cent more.',
+    + 'aerodrome arrangement and is a guess for every site here. MEASURED: 10 m gives 15 '
+    + 'per cent fewer visible pairings, a 50 m lattice tower 30 per cent more.',
   kFactor: 4 / 3,
   kFactorNote: 'Standard refraction. Under a surface duct the radar sees further, so a farm this '
-    + 'screen calls hidden may not be. MEASURED: k = 1 gives 16 per cent fewer visible '
-    + 'pairings, k = 2 gives 25 per cent more.',
+    + 'screen calls hidden may not be. MEASURED: k = 1 gives 15 per cent fewer visible '
+    + 'pairings, k = 2 gives 16 per cent more.',
   maxRangeM: 100000,
   maxRangeNote: 'Pairings beyond 100 km are not tested. Some en-route radars instrument '
     + 'further than that.',
@@ -60,8 +67,8 @@ export const ASSUMPTIONS = {
   samplesNote: 'The terrain profile is sampled 48 times between radar and farm. The per-site '
     + 'assessment uses 128 and real elevation blocks at 100 or 200 m; this uses the 500 m '
     + 'national grid, so a narrow ridge can be missed here and caught there. MEASURED: 16 '
-    + 'samples OVERSTATES visibility by 11 per cent because it steps over ridges, and 128 '
-    + 'samples moves the answer by 2 per cent, so 48 is close to converged.',
+    + 'samples OVERSTATES visibility by 12 per cent because it steps over ridges, and 128 '
+    + 'samples moves the answer by 3 per cent, so 48 is close to converged.',
   positionNote: 'Farm positions are planning-database centroids, out by about 1,100 m in the median '
     + 'case. A centroid is not a turbine, and at the margin of visibility that error '
     + 'decides the answer. MEASURED: shifting every farm 1,100 m flips the visible or '
@@ -85,27 +92,35 @@ export const ASSUMPTIONS = {
  */
 export const SENSITIVITY = {
   measuredOn: '2026-09-22',
-  baselinePairings: 800,
-  baselineFarms: 876,
+  baselinePairings: 910,
+  baselineFarms: 880,
   // Not an assumption, a data question: what happens with no ground at all.
-  noTerrainPct: 127,
-  tipLowPct: -28,        // 100 m tip
-  tipHighPct: 55,        // 250 m tip
-  antennaLowPct: -17,    // 10 m
-  antennaHighPct: 38,    // 50 m lattice
-  kLowPct: -16,          // k = 1.0, no refraction
-  kHighPct: 25,          // k = 2.0, super-refraction
-  samplesCoarsePct: 11,  // 16 samples instead of 48
-  samplesFinePct: -2,    // 128 samples
+  noTerrainPct: 99,
+  // RE-MEASURED after the WINDEL July 2024 extract brought real turbine
+  // heights for 38 per cent of live farms. The tip-height figures fell from
+  // -28/+55 to -19/+33 for exactly that reason: a third of the farms no longer
+  // depend on the fallback at all, so moving the fallback moves less. That is
+  // the assumption getting smaller because the data got better, not the model
+  // changing its mind.
+  tipLowPct: -19,        // 100 m fallback tip
+  tipHighPct: 33,        // 250 m fallback tip
+  antennaLowPct: -15,    // 10 m
+  antennaHighPct: 30,    // 50 m lattice
+  kLowPct: -15,          // k = 1.0, no refraction
+  kHighPct: 16,          // k = 2.0, super-refraction
+  samplesCoarsePct: 12,  // 16 samples instead of 48
+  samplesFinePct: -3,    // 128 samples
   // Not an assumption either: the measured 1,100 m position error. Every farm
   // shifted by that much, worst of four directions, counting verdicts that
   // flip between visible and hidden.
   positionFlipPct: 5.6,
   positionFlipCount: 49,
-  order: 'Ranked by how much each moves the result: terrain at all (127%), '
-    + 'turbine tip height (-28 to +55%), antenna height (-17 to +38%), '
-    + 'refraction (-16 to +25%), profile sampling (-2 to +11%). The 1,100 m '
-    + 'position error flips the verdict on 5.6% of farms.',
+  order: 'Ranked by how much each moves the result: terrain at all (99%), '
+    + 'turbine tip height (-19 to +33%), antenna height (-15 to +30%), '
+    + 'refraction (-15 to +16%), profile sampling (-3 to +12%). The 1,100 m '
+    + 'position error flips the verdict on 5.6% of farms, and the turbine '
+    + 'heights that arrived with the July 2024 extract did nothing to that: it '
+    + 'is the same planning-application grid reference it always was.',
   tolerance: 2,  // percentage points the test allows before it fails
 };
 
@@ -141,9 +156,16 @@ export function nationalScreen({ radars, farms, coarse = null, assumptions = {} 
   // Furthest a turbine tip could be seen over a smooth earth: the radar's own
   // horizon plus the turbine's. Anything past this cannot be visible whatever
   // the terrain does, so it is not worth sampling a profile for.
+  // The range gate has to use the TALLEST tip in play, not the fallback: a
+  // farm with a recorded 250 m tip would otherwise be cut before its profile
+  // was ever sampled, on the strength of a height it does not have.
+  let tallest = a.tipHeightM;
+  for (const f of farms) {
+    if (f.tipHeightM && f.tipHeightM > tallest) tallest = f.tipHeightM;
+  }
   const reach = Math.min(
     a.maxRangeM,
-    horizonDistance(a.antennaHeightM, ae) + horizonDistance(a.tipHeightM, ae),
+    horizonDistance(a.antennaHeightM, ae) + horizonDistance(tallest, ae),
   );
 
   const byRadar = radars.map((r) => ({
@@ -155,6 +177,11 @@ export function nationalScreen({ radars, farms, coarse = null, assumptions = {} 
   }));
   const pairings = [];
   let profiles = 0;
+  // How many pairings used a height the database actually records, against how
+  // many fell back to the assumption. Printing this is the difference between
+  // a map that knows what it is standing on and one that does not.
+  let recordedTip = 0;
+  let assumedTip = 0;
   let skipped = 0;   // pairings with an unusable coordinate
 
   for (let ri = 0; ri < radars.length; ri++) {
@@ -187,7 +214,10 @@ export function nationalScreen({ radars, farms, coarse = null, assumptions = {} 
       if (D > reach) { byRadar[ri].beyond += 1; continue; }
 
       const groundF = terrain.heightAt(dE, dN);
-      const point = { east: dE, north: dN, height: groundF + a.tipHeightM };
+      // The farm's own recorded tip height where the database has one.
+      const tip = f.tipHeightM || a.tipHeightM;
+      if (f.tipHeightM) recordedTip += 1; else assumedTip += 1;
+      const point = { east: dE, north: dN, height: groundF + tip };
       const obs = profileObstruction(site, point, terrain, ae, a.samples);
       profiles += 1;
 
@@ -218,6 +248,12 @@ export function nationalScreen({ radars, farms, coarse = null, assumptions = {} 
     profiles,
     skipped,
     reachM: reach,
+    tipHeights: {
+      recorded: recordedTip,
+      assumed: assumedTip,
+      tallestM: tallest,
+      fallbackM: a.tipHeightM,
+    },
     assumptions: a,
     terrainUsed: coarse ? 'the 500 m national grid' : 'NONE: every pairing treated as flat sea level',
     summary: {

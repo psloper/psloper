@@ -633,14 +633,50 @@ export const REFERENCES = [
 
   // ------------------------------------------------- real UK site positions
   {
+    id: 'windel-2024',
+    title: 'UK Wind Energy Locations (July 2024) v1.0',
+    authors: 'Datadaptive, from Department for Energy Security and Net Zero data (Crown copyright)',
+    type: 'Open Government Licence v3.0; supplied as XLSX, ESRI Shapefile and KMZ',
+    status: 'analysed',
+    supports: ['turbine counts per farm', 'turbine tip heights', 'per-turbine capacity',
+      'the national screen using real heights instead of one assumption'],
+    reports: '2,576 records, a documented extract of the DESNZ Renewable Energy Planning Database '
+      + 'with a published field specification. It carries three fields the GitHub mirror drops '
+      + 'entirely: TURBNUM the number of turbines, TURBHT their height, and TURBCAP the individual '
+      + 'turbine rating, plus native British National Grid eastings and northings. Merged by REPD '
+      + 'reference, this gives a turbine count on 1,320 of 1,447 live farms (91 per cent, 15,846 '
+      + 'machines) and a tip height on 554 (38 per cent). TURBHT is documented only as "the height '
+      + 'of the wind turbines"; it is TIP height, inferred from how it tracks capacity, with 2 MW '
+      + 'records at a 115 m median and 6 to 7 MW records at 200 m. Records carrying 1 m or 15 m are '
+      + 'dropped as data entry errors.',
+    validation: 'IT ADDS NO POSITIONAL ACCURACY, WHICH WAS CHECKED RATHER THAN ASSUMED. On the '
+      + '2,371 REPD references this and the mirror both carry, positions agree to a median of '
+      + '1.7 m, which is coordinate transform rounding. Against the two ground-truth sites it gives '
+      + '1,140 m at Kelmarsh and 1,121 m at Penmanshiel, the same errors as the mirror to the '
+      + 'metre. THERE ARE STILL NO PER-TURBINE POSITIONS FOR ANY FARM. The counts are planning '
+      + 'figures too, not an as-built inventory: at Kelmarsh the extract records 5 turbines where '
+      + 'the ground truth has 6. That is n = 1. MEASURED EFFECT: real tip heights on 38 per cent of '
+      + 'live farms cut the tip-height sensitivity of the national screen from -28/+55 per cent to '
+      + '-19/+33 per cent, because a third of the farms no longer depend on the fallback at all. '
+      + 'Screening at recorded heights gives 910 visible pairings against 918 at a flat 150 m, the '
+      + 'median recorded tip being 130 m.',
+    attribution: 'Contains public sector information licensed under the Open Government Licence v3.0',
+    caution: 'Supersedes nothing. It is the same database as the mirror entry below, reached a '
+      + 'second way, and the two are merged rather than one replacing the other because each holds '
+      + 'live projects the other lacks.',
+  },
+  {
     id: 'repd-pipeline',
     title: 'UK Renewable Energy Planning Database, wind records',
     authors: 'Department for Energy Security and Net Zero (Crown copyright)',
     type: 'Open Government Licence v3, reached through a third-party snapshot',
     status: 'analysed',
     supports: ['real UK wind farm positions', 'current and planned projects', 'the UK site picker'],
-    reports: '2,489 wind records with valid geometry, each with latitude, longitude, capacity, '
-      + 'planning authority, offshore or onshore, and a DEVELOPMENT STATUS. 832 operational '
+    reports: 'MERGED FROM TWO REACHES OF THE SAME DATABASE: an undocumented GitHub mirror of a '
+      + 'later snapshot, and the documented July 2024 extract below. 2,694 wind records with valid '
+      + 'geometry, 1,447 of them current or planned, each with latitude, longitude, capacity, '
+      + 'planning authority, offshore or onshore, and a DEVELOPMENT STATUS. The earlier '
+      + 'mirror-only figures were 2,489 wind records. 832 operational '
       + '(31,519 MW), 44 under construction (13,883 MW), 220 awaiting construction (38,017 MW) and '
       + '179 with an application submitted (28,900 MW), for 1,275 current or planned projects '
       + 'totalling 89,199 MW. 85 of those are offshore. The snapshot contains Hornsea 3 and 4, '

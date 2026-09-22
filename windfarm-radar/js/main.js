@@ -18,7 +18,8 @@ import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
 import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
 import { UkMap, MAP_COLORS } from './ukmap.js';
 import { nationalScreen, ACTIVE_STATUSES } from './national.js';
-import { UK_WIND_FARMS, UK_RADAR_SITES } from './uksites.js';
+import { UK_WIND_FARMS, UK_RADAR_SITES, farmRecord, farmCapacityLabel,
+  farmAttributeCoverage } from './uksites.js';
 import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
 import {
   readTable, readElevationFile, parseTurbineRows, buildImportedTerrain,
@@ -605,16 +606,19 @@ $('#btn-export').addEventListener('click', () => $('#dlg-export').showModal());
 let ukMap = null;
 let ukScreen = null;
 
-// The site lists are stored as compact arrays to keep the bundle small:
-// [name, lat, lon, MW, status, offshore, ref] and
-// [name, role, lat, lon, sources, disagreement]. The map wants objects, and
-// reading the wrong index here is silent, so the mapping is in one place and
-// the test suite checks it against a known site.
+// The site lists are stored as compact arrays to keep the bundle small, and
+// reading the wrong index is silent, so there is exactly ONE mapping and it
+// lives with the data in uksites.js.
+//
+// It did not, for a while. There were three hand-written copies of this
+// mapping: here, in uksites.js, and a third in the test file. When the July
+// 2024 extract added a turbine count and a tip height, updating one of the
+// three meant the sensitivity tool saw the new heights, the test did not, and
+// the application itself did not either. Three copies is three chances to
+// forget, and the forgetting is invisible because a missing field reads as
+// undefined and falls back to an assumption.
 export function farmRowToObject(r, i) {
-  return {
-    index: i, name: r[0], lat: r[1], lon: r[2], mw: r[3],
-    status: r[4], offshore: r[5] === 1, repdRef: r[6],
-  };
+  return farmRecord(i);
 }
 
 export function radarRowToObject(r, i) {
@@ -689,7 +693,7 @@ function mapPanel(hit) {
     el.innerHTML = `<h4>Wind farm</h4><div class="big">${esc(f.name || '(unnamed record)')}</div>`
       + `<div>${esc(f.status)}${f.imported ? ' &middot; imported' : ''}</div><hr>`
       + '<table>'
-      + `<tr><td>Capacity</td><td>${esc(f.mw)} MW</td></tr>`
+      + `<tr><td>Capacity</td><td>${esc(farmCapacityLabel(f))}</td></tr>`
       + `<tr><td>${f.offshore ? 'Offshore' : 'Onshore'}</td><td>${esc(f.authority || '')}</td></tr>`
       + `<tr><td>Radars that can see it</td><td>${esc(b.seenBy)}</td></tr>`
       + `<tr><td>Radars in range but blocked</td><td>${esc(b.hiddenFrom)}</td></tr>`
@@ -699,6 +703,7 @@ function mapPanel(hit) {
     return;
   }
   const a = s.assumptions;
+  const cov = farmAttributeCoverage();
   el.innerHTML = '<h4>National screen</h4>'
     + '<table>'
     + `<tr><td>Radars</td><td>${esc(s.summary.radars)}</td></tr>`
@@ -709,7 +714,22 @@ function mapPanel(hit) {
     + `<tr><td>Farms seen by three or more</td><td>${esc(s.summary.farmsSeenByThreeOrMore)}</td></tr>`
     + `<tr><td>Radars seeing nothing</td><td>${esc(s.summary.radars - s.summary.radarsSeeingSomething)}</td></tr>`
     + `<tr><td>Terrain profiles run</td><td>${esc(s.profiles)} in ${esc(s.tookMs)} ms</td></tr>`
-    + '</table><hr>'
+    + '</table>'
+    // How much of the answer rests on recorded figures and how much on an
+    // assumption. A screen that cannot say which is which invites its numbers
+    // to be read as measurements.
+    + '<hr><h4>What the data carries</h4>'
+    + '<table>'
+    + `<tr><td>Turbines counted</td><td>${esc(cov.turbines.toLocaleString('en-GB'))}</td></tr>`
+    + `<tr><td>Farms with a turbine count</td><td>${esc(cov.withCount)} of ${esc(cov.live)}</td></tr>`
+    + `<tr><td>Farms with a recorded tip height</td><td>${esc(cov.withHeight)} of ${esc(cov.live)}</td></tr>`
+    + `<tr><td>Pairings at a recorded height</td><td>${esc(s.tipHeights.recorded)}</td></tr>`
+    + `<tr><td>Pairings at the ${esc(s.tipHeights.fallbackM)} m fallback</td><td>${esc(s.tipHeights.assumed)}</td></tr>`
+    + '</table>'
+    + '<p>Turbine COUNTS and heights come from the planning database. Turbine POSITIONS do not: '
+    + 'every farm here is one point, and at the two sites with ground truth that point is about '
+    + '1.1 km from the array. Import a layout on the Site and data tab to assess a real one.</p>'
+    + '<hr>'
     + '<h4>What this is</h4>'
     + '<p>Line of sight and range only. It asks whether the top of a turbine would be above the '
     + 'intervening ground as seen from the antenna. It does NOT say a return would cross a '
