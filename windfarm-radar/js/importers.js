@@ -330,6 +330,9 @@ function parseSiteRows(rows, fields, opts, makeSite) {
   const warnings = [];
   const sites = [];
   let skipped = 0;
+  let gridConverted = 0;   // read as British National Grid
+  let gridAsOffset = 0;    // read as metres from the radar grid position
+  let gridIrishAmbiguous = 0;  // inside the Irish Grid box as well
 
   if (found.index < 0 || found.map.name === undefined) {
     return { sites: [], warnings: ['No header row found. The sheet needs a column headed '
@@ -368,7 +371,19 @@ function parseSiteRows(rows, fields, opts, makeSite) {
     if (hasGrid) {
       const e = numberFrom(get('easting'));
       const n = numberFrom(get('northing'));
-      if (e != null && n != null) { east = e - radarEasting; north = n - radarNorthing; }
+      if (e != null && n != null) {
+        if (lat == null && looksLikeNationalGrid(e, n)) {
+          // A real grid reference. Convert it properly rather than treating it
+          // as metres from the radar, and record that the reading was a guess.
+          const w = gridToWgs84(e, n);
+          lat = w.lat; lon = w.lon;
+          gridConverted += 1;
+          if (ambiguousWithIrishGrid(e, n)) gridIrishAmbiguous += 1;
+        } else {
+          east = e - radarEasting; north = n - radarNorthing;
+          gridAsOffset += 1;
+        }
+      }
     }
     if (lat == null && east == null) { skipped += 1; continue; }
 
@@ -376,8 +391,37 @@ function parseSiteRows(rows, fields, opts, makeSite) {
   }
 
   if (!sites.length) warnings.push('No usable rows. Every row was missing a name or a position.');
-  return { sites, warnings, skipped, headerRow: found.index, columns: found.map };
+  // Say which reading was taken. Guessing silently between a grid reference
+  // and a local offset is the difference between a site in Lincolnshire and a
+  // site 600 km off the coast, so the caller is told and can print it.
+  if (gridConverted) {
+    warnings.push(`${gridConverted} site(s) had eastings and northings inside the British `
+      + 'National Grid, so they were converted from OSGB36 to WGS84 latitude and longitude. '
+      + 'That conversion is a 7-parameter Helmert approximation, good to a few metres, not '
+      + 'the centimetre-accurate OSTN15. If those numbers were NOT National Grid, supply '
+      + 'latitude and longitude instead.');
+  }
+  if (gridIrishAmbiguous) {
+    warnings.push(`${gridIrishAmbiguous} of those sit inside the IRISH Grid box as well, `
+      + 'and the two cannot be told apart from the numbers. They have been read as British '
+      + 'National Grid. If the schedule is Irish Grid, every one of them is about 100 km from '
+      + 'where it belongs: supply latitude and longitude instead.');
+  }
+  if (gridAsOffset) {
+    warnings.push(`${gridAsOffset} site(s) had eastings and northings outside the National `
+      + 'Grid, so they were read as metres from the radar grid position you set. No datum '
+      + 'transformation was applied to them.');
+  }
+  return {
+    sites, warnings, skipped, headerRow: found.index, columns: found.map,
+    gridConverted, gridAsOffset, gridIrishAmbiguous,
+  };
 }
+
+// Eastings and northings in a UK schedule are usually a British National Grid
+// reference, not an offset from anything. Treating them as an offset put every
+// such site hundreds of kilometres out.
+import { gridToWgs84, looksLikeNationalGrid, ambiguousWithIrishGrid } from './osgb.js';
 
 const ROLE_WORDS = [
   [/en.?route|nerl|area|long.?range/i, 'en-route'],

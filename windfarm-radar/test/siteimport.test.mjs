@@ -62,15 +62,47 @@ test('a title block above the table does not defeat the header search', () => {
   assert.equal(r.sites[0].antennaHeightM, 18);
 });
 
-test('eastings and northings are read relative to the radar grid position', () => {
+test('eastings and northings inside the National Grid are converted, not offset', () => {
+  // This test used to assert the opposite. Eastings and northings were read as
+  // metres from the radar grid position, so a schedule written in real OSGB36
+  // grid references landed hundreds of kilometres out unless the user happened
+  // to set the radar grid position to match. They are now converted.
   const csv = 'name,easting,northing\nA,412500,318200\nB,411000,317000\n';
   const r = parseFarmSiteRows(rowsOf(csv), { radarEasting: 412000, radarNorthing: 318000 });
   assert.equal(r.sites.length, 2);
+  // 412500 E, 318200 N is near Burton upon Trent. The longitude is checkable
+  // without trusting the conversion: the easting is 12.5 km east of the
+  // 400000 false origin, which sits on the 2 W central meridian, and 12.5 km
+  // at 52.76 N is 12500 / (111412 * cos 52.76) = 0.186 degrees. So 2 W plus
+  // 0.186 is 1.814 W, which is what the conversion gives to three places.
+  assert.ok(Math.abs(r.sites[0].lat - 52.7613) < 0.01, `lat ${r.sites[0].lat}`);
+  assert.ok(Math.abs(r.sites[0].lon - -1.8162) < 0.01, `lon ${r.sites[0].lon}`);
+  assert.equal(r.gridConverted, 2);
+  assert.equal(r.gridAsOffset, 0);
+  assert.ok(r.warnings.some((w) => /OSGB36/.test(w)),
+    'converting a grid reference must say so, and say what transformation was used');
+});
+
+test('eastings outside the National Grid are still read as a local offset', () => {
+  const csv = 'name,easting,northing\nA,500,200\nB,-1000,-300\n';
+  const r = parseFarmSiteRows(rowsOf(csv), { radarEasting: 0, radarNorthing: 0 });
+  assert.equal(r.sites.length, 2);
   assert.equal(r.sites[0].east, 500);
-  assert.equal(r.sites[0].north, 200);
   assert.equal(r.sites[1].east, -1000);
-  assert.ok(r.warnings.some((w) => /radar grid position/.test(w)),
-    'using a grid without lat/lon must warn about the grid origin');
+  assert.equal(r.gridConverted, 0);
+  assert.equal(r.gridAsOffset, 2);
+  assert.ok(r.warnings.some((w) => /radar grid position/.test(w)));
+});
+
+test('a grid reference that could be Irish is flagged, not silently resolved', () => {
+  // The Irish Grid box sits entirely inside the British one. Reading an Irish
+  // reference as British puts the site about 100 km out, and the numbers alone
+  // cannot say which it is.
+  const csv = 'name,easting,northing\nA,315000,234000\n';
+  const r = parseFarmSiteRows(rowsOf(csv));
+  assert.equal(r.gridIrishAmbiguous, 1);
+  assert.ok(r.warnings.some((w) => /IRISH Grid/.test(w)),
+    'an ambiguous grid reference must say it is ambiguous');
 });
 
 test('a file with no position at all fails loudly and says what is missing', () => {
