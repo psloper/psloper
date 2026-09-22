@@ -28,7 +28,7 @@ const R = 38;                                   // metres half-height of a cell
 KEYS.forEach((key, i) => {
   const p = TARGET_PRESETS[key];
   const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing,
-    engines: p.engines, enginesOn: p.enginesOn });
+    engines: p.engines, enginesOn: p.enginesOn, tailLayout: p.tail || null });
   g.traverse((m) => { if (m.isMesh) m.material = mat; });
   holder.clear(); holder.add(g);
   const col = i % COLS, row = Math.floor(i / COLS);

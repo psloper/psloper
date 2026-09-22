@@ -20,7 +20,7 @@ for (const key of SHOW) {
   const p = TARGET_PRESETS[key];
   for (const girth of [1, 6]) {
     const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth,
-      engines: p.engines, enginesOn: p.enginesOn });
+      engines: p.engines, enginesOn: p.enginesOn, tailLayout: p.tail || null });
     g.updateMatrixWorld(true);
     box.setFromObject(g);
     const sx = box.max.x - box.min.x;
@@ -39,7 +39,7 @@ for (const key of ALL) {
   const p = TARGET_PRESETS[key];
   const dims = [1, 6].map((girth) => {
     const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth,
-      engines: p.engines, enginesOn: p.enginesOn });
+      engines: p.engines, enginesOn: p.enginesOn, tailLayout: p.tail || null });
     g.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(g);
     return { x: bb.max.x - bb.min.x, z: bb.max.z - bb.min.z };
@@ -77,7 +77,7 @@ for (const key of ALL) {
   const p = TARGET_PRESETS[key];
   if (p.planform !== 'wing') continue;
   const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing,
-    engines: p.engines, enginesOn: p.enginesOn });
+    engines: p.engines, enginesOn: p.enginesOn, tailLayout: p.tail || null });
   g.updateMatrixWorld(true);
   const fus = partBox(g, 'fuselage');
   const fin = partBox(g, 'fin');
@@ -106,6 +106,88 @@ for (const key of ALL) {
   const ratio = fw / p.lengthM;
   if (ratio > 0.16 || ratio < 0.05) {
     fails.push(`${key}: fuselage is ${ratio.toFixed(3)} of the length across`);
+  }
+
+  // 5. Every lifting surface's centre offset is DERIVED from its leading-edge
+  // sweep, not set to it. panelGeometry translates the whole tip section, so a
+  // leading-edge figure used as a centre offset over-sweeps the trailing edge
+  // by half the taper. That single mistake was three separate faults on the
+  // drawing, and no bounding box can see it, which is why this checks the
+  // parameters the surface was built from.
+  const su = g.userData.surfaces || {};
+  for (const [name, v] of Object.entries(su)) {
+    const want = v.le - (v.root - v.tip) / 2;
+    if (Math.abs(want - v.sweep) > 1e-6) {
+      fails.push(`${key}: ${name} centre sweep ${v.sweep.toFixed(2)} m, but a `
+        + `${v.le.toFixed(2)} m leading-edge sweep on a ${v.root.toFixed(2)}/`
+        + `${v.tip.toFixed(2)} m taper implies ${want.toFixed(2)}`);
+    }
+  }
+
+  // 6. The tail is laid out the way the preset says. It used to be inferred
+  // from engine position, which drew the ATR 72 and the A400M, both T-tails,
+  // with their tailplanes on the tail cone.
+  // Read the layout off the PRESET, not off the geometry's own record of what
+  // it drew. The first version of this check asked the geometry what layout it
+  // had used and then checked it had used it, which is a tautology: the
+  // mutation that made the ATR 72 forget it is a T-tail changed both sides of
+  // the comparison together and the check stayed green.
+  const tp2 = partBox(g, 'tailplane');
+  if (tp2 && p.tail === 't') {
+    const finMid = (fin.max.y + fus.max.y) / 2;
+    if (tp2.min.y < finMid) {
+      fails.push(`${key}: declared a T-tail but the tailplane sits at `
+        + `y ${tp2.min.y.toFixed(2)}, below the fin midpoint ${finMid.toFixed(2)}`);
+    }
+  }
+
+  // 7. A delta carries foreplanes AHEAD of the wing, not a tailplane behind
+  // it. The Typhoon was drawn with a 3.3 m tailplane it does not have.
+  if (tp2 && p.tail === 'canard') {
+    const wingBox = partBox(g, 'wing');
+    if (tp2.min.z < wingBox.max.z) {
+      fails.push(`${key}: declared a canard but the foreplane starts at `
+        + `z ${tp2.min.z.toFixed(2)}, behind the wing leading edge `
+        + `${wingBox.max.z.toFixed(2)}`);
+    }
+  }
+
+  // 8. Tailplane span against wing span. An A320 tailplane is 12.4 m on a
+  // 35.8 m wing and a Cessna 3.4 m on 11.0 m, so 0.30 to 0.38 covers the
+  // range. It was drawn at a flat 0.40 of the span for every class.
+  if (tp2 && (p.tail || 'low') !== 'canard') {
+    const frac = (tp2.max.x - tp2.min.x) / p.spanM;
+    if (frac > 0.38 || frac < 0.26) {
+      fails.push(`${key}: tailplane spans ${frac.toFixed(3)} of the wing span`);
+    }
+  }
+
+  // 9. A low wing is actually low. It sat 5% of the body depth below the
+  // centreline on an A320, which reads as mid-mounted.
+  if (p.wing === 'swept') {
+    const wingBox = partBox(g, 'wing');
+    const wingMid = (wingBox.max.y + wingBox.min.y) / 2;
+    const fusMid = (fus.max.y + fus.min.y) / 2;
+    const depth = fus.max.y - fus.min.y;
+    if ((fusMid - wingMid) / depth < 0.12) {
+      fails.push(`${key}: wing centre is only `
+        + `${(((fusMid - wingMid) / depth) * 100).toFixed(1)}% of the body depth `
+        + 'below the fuselage centreline');
+    }
+  }
+
+  // 10. A propeller measures its own diameter. Two blades set at 30 degrees
+  // spanned cos 30 of the radius: 1.68 m on a Cessna whose disc is 1.91 m.
+  const pr = g.userData.propRadiusM || 0;
+  if (pr > 0 && p.enginesOn !== 'wing-prop') {
+    const blades = partBox(g, 'propeller');
+    if (!blades) { fails.push(`${key}: propeller radius set but no blades`); } else {
+      const drawn = blades.max.x - blades.min.x;
+      if (drawn < pr * 2 * 0.95) {
+        fails.push(`${key}: propeller disc measures ${drawn.toFixed(2)} m `
+          + `against a ${(pr * 2).toFixed(2)} m radius`);
+      }
+    }
   }
 
   // 4. A propeller meets its aircraft. The spinner used to sit right up
@@ -169,7 +251,7 @@ const mat = new THREE.MeshStandardMaterial({ color: 0xdbe7f0, roughness: 0.5, me
 SHOW.forEach((key, i) => {
   const p = TARGET_PRESETS[key];
   const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing, girth: 1,
-    engines: p.engines, enginesOn: p.enginesOn });
+    engines: p.engines, enginesOn: p.enginesOn, tailLayout: p.tail || null });
   g.traverse((m) => { if (m.isMesh) m.material = mat; });
   const k = 20 / Math.max(p.lengthM, p.spanM);   // same drawn size for every one
   g.scale.setScalar(k);

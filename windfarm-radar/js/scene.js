@@ -221,6 +221,25 @@ export class Orbit {
  * whatever those angles are. That is what keeps the drawn span equal to the
  * span the model carries.
  */
+/**
+ * The centre offset that a given LEADING-EDGE sweep implies.
+ *
+ * panelGeometry translates the whole tip SECTION aft by `sweep`, so `sweep` is
+ * a centre-line offset, not the leading-edge sweep anybody quotes. Feeding it
+ * a leading-edge figure over-sweeps the trailing edge by half the taper, and
+ * that one mistake was three of the faults on the aircraft: a wing that read
+ * as a paper dart, a fin whose root trailing edge sat 4.35 m forward of the
+ * tail on an A320 against about 2.4 m real, and a tailplane swept almost twice
+ * as far as the real one.
+ *
+ *   leading edge moves back by  leSweep
+ *   trailing edge moves back by leSweep - (rootChord - tipChord)
+ *   the centre, then, by        leSweep - (rootChord - tipChord) / 2
+ */
+function sweepFromLeadingEdge(leSweep, rootChord, tipChord) {
+  return leSweep - (rootChord - tipChord) / 2;
+}
+
 function panelGeometry({ semi, rootChord, tipChord, sweep, dihedral = 0, thick, side = 1 }) {
   const v = [];
   const tris = [];
@@ -370,6 +389,7 @@ function engineNacelleGeometry(podR, podLen) {
  */
 export function aircraftGeometry(spanM, lengthM, {
   planform = 'wing', wing = 'straight', girth = 1, engines = 0, enginesOn = 'none',
+  tailLayout = null,
 } = {}) {
   const span = Math.max(0.3, spanM);
   const len = Math.max(0.3, lengthM);
@@ -448,6 +468,7 @@ export function aircraftGeometry(spanM, lengthM, {
   // A propeller at the nose or the tail is part of the aircraft's length, so
   // the body is shortened to make room for it rather than the disc being hung
   // off the end where it would make the aircraft longer than the model says.
+  let propRadiusM = 0;
   const propAtNose = engines > 0 && enginesOn === 'nose';
   const propAtTail = engines > 0 && enginesOn === 'tail';
   const propLen = (propAtNose || propAtTail) ? len * 0.06 : 0;
@@ -474,13 +495,23 @@ export function aircraftGeometry(spanM, lengthM, {
   // fractions invented to fill the space: a swept transport wing is about a
   // sixth of the length at the root and a quarter of that at the tip, and
   // sweeps back about half a semi-span, which is 27 degrees.
+  // `le` is the LEADING-EDGE sweep as a fraction of the semi-span, which is
+  // the tangent of the angle everybody quotes: 0.51 is the 27 degrees of an
+  // A320, 1.33 the 53 degrees of a Typhoon, 0.06 the couple of degrees of a
+  // Cessna. The centre offset panelGeometry actually wants is derived from it.
+  //
+  // y: a low-wing transport carries its wing box at the BOTTOM of the
+  // fuselage. It was at -0.45 body radii, which on an A320 put the wing centre
+  // 0.22 m below a centreline in a body 4.28 m deep, so it looked mid-mounted.
   const wingSpec = delta
-    ? { root: len * 0.50, taper: 0.10, sweep: semi * 1.00, dihedral: 0, y: 0, z: -len * 0.06 }
+    ? { root: len * 0.50, taper: 0.10, le: 1.33, dihedral: 0, y: 0, z: -len * 0.06 }
     : swept
-      ? { root: len * 0.17, taper: 0.26, sweep: semi * 0.50, dihedral: semi * 0.07,
-        y: -bodyR * 0.45, z: -len * 0.02 }
-      : { root: len * 0.155, taper: 0.62, sweep: semi * 0.05, dihedral: semi * 0.05,
-        y: bodyR * 0.35, z: len * 0.10 };
+      ? { root: len * 0.17, taper: 0.26, le: 0.51, dihedral: semi * 0.07,
+        y: -bodyR * 0.80, z: -len * 0.02 }
+      : { root: len * 0.165, taper: 0.68, le: 0.06, dihedral: semi * 0.05,
+        y: bodyR * 0.35, z: len * 0.08 };
+  wingSpec.sweep = sweepFromLeadingEdge(
+    semi * wingSpec.le, wingSpec.root, wingSpec.root * wingSpec.taper);
   // Same overhang rule as the tail surfaces, and for the same reason: sweep
   // moves the whole tip section aft, so a big enough sweep carries the tip
   // trailing edge past the tail. On a delta the sweep is a full semi-span, and
@@ -506,17 +537,18 @@ export function aircraftGeometry(spanM, lengthM, {
   // a light aircraft. Sizing the panel itself rather than the tip was the
   // second half of the missing-tail problem: with a fat body the panel was
   // shorter than the fuselage radius and sat entirely inside it.
-  const finTipFrac = delta ? 0.22 : swept ? 0.26 : 0.20;
+  const finTipFrac = delta ? 0.22 : swept ? 0.24 : 0.20;
   const finH = Math.max(len * 0.07, len * finTipFrac - bodyR * 0.35);
   // The root chord is about the fin's own height on a real aeroplane, which is
   // what gives the leading edge room to sweep while the trailing edge stays
   // near vertical.
-  const finRoot = finH * 0.75;
-  const finTip = finRoot * 0.35;
+  const finRoot = finH * (swept ? 0.85 : 0.75);
+  const finTip = finRoot * (swept ? 0.40 : 0.35);
   const finThick = Math.max(len * 0.004, finRoot * 0.07 * Math.min(girth, 3));
-  // Real fin sweep: about 40 degrees on a swept-wing transport, less on a
-  // straight-wing light aircraft, more on a fast jet.
-  const finSweep = finH * (delta ? 0.85 : swept ? 0.72 : 0.45);
+  // Leading-edge sweep, as a fraction of the fin's own height: 0.82 is the
+  // 39 degrees of a transport fin, 0.47 the 25 degrees of a light aircraft.
+  const finSweep = sweepFromLeadingEdge(
+    finH * (delta ? 1.10 : swept ? 0.82 : 0.47), finRoot, finTip);
   // Sweep moves the WHOLE tip section aft in this panel model, so an
   // unplaced panel carries its tip trailing edge past the tail: the fast jet
   // came out 17.4 m long against a 15.6 m model and the verifier caught it.
@@ -564,19 +596,32 @@ export function aircraftGeometry(spanM, lengthM, {
   // Tailplane. On an aircraft with rear-fuselage engines it goes on top of the
   // fin, because that is where it goes and a T-tail is the clearest way to
   // tell a business jet from an airliner at a glance.
-  const tTail = enginesOn === 'rear';
-  const tailSemi = semi * (delta ? 0.30 : 0.40);
-  const tailRoot = wingSpec.root * (delta ? 0.42 : 0.58);
+  // Tail layout is a property of the AIRFRAME, not of where its engines are.
+  // Inferring a T-tail from rear-mounted engines drew the ATR 72 and the A400M
+  // with their tailplanes on the tail cone at 0.4 m when both are T-tails with
+  // the fin tip at 5.4 m. A delta gets foreplanes ahead of the wing instead:
+  // the Typhoon was drawn with a 3.3 m tailplane it does not have.
+  const tail = tailLayout || (enginesOn === 'rear' ? 't' : delta ? 'canard' : 'low');
+  const tTail = tail === 't';
+  const canard = tail === 'canard';
+  // Span, against the real thing: an A320 tailplane is 12.4 m on a 35.8 m
+  // wing, a Cessna 3.4 m on 11.0 m. It was 0.40 of the span, which is both.
+  const tailSemi = semi * (canard ? 0.45 : 0.34);
+  const tailRoot = wingSpec.root * (canard ? 0.38 : 0.58);
   const tailTip = tailRoot * 0.5;
-  const tailSweep = tailSemi * (swept || delta ? 0.55 : 0.14);
+  const tailSweep = sweepFromLeadingEdge(
+    tailSemi * (swept || canard ? 0.55 : 0.09), tailRoot, tailTip);
   const tailThick = Math.max(len * 0.004, tailRoot * 0.09 * Math.min(girth, 3));
   // Same placement rule as the fin. A T-tail rides the fin tip, but never far
   // enough aft to overhang the fuselage.
   const tailAft = Math.max(tailRoot / 2, tailSweep + tailTip / 2);
-  const tailZ = tTail
-    ? Math.max(finZ - finSweep, -nz + tailAft)
-    : -nz + tailAft;
-  const tailY = tTail ? bodyR * 0.35 + finH : bodyR * 0.3;
+  const tailZ = canard
+    // Ahead of the wing leading edge, where a foreplane goes.
+    ? Math.min(nz - tailRoot * 0.6, wingSpec.z + wingSpec.root / 2 + tailRoot * 0.9)
+    : tTail
+      ? Math.max(finZ - finSweep, -nz + tailAft)
+      : -nz + tailAft;
+  const tailY = tTail ? bodyR * 0.35 + finH : canard ? bodyR * 0.55 : bodyR * 0.3;
   for (const side of [-1, 1]) {
     const tp = new THREE.Mesh(panelGeometry({
       semi: tailSemi, rootChord: tailRoot, tipChord: tailTip,
@@ -603,6 +648,7 @@ export function aircraftGeometry(spanM, lengthM, {
     // Propeller radius from the real thing: an ATR 72 turns a 3.9 m disc on a
     // 27.2 m airframe, an A400M a 5.3 m disc on 45.1 m.
     const propR = wingProp ? Math.min(len * 0.065, semi * 0.28) : 0;
+    if (wingProp) propRadiusM = propR;
     for (let e = 0; e < pairs; e++) {
       const frac = pairs === 1 ? 0.34 : 0.28 + e * 0.29;
       // Furthest out an engine may sit and still be inside the wingtip, with
@@ -692,6 +738,7 @@ export function aircraftGeometry(spanM, lengthM, {
   if (propAtNose || propAtTail) {
     const dir = propAtNose ? 1 : -1;
     const propR = Math.min(len * 0.115, semi * 0.75);
+    propRadiusM = propR;
     // Where the body actually ends on this side, so the spinner starts there.
     const faceZ = nz - propLen;
     const spinner = new THREE.Mesh(
@@ -708,7 +755,10 @@ export function aircraftGeometry(spanM, lengthM, {
       const blade = new THREE.Mesh(new THREE.BoxGeometry(
         propR * 2, Math.max(0.03, bodyR * 0.12), Math.max(0.03, propLen * 0.30)), null);
       blade.position.z = hubZ;
-      blade.rotation.z = (b / blades) * Math.PI + Math.PI / 6;
+      // Offset zero, so a two-blade propeller lies along X and the drawn disc
+      // is its true diameter. At 30 degrees the pair measured cos 30 of the
+      // radius: 1.68 m across on a Cessna whose propeller is 1.91 m.
+      blade.rotation.z = (b / blades) * Math.PI;
       blade.userData.part = 'propeller';
       g.add(blade);
     }
@@ -716,6 +766,21 @@ export function aircraftGeometry(spanM, lengthM, {
 
   g.userData.spanM = span;
   g.userData.lengthM = len;
+  // What the surfaces were actually built from, so a check can test the
+  // PARAMETERS and not only the bounding boxes they happen to produce. A
+  // bounding box cannot tell a correct centre-line offset from a leading-edge
+  // figure used in its place, which is the mistake that made every lifting
+  // surface on every class read as a dart.
+  g.userData.surfaces = {
+    wing: { semi, root: wingSpec.root, tip: tipChord,
+      le: semi * wingSpec.le, sweep: wingSpec.sweep },
+    fin: { semi: finH, root: finRoot, tip: finTip,
+      le: finH * (delta ? 1.10 : swept ? 0.82 : 0.47), sweep: finSweep },
+    tail: { semi: tailSemi, root: tailRoot, tip: tailTip,
+      le: tailSemi * (swept || canard ? 0.55 : 0.09), sweep: tailSweep },
+  };
+  g.userData.tailLayout = tail;
+  g.userData.propRadiusM = propRadiusM;
   return g;
 }
 
@@ -1765,6 +1830,7 @@ export class SceneView {
       wing: t.wing || 'straight',
       engines: t.engines || 0,
       enginesOn: t.enginesOn || 'none',
+      tailLayout: t.tail || null,
       // NO girth exaggeration. The turbines need it because they are drawn at
       // true size and a 5.5 m tower is a quarter of a pixel across a 40 km
       // scene. The aircraft is already scaled up bodily by aircraftScale, so

@@ -1,44 +1,92 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aircraft look</title>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Aircraft three-view</title>
 <script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
-<style>body{margin:0;background:#f2f4f7}canvas{display:block}</style></head><body>
+<style>body{margin:0;background:#eef1f5}canvas{display:block}</style></head><body>
 <canvas id="c"></canvas>
 <script type="module">
 import * as THREE from 'three';
 import { aircraftGeometry } from '../js/scene.js';
 import { TARGET_PRESETS } from '../js/model.js';
 
-// One class, three orthographic views, drawn large enough to judge the shape
-// rather than to confirm a number. Plan, side, front: the three views an
-// aircraft three-view uses, for the same reason.
-const key = new URL(location).searchParams.get('t') || 'regional-jet';
+// One class, three orthographic views at a KNOWN scale, over a metre grid, so
+// a fault can be measured off the picture and not just asserted. Every view
+// uses the same pixels-per-metre, so the three are directly comparable.
+const key = new URL(location).searchParams.get('t') || 'a320';
 const p = TARGET_PRESETS[key];
-const W = 1400, H = 1300;
+const W = 1500;
+const PLAN = 620, SIDE = 460, FRONT = 420;
+const H = PLAN + SIDE + FRONT;
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(W, H); renderer.setClearColor(0xf2f4f7, 1);
+renderer.setSize(W, H); renderer.setClearColor(0xeef1f5, 1);
 renderer.setScissorTest(true);
+
+const span = p.spanM, len = p.lengthM;
+const scale = Math.min((W - 80) / Math.max(span, len), (PLAN - 60) / Math.max(span, len));
+const grid = span > 40 ? 10 : span > 14 ? 5 : 1;   // metres per grid square
+
 const scene = new THREE.Scene();
-scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa5b1, 2.0));
-const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(2, 3, 2); scene.add(sun);
-const g = aircraftGeometry(p.spanM, p.lengthM, { planform: p.planform, wing: p.wing,
-  engines: p.engines, enginesOn: p.enginesOn });
-const mat = new THREE.MeshStandardMaterial({ color: 0x2b3440, roughness: 0.55, metalness: 0.05 });
+scene.add(new THREE.HemisphereLight(0xffffff, 0x97a2ae, 2.1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(1.4, 2.6, 1.8); scene.add(sun);
+
+// Grid, drawn in all three planes so every view has a ruler behind it.
+const gmat = new THREE.LineBasicMaterial({ color: 0xc3ccd6 });
+const gmat10 = new THREE.LineBasicMaterial({ color: 0x9aa7b4 });
+const ext = Math.max(span, len) * 0.75;
+const pts = [], pts10 = [];
+for (let v = -Math.ceil(ext / grid) * grid; v <= ext; v += grid) {
+  const major = Math.abs(v % (grid * 5)) < 1e-6;
+  const t = major ? pts10 : pts;
+  t.push(new THREE.Vector3(v, -ext, 0), new THREE.Vector3(v, ext, 0));   // XY plane
+  t.push(new THREE.Vector3(-ext, v, 0), new THREE.Vector3(ext, v, 0));
+  t.push(new THREE.Vector3(v, 0, -ext), new THREE.Vector3(v, 0, ext));   // XZ plane
+  t.push(new THREE.Vector3(-ext, 0, v), new THREE.Vector3(ext, 0, v));
+  t.push(new THREE.Vector3(0, v, -ext), new THREE.Vector3(0, v, ext));   // YZ plane
+  t.push(new THREE.Vector3(0, -ext, v), new THREE.Vector3(0, ext, v));
+}
+const mkLines = (arr, m) => {
+  const g = new THREE.BufferGeometry().setFromPoints(arr);
+  return new THREE.LineSegments(g, m);
+};
+scene.add(mkLines(pts, gmat));
+scene.add(mkLines(pts10, gmat10));
+
+const g = aircraftGeometry(span, len, { planform: p.planform, wing: p.wing,
+  engines: p.engines, enginesOn: p.enginesOn, tailLayout: p.tail || null });
+const mat = new THREE.MeshStandardMaterial({ color: 0x33404e, roughness: 0.5, metalness: 0.08 });
 g.traverse((m) => { if (m.isMesh) m.material = mat; });
 scene.add(g);
-const R = Math.max(p.spanM, p.lengthM) * 0.60;
+g.updateMatrixWorld(true);
+
 const views = [
-  { name: 'plan',  pos: [0, 100, 0],  up: [0, 0, -1], rect: [0, H / 2, W, H / 2] },
-  { name: 'side',  pos: [100, 0, 0],  up: [0, 1, 0],  rect: [0, H / 4, W, H / 4] },
-  { name: 'front', pos: [0, 0, 100],  up: [0, 1, 0],  rect: [0, 0, W / 2, H / 4] },
-  { name: '3/4',   pos: [70, 34, 62], up: [0, 1, 0],  rect: [W / 2, 0, W / 2, H / 4] },
+  { pos: [0, 200, 0],  up: [0, 0, -1], y: H - PLAN,  h: PLAN },   // plan, nose up
+  { pos: [200, 0, 0],  up: [0, 1, 0],  y: FRONT,     h: SIDE },   // side, nose right
+  { pos: [0, 0, 200],  up: [0, 1, 0],  y: 0,         h: FRONT },  // front
 ];
 for (const v of views) {
-  const [x, y, w, h] = v.rect;
-  const a = w / h;
-  const cam = new THREE.OrthographicCamera(-R * a, R * a, R, -R, 0.1, 500);
+  const cam = new THREE.OrthographicCamera(
+    -W / (2 * scale), W / (2 * scale), v.h / (2 * scale), -v.h / (2 * scale), 0.1, 900);
   cam.position.set(...v.pos); cam.up.set(...v.up); cam.lookAt(0, 0, 0);
-  renderer.setViewport(x, y, w, h); renderer.setScissor(x, y, w, h);
+  renderer.setViewport(0, v.y, W, v.h); renderer.setScissor(0, v.y, W, v.h);
   renderer.render(scene, cam);
 }
+
+// Per-part measurements in metres, computed from the geometry rather than read
+// off the picture, so a fault named from the image comes with a number.
+const parts = {};
+const bb = new THREE.Box3();
+g.traverse((m) => {
+  if (!m.isMesh) return;
+  const name = m.userData.part || 'unnamed';
+  bb.setFromObject(m);
+  const e = parts[name] || (parts[name] = {
+    minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity,
+    minZ: Infinity, maxZ: -Infinity, n: 0 });
+  e.minX = Math.min(e.minX, bb.min.x); e.maxX = Math.max(e.maxX, bb.max.x);
+  e.minY = Math.min(e.minY, bb.min.y); e.maxY = Math.max(e.maxY, bb.max.y);
+  e.minZ = Math.min(e.minZ, bb.min.z); e.maxZ = Math.max(e.maxZ, bb.max.z);
+  e.n += 1;
+});
+window.__parts = parts;
+window.__meta = { key, label: p.label, span, len, grid, scale };
 window.__drawn = true;
 </script></body></html>
