@@ -197,7 +197,12 @@ test('anything claiming to have been read in full has the text stored to prove i
   const read = REFERENCES.filter((r) => r.status === 'read');
   for (const r of read) {
     assert.ok(r.validation, `${r.id} claims to be read in full but shows no working`);
-    const m = r.validation.match(/docs\/evidence\/[\w.-]+/);
+    // Greedy over filename characters but required to END on a word character.
+    // Two things went wrong here. [\w.-]+ swallowed a sentence-ending full stop
+    // and turned "...guide.txt." into a filename that does not exist; matching
+    // a single extension instead then truncated
+    // "eurocontrol-esassp-spec-0147-ed1.3-2024.txt" at the dot inside "ed1.3".
+    const m = r.validation.match(/docs\/evidence\/[\w.-]*\w/);
     assert.ok(m, `${r.id} claims to be read in full but names no stored copy of the text`);
     const file = resolve(dirname(fileURLToPath(import.meta.url)), '..', m[0]);
     assert.ok(existsSync(file), `${r.id} names ${m[0]}, which does not exist`);
