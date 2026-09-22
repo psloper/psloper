@@ -755,6 +755,7 @@ function mapLegend() {
   row(MAP_COLORS.farmPipeline, 'In planning (layer off by default)');
   row(MAP_COLORS.radar, 'Radar with farms in sight');
   row(MAP_COLORS.radarQuiet, 'Radar with none');
+  row(MAP_COLORS.radarMil, 'Imported air defence site (not in the built-in list)');
   row(null, 'Heat: how many radars can see the turbines there. '
     + 'Not a probability of anything.').style.marginTop = '6px';
 }

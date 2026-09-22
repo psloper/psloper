@@ -13,7 +13,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-import { nationalScreen, distanceM, STATUS_GROUPS, ACTIVE_STATUSES, ASSUMPTIONS } from '../js/national.js';
+import { nationalScreen, distanceM, STATUS_GROUPS, ACTIVE_STATUSES, ASSUMPTIONS,
+  SENSITIVITY } from '../js/national.js';
+import { decodeBlock } from '../js/terrain.js';
+import { METHOD_HTML } from '../js/report.js';
 import { COASTLINE, COASTLINE_SOURCE } from '../js/coastline.js';
 import { UK_WIND_FARMS, UK_RADAR_SITES } from '../js/uksites.js';
 
@@ -173,4 +176,79 @@ test('the coastline is well formed and small enough to ship', () => {
   }
   const bytes = readFileSync(resolve(root, 'js/coastline.js')).length;
   assert.ok(bytes < 300 * 1024, `coastline.js is ${(bytes / 1024).toFixed(0)} KB`);
+});
+
+// --------------------------------------------------- measured sensitivity
+
+// The map states percentages for how far each assumption moves the answer.
+// They were measured once by tools/measure_sensitivity.mjs, and a number
+// measured once is a number that goes stale. This recomputes them against the
+// shipped terrain and fails if any has drifted.
+const manifest = JSON.parse(readFileSync(resolve(root, 'data/terrain/manifest.json'), 'utf8'));
+const buf = readFileSync(resolve(root, 'data/terrain', manifest.coarse.file));
+const coarse = await decodeBlock(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+const activeFarms = UK_WIND_FARMS.map(farmObj).filter((f) => ACTIVE_STATUSES.includes(f.status));
+const allRadars = UK_RADAR_SITES.map(radarObj);
+
+test('the stated sensitivity figures still match the data', () => {
+  const base = nationalScreen({ radars: allRadars, farms: activeFarms, coarse });
+  const B = base.summary.visiblePairings;
+  assert.equal(B, SENSITIVITY.baselinePairings, 'the baseline itself has moved');
+  assert.equal(activeFarms.length, SENSITIVITY.baselineFarms);
+  const pct = (over, terrain = coarse) => {
+    const n = nationalScreen({ radars: allRadars, farms: activeFarms, coarse: terrain,
+      assumptions: over }).summary.visiblePairings;
+    return Math.round(((n - B) / B) * 100);
+  };
+  const checks = [
+    ['noTerrainPct', pct({}, null)],
+    ['tipLowPct', pct({ tipHeightM: 100 })],
+    ['tipHighPct', pct({ tipHeightM: 250 })],
+    ['antennaLowPct', pct({ antennaHeightM: 10 })],
+    ['antennaHighPct', pct({ antennaHeightM: 50 })],
+    ['kLowPct', pct({ kFactor: 1.0 })],
+    ['kHighPct', pct({ kFactor: 2.0 })],
+    ['samplesCoarsePct', pct({ samples: 16 })],
+    ['samplesFinePct', pct({ samples: 128 })],
+  ];
+  const drift = checks.filter(([k, v]) => Math.abs(v - SENSITIVITY[k]) > SENSITIVITY.tolerance)
+    .map(([k, v]) => `${k}: stated ${SENSITIVITY[k]}%, measured ${v}%`);
+  assert.deepEqual(drift, [], 'stated sensitivity has drifted from the data');
+});
+
+test('the ranking the panel claims is the ranking the numbers give', () => {
+  // The panel says terrain matters most, then tip height, then antenna, then
+  // refraction, then sampling. If that order ever changes the text is wrong.
+  const spread = (lo, hi) => Math.abs(SENSITIVITY[hi]) + Math.abs(SENSITIVITY[lo]);
+  const tip = spread('tipLowPct', 'tipHighPct');
+  const ant = spread('antennaLowPct', 'antennaHighPct');
+  const k = spread('kLowPct', 'kHighPct');
+  const samp = spread('samplesFinePct', 'samplesCoarsePct');
+  assert.ok(SENSITIVITY.noTerrainPct > tip, 'terrain is no longer the biggest effect');
+  assert.ok(tip > ant, 'tip height is no longer the biggest assumption');
+  assert.ok(ant > k, 'antenna height no longer beats refraction');
+  assert.ok(k > samp, 'refraction no longer beats sampling');
+  assert.match(SENSITIVITY.order, /terrain at all/);
+});
+
+test('the assumption notes quote the measured figures, not adjectives', () => {
+  // Each note must contain the number its own sensitivity entry carries, so a
+  // measured value cannot be updated while the prose keeps the old claim.
+  assert.match(ASSUMPTIONS.tipHeightNote, new RegExp(String(Math.abs(SENSITIVITY.tipHighPct))));
+  assert.match(ASSUMPTIONS.antennaHeightNote, new RegExp(String(Math.abs(SENSITIVITY.antennaHighPct))));
+  assert.match(ASSUMPTIONS.kFactorNote, new RegExp(String(Math.abs(SENSITIVITY.kHighPct))));
+  assert.match(ASSUMPTIONS.samplesNote, new RegExp(String(Math.abs(SENSITIVITY.samplesCoarsePct))));
+  assert.match(ASSUMPTIONS.positionNote, new RegExp(String(SENSITIVITY.positionFlipCount)));
+  for (const note of [ASSUMPTIONS.tipHeightNote, ASSUMPTIONS.antennaHeightNote]) {
+    assert.match(note, /MEASURED/, 'a note no longer says its figure was measured');
+  }
+});
+
+test('the military radar statement is scoped to the built-in list', () => {
+  // Importing air defence positions is supported, so the report must not go on
+  // claiming there is no military radar "in this tool".
+  assert.ok(!/No military radar is included in either set or in this tool/.test(METHOD_HTML),
+    'the report still says no military radar is in this tool, which import makes false');
+  assert.match(METHOD_HTML, /BUILT-IN list/);
+  assert.match(METHOD_HTML, /air defence/i);
 });

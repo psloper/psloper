@@ -200,9 +200,15 @@ to assert the performance of any aircraft.</p>
       (CC BY 4.0), last released in early 2022, so they are neither current nor per-turbine.
       Radar positions are merged from two community aviation data sets, which disagree with
       each other by a median of 1.4 km and by up to 5.9 km; neither is an official source.
-      No military radar is included in either set or in this tool, and MOD safeguarding is
-      what most often decides a real UK application. Placing a pairing gives you a realistic
-      geometry to explore. It does not give you a site assessment.</li>
+      No military radar is in either set or in the BUILT-IN list, and MOD safeguarding is
+      what most often decides a real UK application. You can import military radar positions
+      yourself: the site list importer recognises an air defence role and the map draws those
+      sites separately, so an imported air defence radar is never counted as a civil PSR. It
+      remains your data and your responsibility, this tool asserts nothing about where those
+      sites are, and it models an air defence radar with the same primary-radar physics as
+      any other, which is a poorer fit the further the real system is from a conventional
+      2D surveillance radar. Placing a pairing gives you a realistic geometry to explore. It
+      does not give you a site assessment.</li>
   <li>Wind farm effects on communications, navigation aids, or seismic arrays.</li>
   <li>Aerodrome obstacle limitation surfaces and physical safeguarding.</li>
   <li>Weather radar product corruption beyond the generic clutter treatment.</li>

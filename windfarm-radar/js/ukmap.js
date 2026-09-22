@@ -18,6 +18,9 @@ export const MAP_COLORS = {
   farmHidden: '#416f83',
   radar: '#ff6b52',
   radarQuiet: '#8fa3b0',
+  // Imported air defence sites are drawn apart from civil radar, so one is
+  // never read as the other on a map that mixes both.
+  radarMil: '#b98cff',
   sight: 'rgba(111, 211, 162, 0.16)',
   selected: '#ffffff',
 };
@@ -389,8 +392,14 @@ export class UkMap {
       ctx.lineTo(p.x + size, p.y + size * 0.8);
       ctx.lineTo(p.x - size, p.y + size * 0.8);
       ctx.closePath();
-      ctx.fillStyle = quiet ? MAP_COLORS.radarQuiet : MAP_COLORS.radar;
+      ctx.fillStyle = r.role === 'air-defence' ? MAP_COLORS.radarMil
+        : quiet ? MAP_COLORS.radarQuiet : MAP_COLORS.radar;
       ctx.fill();
+      if (r.role === 'air-defence') {
+        // A square notch under the triangle: colour alone is not enough on a
+        // dark map, and this survives a greyscale print of the report.
+        ctx.fillRect(p.x - size * 0.45, p.y + size * 0.8, size * 0.9, size * 0.5);
+      }
       if (i === this.selected || (this.hover && this.hover.kind === 'radar' && this.hover.index === i)) {
         ctx.strokeStyle = MAP_COLORS.selected;
         ctx.lineWidth = 1.6;
