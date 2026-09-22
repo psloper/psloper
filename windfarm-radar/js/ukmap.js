@@ -7,6 +7,13 @@
 
 import { STATUS_GROUPS, distanceM } from './national.js';
 
+/**
+ * How far each farm's visibility spreads in the heat layer, in kilometres on
+ * the ground. Fixed in GROUND distance so the colour means the same thing at
+ * every zoom; it is stated on the map next to the scale bar.
+ */
+export const HEAT_RADIUS_KM = 12;
+
 /** Colours, kept here so the legend and the canvas cannot disagree. */
 export const MAP_COLORS = {
   sea: '#0b1620',
@@ -257,6 +264,7 @@ export class UkMap {
     if (this.layers.sightlines && this.screen) this._drawSightlines();
     this._drawFarms();
     if (this.layers.radars) this._drawRadars();
+    this._drawScaleBar();
   }
 
   _drawHeat() {
@@ -267,7 +275,23 @@ export class UkMap {
       const gw = Math.ceil(this.w / step);  // resolution and scale up: the
       const gh = Math.ceil(this.h / step);  // field is smooth, so it costs
       const field = new Float32Array(gw * gh);  // nothing visible.
-      const radius = 9;
+      // The kernel is a fixed distance ON THE GROUND, not a fixed number of
+      // pixels. It used to be 27 screen pixels, which meant a 42 km
+      // neighbourhood at the default view and a 1.1 km one zoomed in: the same
+      // colour meant a different thing depending on how far you had zoomed,
+      // which is the one thing a heat map must never do. Clamped at the top so
+      // a deep zoom cannot turn one farm into a screen-filling wash, and at
+      // the bottom so it stays visible when zoomed out.
+      const wantPx = HEAT_RADIUS_KM * 1000 * this.proj.pxPerMetre();
+      // Zoomed in far enough that one farm's kernel covers a third of the
+      // view, the field stops being a field: it is one blob, it hides the
+      // coastline and the markers, and it tells you nothing you could not read
+      // off the farm itself. Below that scale the layer switches itself off
+      // and says why, rather than drawing something unreadable.
+      this.heatTooClose = wantPx * 2 > Math.min(this.w, this.h) * 0.66;
+      if (this.heatTooClose) { this.heat = { skip: true }; return this._heatNote(); }
+      const radius = Math.max(4, Math.round(wantPx / step));
+      this.heatRadiusKm = (radius * step) / (this.proj.pxPerMetre() * 1000);
       const r2 = radius * radius;
       let max = 0;
       for (const fb of this.screen.byFarm) {
@@ -296,18 +320,31 @@ export class UkMap {
         img.data[i * 4] = r;
         img.data[i * 4 + 1] = g;
         img.data[i * 4 + 2] = 70;
-        img.data[i * 4 + 3] = Math.round(190 * Math.min(1, t * 1.25));
+        img.data[i * 4 + 3] = Math.round(225 * Math.min(1, t * 1.6));
       }
       const off = document.createElement('canvas');
       off.width = gw; off.height = gh;
       off.getContext('2d').putImageData(img, 0, 0);
-      this.heat = { canvas: off, max, step };
+      this.heat = { canvas: off, max, step, radius };
     }
+    if (this.heat.skip) return this._heatNote();
     const ctx = this.ctx;
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(this.heat.canvas, 0, 0, this.w, this.h);
+    ctx.restore();
+  }
+
+  /** Say why the heat layer is not drawn, rather than leaving it blank. */
+  _heatNote() {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(232, 194, 63, 0.9)';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Heat map hidden: zoomed in past its ${HEAT_RADIUS_KM} km resolution. `
+      + 'Zoom out to read it.', this.w / 2, 22);
     ctx.restore();
   }
 
@@ -360,7 +397,10 @@ export class UkMap {
       // A farm no radar can see is drawn cooler, so the map distinguishes
       // "there is a turbine here" from "a radar can see it".
       if (seen && seen.get(f) === 0) colour = MAP_COLORS.farmHidden;
-      const r = f.offshore ? 2.6 : 2.2;
+      // Scaled with zoom, clamped. At a fixed 2.2 px a farm was 3.4 km across
+      // at the national view and 86 m across at full zoom, so zooming in to
+      // look at something made it disappear.
+      const r = (f.offshore ? 2.6 : 2.2) * this.markerScale();
       ctx.beginPath();
       ctx.fillStyle = colour;
       if (f.offshore) {
@@ -386,7 +426,7 @@ export class UkMap {
       const p = this.proj.project(r.lat, r.lon);
       const sees = this.screen ? this.screen.byRadar[i].visible : null;
       const quiet = sees === 0;
-      const size = 5.5;
+      const size = 5.5 * this.markerScale();
       ctx.beginPath();
       ctx.moveTo(p.x, p.y - size);
       ctx.lineTo(p.x + size, p.y + size * 0.8);
@@ -406,6 +446,55 @@ export class UkMap {
         ctx.stroke();
       }
     }
+  }
+
+  /**
+   * How much to grow a marker at the current zoom.
+   *
+   * Not linear: markers should grow so they stay findable, but a wind farm
+   * drawn to its true footprint would be a dot at any national zoom and the
+   * map is not a site plan. The fourth root keeps them legible across the
+   * whole range without pretending to be a scale drawing.
+   */
+  markerScale() {
+    return Math.max(1, Math.min(3.2, Math.pow(this.proj.view.zoom, 0.25)));
+  }
+
+  /**
+   * A scale bar, because without one a heat blob has no size and a distance on
+   * screen means nothing. Picks a round number of kilometres that fits in
+   * about a fifth of the width.
+   */
+  _drawScaleBar() {
+    const ctx = this.ctx;
+    const ppm = this.proj.pxPerMetre();
+    if (!Number.isFinite(ppm) || ppm <= 0) return;
+    const targetPx = this.w * 0.18;
+    const rounds = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+    let km = rounds[rounds.length - 1];
+    for (const r of rounds) { if (r * 1000 * ppm >= targetPx) { km = r; break; } }
+    const px = km * 1000 * ppm;
+    // Bottom centre. Bottom right put it underneath the readout panel, which
+    // is an HTML overlay, so it was drawn every frame and never seen.
+    const x = Math.max(18, this.w / 2 - px / 2), y = this.h - 14;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(220, 232, 240, 0.85)';
+    ctx.fillStyle = 'rgba(220, 232, 240, 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 5); ctx.lineTo(x, y); ctx.lineTo(x + px, y); ctx.lineTo(x + px, y - 5);
+    ctx.stroke();
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${km} km`, x + px / 2, y - 8);
+    // The heat kernel's real size, stated next to the bar that gives it scale.
+    if (this.layers.heat && this.heatRadiusKm && !this.heatTooClose) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(220, 232, 240, 0.55)';
+      ctx.fillText(`heat spreads each farm over ${this.heatRadiusKm.toFixed(0)} km`,
+        x + px / 2, y - 22);
+    }
+    ctx.restore();
   }
 
   /** The nearest farm to a radar, used when a click loads a pairing. */

@@ -671,13 +671,24 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 /* ---------------------------------------------------------- national map */
 /* The map needs the whole window: at national scale a 600 px box turns the
    country into a smear and every radar into the same pixel. */
-.dlg-full { width: 96vw; max-width: 96vw; height: 92vh; }
-.dlg-full .map-wrap { position: relative; width: 100%; height: calc(92vh - 54px); }
+/* The map dialog is laid out with flexbox so the canvas gets exactly the space
+   left after the header, rather than a calc() that has to guess at the header
+   height and the box model. The calc() was wrong by 64 px: the canvas ran past
+   the bottom of the dialog and that strip of the map, including the scale bar,
+   was drawn but never visible. `min-height: 0` is what lets a flex child
+   actually shrink; without it the canvas pushes the container open again. */
+.dlg-full { width: 96vw; max-width: 96vw; height: 92vh; max-height: 92vh; overflow: hidden; }
+/* Scoped to [open]. A bare `display: flex` on a dialog beats the user-agent
+   `dialog:not([open]) { display: none }`, so the closed dialog stayed in the
+   layout and its header swallowed clicks on the page behind it. */
+.dlg-full[open] { display: flex; flex-direction: column; }
+.dlg-full > form { flex: 0 0 auto; }
+.dlg-full .map-wrap { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; }
 .map-wrap canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 .map-overlay { position: absolute; pointer-events: none; }
 .map-overlay > * { pointer-events: auto; }
 .map-top-left { top: 10px; left: 10px; }
-.map-top-right { top: 10px; right: 10px; width: 330px; max-height: calc(92vh - 90px); overflow-y: auto; }
+.map-top-right { top: 10px; right: 10px; bottom: 10px; width: 330px; overflow-y: auto; }
 .map-bottom-left { bottom: 10px; left: 10px; }
 .map-bottom-right { bottom: 10px; right: 10px; max-width: 460px; }
 .map-panel {

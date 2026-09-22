@@ -18,6 +18,7 @@ import { nationalScreen, distanceM, STATUS_GROUPS, ACTIVE_STATUSES, ASSUMPTIONS,
 import { decodeBlock } from '../js/terrain.js';
 import { METHOD_HTML } from '../js/report.js';
 import { COASTLINE, COASTLINE_SOURCE } from '../js/coastline.js';
+import { HEAT_RADIUS_KM } from '../js/ukmap.js';
 import { UK_WIND_FARMS, UK_RADAR_SITES } from '../js/uksites.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -251,4 +252,38 @@ test('the military radar statement is scoped to the built-in list', () => {
     'the report still says no military radar is in this tool, which import makes false');
   assert.match(METHOD_HTML, /BUILT-IN list/);
   assert.match(METHOD_HTML, /air defence/i);
+});
+
+// ------------------------------------------------------------ the map layer
+
+test('the heat kernel is a ground distance, not a number of pixels', () => {
+  // It used to be 27 screen pixels, which meant a 42 km neighbourhood at the
+  // national view and 1.1 km zoomed in: the same colour meant different things
+  // at different zooms. Fixing it in kilometres is the whole point, so the
+  // constant has to stay a distance and stay sane.
+  assert.ok(Number.isFinite(HEAT_RADIUS_KM));
+  assert.ok(HEAT_RADIUS_KM >= 5 && HEAT_RADIUS_KM <= 40,
+    `a ${HEAT_RADIUS_KM} km kernel is not a sensible neighbourhood for this map`);
+  const src = readFileSync(resolve(root, 'js/ukmap.js'), 'utf8');
+  // The kernel must be derived from the projection scale, or it is back to
+  // being a pixel count by another name.
+  assert.match(src, /HEAT_RADIUS_KM \* 1000 \* this\.proj\.pxPerMetre\(\)/);
+  // And it must stop drawing rather than fill the screen when zoomed past it.
+  assert.match(src, /heatTooClose/);
+});
+
+test('the map dialog only becomes a flex container when it is open', () => {
+  // A bare `display: flex` on a dialog beats the user-agent
+  // `dialog:not([open]) { display: none }`. The closed dialog then stayed in
+  // the layout and its header swallowed every click on the page behind it,
+  // which made the whole tool unusable, not just the map.
+  const css = readFileSync(resolve(root, 'css/style.css'), 'utf8');
+  const rules = css.match(/^\.dlg-full[^{]*\{[^}]*\}/gm) || [];
+  assert.ok(rules.length, 'the map dialog has no rules at all');
+  for (const rule of rules) {
+    if (/display:\s*flex/.test(rule)) {
+      assert.match(rule, /\[open\]/,
+        `display:flex on a dialog must be scoped to [open]: ${rule.split('\n')[0]}`);
+    }
+  }
 });
