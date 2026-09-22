@@ -672,7 +672,8 @@ function mapPanel(hit) {
     el.innerHTML = `<h4>Radar</h4><div class="big">${esc(r.name)}</div>`
       + `<div>${esc(r.role)}${r.imported ? ' &middot; imported' : ''}</div><hr>`
       + '<table>'
-      + `<tr><td>Active farms in line of sight</td><td>${esc(b.visible)}</td></tr>`
+      + `<tr><td>Operational or building, in sight</td><td>${esc(b.visibleActive)}</td></tr>`
+      + `<tr><td>All records in sight</td><td>${esc(b.visible)}</td></tr>`
       + `<tr><td>In range but hidden by terrain</td><td>${esc(b.hidden)}</td></tr>`
       + `<tr><td>Nearest visible</td><td>${Number.isFinite(b.nearestVisibleM)
         ? (b.nearestVisibleM / 1000).toFixed(1) + ' km' : 'none'}</td></tr>`
@@ -701,7 +702,8 @@ function mapPanel(hit) {
   el.innerHTML = '<h4>National screen</h4>'
     + '<table>'
     + `<tr><td>Radars</td><td>${esc(s.summary.radars)}</td></tr>`
-    + `<tr><td>Farms drawn from</td><td>${esc(s.summary.farms)}</td></tr>`
+    + `<tr><td>Planning records screened</td><td>${esc(s.summary.farms)}</td></tr>`
+    + `<tr><td>of which operational or building</td><td>${esc(s.summary.activeFarms)}</td></tr>`
     + `<tr><td>Visible pairings</td><td>${esc(s.summary.visiblePairings)}</td></tr>`
     + `<tr><td>Farms seen by a radar</td><td>${esc(s.summary.farmsSeenByAtLeastOne)}</td></tr>`
     + `<tr><td>Farms seen by three or more</td><td>${esc(s.summary.farmsSeenByThreeOrMore)}</td></tr>`

@@ -147,7 +147,8 @@ export function nationalScreen({ radars, farms, coarse = null, assumptions = {} 
   );
 
   const byRadar = radars.map((r) => ({
-    radar: r, visible: 0, hidden: 0, beyond: 0, nearestVisibleM: Infinity,
+    radar: r, visible: 0, visibleActive: 0, hidden: 0, beyond: 0,
+    nearestVisibleM: Infinity,
   }));
   const byFarm = farms.map((f) => ({
     farm: f, seenBy: 0, hiddenFrom: 0, nearestRadarM: Infinity, nearestRadar: null,
@@ -195,6 +196,10 @@ export function nationalScreen({ radars, farms, coarse = null, assumptions = {} 
         byFarm[fi].hiddenFrom += 1;
       } else {
         byRadar[ri].visible += 1;
+        // Counted separately because the screen runs over every planning
+        // record, including refused and withdrawn ones, and a panel that says
+        // "active" must not report that total.
+        if (ACTIVE_STATUSES.includes(f.status)) byRadar[ri].visibleActive += 1;
         byFarm[fi].seenBy += 1;
         byRadar[ri].nearestVisibleM = Math.min(byRadar[ri].nearestVisibleM, D);
         pairings.push({ ri, fi, D, clearance: obs.clearance });
@@ -218,6 +223,7 @@ export function nationalScreen({ radars, farms, coarse = null, assumptions = {} 
     summary: {
       radars: radars.length,
       farms: farms.length,
+      activeFarms: farms.filter((f) => ACTIVE_STATUSES.includes(f.status)).length,
       visiblePairings: pairings.length,
       farmsSeenByAtLeastOne: byFarm.filter((x) => x.seenBy > 0).length,
       farmsSeenByThreeOrMore: byFarm.filter((x) => x.seenBy >= 3).length,

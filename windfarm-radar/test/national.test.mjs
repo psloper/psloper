@@ -287,3 +287,21 @@ test('the map dialog only becomes a flex container when it is open', () => {
     }
   }
 });
+
+test('the active count is separate from the all-records count', () => {
+  // The panel said "Active farms in line of sight" while the screen ran over
+  // every planning record, refused and withdrawn included. Lowther Hill was
+  // reported as seeing 288 "active" farms when the real figure is 89.
+  const radars = [{ name: 'r', lat: 55, lon: -3 }];
+  const farms = [
+    { name: 'a', lat: 55.05, lon: -3, status: 'Operational' },
+    { name: 'b', lat: 55.06, lon: -3, status: 'Under Construction' },
+    { name: 'c', lat: 55.07, lon: -3, status: 'Application Refused' },
+    { name: 'd', lat: 55.08, lon: -3, status: 'Application Withdrawn' },
+  ];
+  const s2 = nationalScreen({ radars, farms, coarse: null });
+  assert.equal(s2.byRadar[0].visible, 4, 'every record should be screened');
+  assert.equal(s2.byRadar[0].visibleActive, 2, 'only two of those are active');
+  assert.equal(s2.summary.farms, 4);
+  assert.equal(s2.summary.activeFarms, 2);
+});
