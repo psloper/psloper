@@ -33,6 +33,11 @@ cp -r "$root/samples" "$pkg/samples"
 # the source tree runs rather than failing to load anything.
 for d in js css test tools samples calibration; do cp -r "$root/$d" "$pkg/source/"; done
 cp "$root/index.html" "$root/package.json" "$root/README.md" "$pkg/source/"
+# docs/ goes into the source tree as well as the package root. Two tests read
+# their evidence files from source/docs/evidence, and without them the source
+# a reviewer is handed fails its own suite for a packaging reason rather than a
+# real one. It is 392 KB, so the duplication is cheap.
+cp -r "$root/docs" "$pkg/source/"
 rm -rf "$pkg/source/tools/__pycache__"
 mkdir -p "$pkg/source/data/terrain"
 cp "$root/data/uk-wind-farms.json" "$root/data/uk-radar-sites.json" "$pkg/source/data/"

@@ -1,7 +1,7 @@
 # Wind farm and radar screening tool
 
 Developer: Paul Sloper
-Packaged: 2026-09-20
+Packaged: 2026-09-22
 
 ## Run it
 
@@ -20,8 +20,8 @@ radar site lists, and the elevation data. That is why they are large.
 
 | File or folder | What it is |
 | --- | --- |
-| `windfarm-radar-offline-200m.html` | The tool. 14.6 MB, one file, runs offline. Start here. |
-| `windfarm-radar-offline-500m.html` | Same tool, coarser ground, 3.6 MB. |
+| `windfarm-radar-offline-200m.html` | The tool. 14.9 MB, one file, runs offline. Start here. |
+| `windfarm-radar-offline-500m.html` | Same tool, coarser ground, 3.8 MB. |
 | `docs/SECURITY.md` | For your IT security team. What the page can and cannot do, and how to check that yourself. |
 | `docs/OFFLINE.md` | Why it is one file, how to run it from a USB stick, and what a `file://` page is allowed to do. |
 | `docs/TERRAIN.md` | Where the ground heights come from, how they were resampled, and the heights I checked them against. |
@@ -43,6 +43,12 @@ Read `docs/SECURITY.md` first. The short version:
 - It makes no network request when you run it. There is no `XMLHttpRequest`,
   no WebSocket, no `sendBeacon`, no `EventSource`, no `eval` and no external
   script or stylesheet tag anywhere in the file.
+- **This was measured, not just reasoned about.** The packaged file was opened
+  from `file://` with no server running, driven through the control tabs, the
+  national map and the evidence register, with every request the page attempted
+  recorded. Total requests: **one**, the file itself. External requests: none.
+  You can repeat this yourself: open the file, press F12, go to the Network
+  tab, and reload. You should see one entry.
 - Grep it and you will find two `fetch(` calls. Both are in the terrain loader
   and both are dead code in this build: the elevation data is already inside
   the page, so the loader takes the embedded branch and the `fetch` branch is
@@ -64,6 +70,30 @@ Read `docs/SECURITY.md` first. The short version:
   download.
 - The source in `source/` is the source the file was built from. `source/tools/build_offline.mjs`
   is the script that produced it.
+
+## What changed since the last package
+
+- **A national map** of the UK and Ireland: 2,694 planning records and 55 civil
+  radar sites, screened for line of sight over the 500 m national grid. Click a
+  radar to drop into its full assessment.
+- **Turbine counts and heights** from the July 2024 planning database extract,
+  covering 91% and 38% of live farms. The map reports how much of its answer
+  rests on recorded figures and how much on an assumption.
+- **Every site is tagged with its territory**, so you can see the split between
+  England, Scotland, Wales and Northern Ireland. That tagging also cross-checks
+  the offshore flag against the geography, and found nine records where the two
+  disagree, one of which is a genuine error in the source data.
+- **Named aircraft types** rather than generic classes: A320, 737-800, 787-9,
+  A350-900, ATR 72, E190, C172, PA-28, SR22, H135, AW139, Typhoon, F-35B,
+  A400M, MQ-9 and a quadcopter. Dimensions are the airframers'; the radar cross
+  sections are estimates and the tool says so where you pick one.
+- **An inspector for data nobody has described.** Feed it a spreadsheet and it
+  works out what each column holds from the VALUES as well as the heading, then
+  reports how it differs from the built-in table. It never writes to the site
+  tables: a file that disagrees is evidence about one of the two, and which one
+  is wrong is not a decision the tool can make for you.
+- The aircraft, turbines and radar installations are drawn properly now, and
+  three rendered harnesses check their shape and not just their size.
 
 ## Honest limits
 
