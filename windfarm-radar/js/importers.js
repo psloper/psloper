@@ -269,12 +269,14 @@ export const FARM_SITE_FIELDS = {
   longitude: TURBINE_FIELDS.longitude,
   easting:   TURBINE_FIELDS.easting,
   northing:  TURBINE_FIELDS.northing,
-  capacity:  ['capacity', 'capacity mw', 'mw', 'installed capacity', 'rated capacity', 'output'],
+  capacity:  ['capacity', 'capacity mw', 'mw', 'installed capacity', 'instcap',
+    'rated capacity', 'output'],
   status:    ['status', 'development status', 'stage', 'planning status', 'state'],
   offshore:  ['offshore', 'onshore offshore', 'location type', 'marine', 'sea'],
   reference: ['reference', 'ref', 'repd', 'repd ref', 'repdref', 'repd reference',
     'planning ref', 'application ref', 'id', 'refid', 'ref id', 'project id'],
-  turbines:  ['turbines', 'turbine count', 'number of turbines', 'no of turbines', 'machines'],
+  turbines:  ['turbines', 'turbine count', 'turbnum', 'number of turbines',
+    'no of turbines', 'machines'],
   tipHeight: TURBINE_FIELDS.tipHeight,
 };
 

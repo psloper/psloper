@@ -365,7 +365,10 @@ async function inspectUnknownFile() {
     // as an unescaped interpolation. Reordering keeps the guard strict rather
     // than adding an exception to it.
     importStatus(`${file.name}: ${su.matched} of ${su.total} rows matched a known project.`, 'ok');
-    $('#text-title').textContent = `Inspect: ${file.name}`;
+    // This dialog is shared with the import help, so set ITS heading.
+    // #text-title belongs to a different dialog, and setting that left this
+    // one headed "Getting data in and out" over a file inspection.
+    $('#import-help-title').textContent = `Inspect: ${file.name}`;
     $('#import-help-body').innerHTML = html;
     $('#dlg-import-help').showModal();
   } catch (err) {
@@ -374,7 +377,7 @@ async function inspectUnknownFile() {
     // built, so when this is run from the map, where its own button lives, a
     // failure wrote to nothing and the whole thing looked like a hang.
     importStatus(err.message, 'error');
-    $('#text-title').textContent = 'Inspect';
+    $('#import-help-title').textContent = 'Inspect';
     // Concatenated, not interpolated: this is textContent and needs no
     // escaping, but it sits inside the injection guard's window after the
     // innerHTML assignment above, and a template literal there would read as
@@ -663,6 +666,8 @@ el.profile.title = 'Click the left or right half to rotate the section bearing';
 // --------------------------------------------------------------- dialogs
 
 $('#btn-import-help').addEventListener('click', () => {
+  // The inspector borrows this dialog and retitles it, so restore the heading.
+  $('#import-help-title').textContent = 'Getting data in and out';
   $('#import-help-body').innerHTML = IMPORT_HTML;
   $('#dlg-import-help').showModal();
 });
