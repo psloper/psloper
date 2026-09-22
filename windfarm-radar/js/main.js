@@ -20,7 +20,7 @@ import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
 import { UkMap, MAP_COLORS } from './ukmap.js';
 import { nationalScreen, ACTIVE_STATUSES } from './national.js';
 import { UK_WIND_FARMS, UK_RADAR_SITES, farmRecord, farmCapacityLabel,
-  farmAttributeCoverage } from './uksites.js';
+  farmAttributeCoverage, offshoreFlagConflicts, territoryCounts } from './uksites.js';
 import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
 import {
   readTable, readElevationFile, parseTurbineRows, buildImportedTerrain,
@@ -815,6 +815,11 @@ function mapPanel(hit) {
   }
   const a = s.assumptions;
   const cov = farmAttributeCoverage();
+  // Two independent facts about each record, compared. Small is expected;
+  // growing would mean the boundaries or the flag have moved.
+  const fc = offshoreFlagConflicts();
+  const conflicts = fc.onshoreInSea.length + fc.offshoreOnLand.length;
+  const terr = territoryCounts();
   el.innerHTML = '<h4>National screen</h4>'
     + '<table>'
     + `<tr><td>Radars</td><td>${esc(s.summary.radars)}</td></tr>`
@@ -834,8 +839,13 @@ function mapPanel(hit) {
     + `<tr><td>Turbines counted</td><td>${esc(cov.turbines.toLocaleString('en-GB'))}</td></tr>`
     + `<tr><td>Farms with a turbine count</td><td>${esc(cov.withCount)} of ${esc(cov.live)}</td></tr>`
     + `<tr><td>Farms with a recorded tip height</td><td>${esc(cov.withHeight)} of ${esc(cov.live)}</td></tr>`
+    + `<tr><td>Records whose offshore flag and position disagree</td><td>${esc(conflicts)}</td></tr>`
     + `<tr><td>Pairings at a recorded height</td><td>${esc(s.tipHeights.recorded)}</td></tr>`
     + `<tr><td>Pairings at the ${esc(s.tipHeights.fallbackM)} m fallback</td><td>${esc(s.tipHeights.assumed)}</td></tr>`
+    + '</table>'
+    + '<h4>By territory</h4><table>'
+    + Object.entries(terr).sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')
     + '</table>'
     + '<p>Turbine COUNTS and heights come from the planning database. Turbine POSITIONS do not: '
     + 'every farm here is one point, and at the two sites with ground truth that point is about '

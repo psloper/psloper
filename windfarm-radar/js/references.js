@@ -633,6 +633,42 @@ export const REFERENCES = [
 
   // ------------------------------------------------- real UK site positions
   {
+    id: 'uk-ireland-territories',
+    title: 'UK_IRELAND territory boundaries',
+    authors: 'CREATOR NOT STATED. The shapefile carries no author metadata: the .dbf holds '
+      + 'one field, GEONM, and the .prj only a coordinate system. Supplied by the tool\u2019s '
+      + 'user with a CC BY 4.0 licence document.',
+    type: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+    status: 'analysed',
+    supports: ['the territory each wind farm and radar stands in',
+      'cross-checking the offshore flag against the geography'],
+    reports: 'A WGS84 polygon shapefile of seven named territories: England, Scotland, Wales, '
+      + 'Northern Ireland, Ireland, Isle of Man and Channel Islands. 10,846 rings and 3,156,054 '
+      + 'points, 50,540,712 bytes, which is exactly the size its own index declares. NONE OF THE '
+      + 'GEOMETRY IS SHIPPED. It is used once at build time to decide which country each site '
+      + 'stands in, and only that answer is stored, as one index per record.',
+    validation: 'THE GEOMETRY WAS CHECKED AGAINST PUBLISHED AREAS BEFORE IT WAS TRUSTED. The '
+      + 'largest ring of each territory measures 130,717 km\u00b2 for England against a published '
+      + '130,279, Scotland 67,675 for the mainland, Wales 19,946 against 20,779, Northern Ireland '
+      + '14,018 against 14,130, Ireland 69,336 against 70,273 and the Isle of Man 570 against 572. '
+      + 'IT IS NOT A COASTLINE AND IS NOT USED AS ONE. The polygons are territories, so England\u2019s '
+      + 'ring follows its land borders: it shares 5,669 vertices with Scotland\u2019s ring and 23,964 '
+      + 'with Wales\u2019s, and drawing these rings would draw those borders as coast. The map\u2019s '
+      + 'coastline stays Natural Earth. The Northern Ireland and Ireland rings share NO vertices, '
+      + 'so that border is digitised twice from different data and any union of these polygons '
+      + 'would leave slivers. WHAT THE TAGGING FOUND: of 2,694 records, 9 disagree with their own '
+      + 'offshore flag. Three flagged onshore fall outside every landmass, two of them within 40 m '
+      + 'of the coastline, which is a harbour site and not an error. Six flagged offshore fall on '
+      + 'land, five of which are floating or offshore projects recorded at their onshore grid '
+      + 'connection. The ninth is a genuine error in the source: a single turbine on a '
+      + 'Cambridgeshire fen, 10.7 km inland, flagged offshore.',
+    attribution: 'Territory boundaries licensed under CC BY 4.0. Creator not stated in the '
+      + 'supplied files; attribution is incomplete until the source is identified.',
+    caution: 'CC BY 4.0 requires the creator to be credited. The files name none, so this entry '
+      + 'cannot yet satisfy the licence in full, and the gap is recorded here rather than papered '
+      + 'over with a guess.',
+  },
+  {
     id: 'windel-2024',
     title: 'UK Wind Energy Locations (July 2024) v1.0',
     authors: 'Datadaptive, from Department for Energy Security and Net Zero data (Crown copyright)',

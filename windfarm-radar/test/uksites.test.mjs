@@ -10,6 +10,7 @@ import {
   POSITION_UNCERTAINTY_M, STATED_PRECISION_M,
   greatCircleM, initialBearingDeg, nearestRadar, pairingGeometry, farmRecord, radarRecord,
   liveFarmIndices, farmCapacityLabel, farmAttributeCoverage,
+  TERRITORIES, territoryCounts, offshoreFlagConflicts,
 } from '../js/uksites.js';
 
 test('every record sits inside the UK and Ireland bounding box', () => {
@@ -282,4 +283,64 @@ test('one row mapping, not three', () => {
   const tool = readFileSync(new URL('../tools/measure_sensitivity.mjs', import.meta.url), 'utf8');
   assert.match(tool, /farmRecord\(/,
     'the sensitivity tool measures something other than what the app screens');
+});
+
+test('every site carries the territory it stands in', () => {
+  const counts = territoryCounts();
+  // Counted, not asserted: these are what the boundaries actually give.
+  assert.ok(counts.Scotland > 1000, `Scotland has ${counts.Scotland} farms`);
+  assert.ok(counts.England > 700, `England has ${counts.England} farms`);
+  assert.ok(counts['Northern Ireland'] > 200);
+  assert.ok(counts.Wales > 150);
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  assert.equal(total, UK_WIND_FARMS.length, 'every record must land in exactly one bucket');
+
+  // Null is not a gap. An offshore site is in no country, and the record must
+  // say null rather than pick a nearest one.
+  let offshoreWithNull = 0;
+  for (let i = 0; i < UK_WIND_FARMS.length; i += 1) {
+    const f = farmRecord(i);
+    assert.ok(f.territory === null || TERRITORIES.includes(f.territory),
+      `${f.name} has territory ${f.territory}`);
+    if (f.offshore && f.territory === null) offshoreWithNull += 1;
+  }
+  assert.ok(offshoreWithNull > 50, 'offshore sites should mostly be in no territory');
+
+  // Radars too, and the Irish ones must come out as Ireland rather than being
+  // forced into a UK territory.
+  const irish = UK_RADAR_SITES.filter((_, i) => radarRecord(i).territory === 'Ireland');
+  assert.ok(irish.length >= 3, `only ${irish.length} radars placed in Ireland`);
+});
+
+test('the offshore flag is cross-checked against the geography', () => {
+  // Two independent facts: a field somebody typed, and a point-in-polygon test.
+  // Where they disagree is worth surfacing, and the count must stay small or
+  // the boundaries or the flag have moved.
+  const c = offshoreFlagConflicts();
+  const total = c.onshoreInSea.length + c.offshoreOnLand.length;
+  assert.ok(total < UK_WIND_FARMS.length * 0.01,
+    `${total} records disagree, which is too many to treat as exceptions`);
+  assert.ok(total > 0, 'no disagreements at all suggests the check is not running');
+  // Every conflict must be a real record the caller can go and look at.
+  for (const f of [...c.onshoreInSea, ...c.offshoreOnLand]) {
+    assert.ok(Number.isFinite(f.lat) && Number.isFinite(f.lon));
+    assert.ok(typeof f.name === 'string');
+  }
+  // The direction has to be right: onshore-in-sea have no territory, and
+  // offshore-on-land have one.
+  for (const f of c.onshoreInSea) assert.equal(f.territory, null);
+  for (const f of c.offshoreOnLand) assert.notEqual(f.territory, null);
+});
+
+test('the compact row width matches what the record builder reads', () => {
+  // The builder reads f[11]; a generator that writes 11 fields would hand it
+  // undefined and every site would silently lose its territory. This pins the
+  // width to the highest index anything actually reads.
+  const src = readFileSync(new URL('../js/uksites.js', import.meta.url), 'utf8');
+  const reads = [...src.matchAll(/\bf\[(\d+)\]/g)].map((m) => Number(m[1]));
+  const widest = Math.max(...reads);
+  for (const row of UK_WIND_FARMS) {
+    assert.ok(row.length > widest,
+      `a row has ${row.length} fields but the builder reads f[${widest}]`);
+  }
 });

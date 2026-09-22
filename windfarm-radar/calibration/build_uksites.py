@@ -39,6 +39,11 @@ HEADER = '''// Real UK wind farm and civil radar site positions.
 '''
 
 LIVE = ("Operational", "Under Construction", "Awaiting Construction", "Application Submitted")
+
+# Order fixed here, not derived from the data, so the indices written into the
+# table are stable across rebuilds. Appending is safe; reordering is not.
+TERRITORIES = ('England', 'Scotland', 'Wales', 'Northern Ireland',
+               'Ireland', 'Isle of Man', 'Channel Islands')
 DEAD_WORDS = ("Refused", "Withdrawn", "Abandoned", "Expired")
 
 MARKER = 'const R_EARTH = 6371008.8;'
@@ -63,7 +68,8 @@ def main():
     out.write('export const LIVE_STATUSES = [%s];\n\n'
               % ', '.join("'%s'" % s for s in LIVE))
     out.write('// [name, latitude, longitude, capacity_MW, status, offshore(0|1), REPD ref,\n'
-              '//  turbine count|0, tip height m|0, per-turbine MW|0, grid precision m|0]\n'
+              '//  turbine count|0, tip height m|0, per-turbine MW|0, grid precision m|0,\n'
+              '//  territory index into TERRITORIES, or -1 for none]\n'
               '//\n'
               '// The last four come from the WINDEL July 2024 extract via\n'
               '// calibration/merge_windel.py and are 0 where that source has no figure.\n'
@@ -74,20 +80,26 @@ def main():
               '// is still about a kilometre out at both sites with ground truth.\n')
     out.write('export const UK_WIND_FARMS = [\n')
     for f in farms:
-        out.write('  [%s,%.5f,%.5f,%.1f,%s,%d,%s,%d,%d,%g,%d],\n' % (
+        out.write('  [%s,%.5f,%.5f,%.1f,%s,%d,%s,%d,%d,%g,%d,%d],\n' % (
             json.dumps(f['name']), f['lat'], f['lon'], f['mw'],
             json.dumps(f['status']), 1 if f['offshore'] else 0, json.dumps(f['ref']),
             f.get('turbines') or 0, f.get('tipHeightM') or 0,
-            f.get('turbineMw') or 0, f.get('gridPrecisionM') or 0))
+            f.get('turbineMw') or 0, f.get('gridPrecisionM') or 0,
+            TERRITORIES.index(f['territory']) if f.get('territory') in TERRITORIES else -1))
     out.write('];\n\n')
-    out.write("// [name, role, latitude, longitude, sources, disagreement_m|0]\n"
+    out.write('// The territory each site stands in, as an index, because the string\n'
+              '// repeats thousands of times and the table is shipped verbatim.\n')
+    out.write('export const TERRITORIES = [%s];\n\n'
+              % ', '.join("'%s'" % t for t in TERRITORIES))
+    out.write("// [name, role, latitude, longitude, sources, disagreement_m|0, territory|-1]\n"
               "// role: 'en-route' (NATS En Route surveillance), 'aerodrome' (airport\n"
               "// approach/terminal radar), 'unclassified' (present in one source only).\n")
     out.write('export const UK_RADAR_SITES = [\n')
     for r in radars:
-        out.write('  [%s,%s,%.5f,%.5f,%s,%d],\n' % (
+        out.write('  [%s,%s,%.5f,%.5f,%s,%d,%d],\n' % (
             json.dumps(r['name']), json.dumps(r['role']), r['lat'], r['lon'],
-            json.dumps(','.join(r['sources'])), r.get('source_disagreement_m') or 0))
+            json.dumps(','.join(r['sources'])), r.get('source_disagreement_m') or 0,
+            TERRITORIES.index(r['territory']) if r.get('territory') in TERRITORIES else -1))
     out.write('];\n\n')
     out.write(mil)
     out.write(tail)
