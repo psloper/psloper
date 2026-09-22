@@ -247,3 +247,74 @@ accurate your file is.
 
 Nothing this tool produces can support a planning submission. It is for finding
 the obvious problems early.
+
+## The national map
+
+The **UK map** button opens a view of the whole country: every radar in the
+built-in list, every wind farm in the planning database, and which of them can
+see which.
+
+### What the colours mean
+
+The heat map shows **how many radars can see the turbines in that area**. It is
+not a probability of interference, not a measure of severity, and not a
+forecast of whether anyone will object. A farm that four radars can see glows
+four times as brightly as one a single radar can see, and that is all it says.
+
+The screen behind it is **line of sight and range only**. It asks one question,
+geometrically: standing at the antenna, with the earth curving away at standard
+refraction, is the top of a turbine above the intervening ground? It does not
+ask whether the return would cross a detection threshold, survive the clutter
+filter, or ever reach a controller. Click a radar for that.
+
+That choice is deliberate. A national map coloured by detection margin would
+have to invent radar parameters for 55 sites whose real numbers nobody has, and
+would look far more authoritative than it could be. Geometry needs positions,
+heights and ground, and all three are real.
+
+### The assumptions, and which one matters most
+
+| Assumption | Value | Why it matters |
+|---|---|---|
+| Turbine tip height | 150 m | The planning database gives no height. **This is the biggest lever on the result.** A 100 m tip sees less; a 200 m tip sees more. |
+| Antenna height | 20 m above ground | No mounting is published for most sites. A lattice tower at 30 m reaches noticeably further. |
+| Refraction | k = 4/3 | Under a surface duct the radar sees further, so a farm called hidden may not be. |
+| Terrain | 500 m national grid, 48 samples per profile | The per-site assessment uses 128 samples and 100 or 200 m ground, so a narrow ridge can be missed here and caught there. |
+| Farm position | planning centroid | Out by about 1,100 m in the median case. At the margin of visibility that error decides the answer. |
+
+Terrain matters more than any of them: with real ground **2,283 pairings are in
+line of sight; treating the country as flat sea level gives 5,229**. More than
+half of what a flat earth would show is hidden by hills.
+
+### Ireland
+
+The Irish coastline is drawn and four Irish radar points are shown, but those
+four are marked *unclassified* and come from a low-confidence source. **No
+Republic of Ireland wind farm data is loaded at all.** Nothing in the built-in
+list is south of the border. Use the site list import to add it.
+
+### Adding your own data
+
+Two buttons on the map take a wind farm site list or a radar site list, as
+`.xlsx` or `.csv`, one row per site with a name and a position. Templates are in
+`samples/`. Imported sites are drawn alongside the built-in lists, are included
+in the screen, and are marked as imported in the panel.
+
+Imported sites carry **no position uncertainty figure**. The 1,100 m the
+planning database was measured to carry does not apply to them, and this tool
+does not know how yours were surveyed.
+
+### Clicking through to an assessment
+
+Click a radar once to select it and read its counts. Click the same radar again
+to load it, against its nearest operational or under-construction farm, into
+the full 3D assessment. That replaces the current scenario, which is why it
+takes two clicks rather than one.
+
+### The coastline
+
+Natural Earth 1:10m Admin 0 Countries, public domain, simplified to about 440 m
+and shipped in the repository because this tool makes no network request. It is
+**for drawing only**. Do not measure anything off it and do not use it to decide
+whether a point is on land. Distances in the screen come from the coordinates,
+not from the outline.

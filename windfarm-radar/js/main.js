@@ -15,6 +15,10 @@ import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
 import { loadTerrain, createRealTerrain } from './terrain.js';
 import { WIND_ROSE_PRESETS } from './wind.js';
 import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
+import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
+import { UkMap, MAP_COLORS } from './ukmap.js';
+import { nationalScreen, ACTIVE_STATUSES } from './national.js';
+import { UK_WIND_FARMS, UK_RADAR_SITES } from './uksites.js';
 import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
 import {
   readTable, readElevationFile, parseTurbineRows, buildImportedTerrain,
@@ -39,6 +43,9 @@ let activeTab = 'radar';
 let fullTimer = null;
 let importedTerrain = null;     // held outside the scenario: a raster is not a setting
 let realTerrain = null;         // likewise: real elevation data is not a setting
+// The 500 m national grid, kept separately from realTerrain because that one
+// is anchored on a single radar and the national map needs to anchor on 55.
+let terrainCoarseBlock = null;
 let roseResult = null;
 let roseFindings = [];
 let sweepResult = null;
@@ -237,6 +244,7 @@ async function importRadarSites() {
     importedSites.radars = res.sites;
     importedSites.source.radars = file.name;
     rebuildRail();
+    refreshMapData();
     importStatus(siteImportReport('radar sites', file, res), res.warnings.length ? '' : 'ok');
   } catch (err) {
     importStatus(err.message, 'error');
@@ -257,6 +265,7 @@ async function importFarmSites() {
     importedSites.farms = res.sites;
     importedSites.source.farms = file.name;
     rebuildRail();
+    refreshMapData();
     importStatus(siteImportReport('wind farm sites', file, res), res.warnings.length ? '' : 'ok');
   } catch (err) {
     importStatus(err.message, 'error');
@@ -290,6 +299,7 @@ async function loadRealTerrain() {
   try {
     const extent = result ? result.extent : 40000;
     const loaded = await loadTerrain({ lat, lon, halfExtentM: extent });
+    terrainCoarseBlock = loaded.coarse;
     realTerrain = createRealTerrain({
       anchorLat: lat, anchorLon: lon,
       coarse: loaded.coarse, blocks: loaded.blocks,
@@ -586,6 +596,330 @@ $('#btn-evidence').addEventListener('click', () => {
 });
 
 $('#btn-export').addEventListener('click', () => $('#dlg-export').showModal());
+
+// --------------------------------------------------------------- UK map
+//
+// The national view. Built lazily on first open, because the screen touches
+// every radar against every farm and there is no reason to pay for that
+// before anyone asks to see it.
+let ukMap = null;
+let ukScreen = null;
+
+// The site lists are stored as compact arrays to keep the bundle small:
+// [name, lat, lon, MW, status, offshore, ref] and
+// [name, role, lat, lon, sources, disagreement]. The map wants objects, and
+// reading the wrong index here is silent, so the mapping is in one place and
+// the test suite checks it against a known site.
+export function farmRowToObject(r, i) {
+  return {
+    index: i, name: r[0], lat: r[1], lon: r[2], mw: r[3],
+    status: r[4], offshore: r[5] === 1, repdRef: r[6],
+  };
+}
+
+export function radarRowToObject(r, i) {
+  return {
+    index: i, name: r[0], role: r[1], lat: r[2], lon: r[3],
+    sources: r[4], disagreementM: r[5],
+  };
+}
+
+function mapFarms() {
+  // Imported farms sit alongside the built-in table and are marked, so the
+  // map can show them differently and the panel can say where a row came from.
+  return [
+    ...UK_WIND_FARMS.map(farmRowToObject),
+    ...importedSites.farms.map((f) => ({
+      name: f.name, lat: f.lat, lon: f.lon, mw: f.mw,
+      status: f.status || 'Operational', offshore: !!f.offshore,
+      authority: f.authority || '', imported: true,
+    })),
+  ];
+}
+
+function mapRadars() {
+  return [
+    ...UK_RADAR_SITES.map(radarRowToObject),
+    ...importedSites.radars.map((r) => ({
+      name: r.name, role: r.role || 'unclassified', lat: r.lat, lon: r.lon,
+      heightAgl: r.heightAgl, imported: true,
+    })),
+  ];
+}
+
+function runNationalScreen() {
+  const farms = mapFarms();
+  const radars = mapRadars();
+  // Real ground if the elevation data is loaded, flat sea level if not. The
+  // panel says which, because it changes the answer by more than half.
+  const coarse = terrainCoarseBlock;
+  const t0 = performance.now();
+  ukScreen = nationalScreen({ radars, farms, coarse });
+  ukScreen.tookMs = Math.round(performance.now() - t0);
+  return ukScreen;
+}
+
+function mapPanel(hit) {
+  const el = $('#map-panel');
+  if (!el || !ukMap) return;
+  const s = ukScreen;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  if (hit && hit.kind === 'radar') {
+    const r = ukMap.radars[hit.index];
+    const b = s.byRadar[hit.index];
+    const near = ukMap.nearestFarmTo(hit.index, ACTIVE_STATUSES);
+    el.innerHTML = `<h4>Radar</h4><div class="big">${esc(r.name)}</div>`
+      + `<div>${esc(r.role)}${r.imported ? ' &middot; imported' : ''}</div><hr>`
+      + '<table>'
+      + `<tr><td>Active farms in line of sight</td><td>${esc(b.visible)}</td></tr>`
+      + `<tr><td>In range but hidden by terrain</td><td>${esc(b.hidden)}</td></tr>`
+      + `<tr><td>Nearest visible</td><td>${Number.isFinite(b.nearestVisibleM)
+        ? (b.nearestVisibleM / 1000).toFixed(1) + ' km' : 'none'}</td></tr>`
+      + (near ? `<tr><td>Nearest active farm</td><td>${(near.distanceM / 1000).toFixed(1)} km</td></tr>` : '')
+      + '</table><hr>'
+      + `<p>Click again to load <strong>${esc(r.name)}</strong> against its nearest active `
+      + 'farm into the full assessment.</p>';
+    return;
+  }
+  if (hit && hit.kind === 'farm') {
+    const f = ukMap.farms[hit.index];
+    const b = s.byFarm[hit.index];
+    el.innerHTML = `<h4>Wind farm</h4><div class="big">${esc(f.name || '(unnamed record)')}</div>`
+      + `<div>${esc(f.status)}${f.imported ? ' &middot; imported' : ''}</div><hr>`
+      + '<table>'
+      + `<tr><td>Capacity</td><td>${esc(f.mw)} MW</td></tr>`
+      + `<tr><td>${f.offshore ? 'Offshore' : 'Onshore'}</td><td>${esc(f.authority || '')}</td></tr>`
+      + `<tr><td>Radars that can see it</td><td>${esc(b.seenBy)}</td></tr>`
+      + `<tr><td>Radars in range but blocked</td><td>${esc(b.hiddenFrom)}</td></tr>`
+      + `<tr><td>Nearest radar</td><td>${Number.isFinite(b.nearestRadarM)
+        ? (b.nearestRadarM / 1000).toFixed(1) + ' km' : 'none in range'}</td></tr>`
+      + '</table>';
+    return;
+  }
+  const a = s.assumptions;
+  el.innerHTML = '<h4>National screen</h4>'
+    + '<table>'
+    + `<tr><td>Radars</td><td>${esc(s.summary.radars)}</td></tr>`
+    + `<tr><td>Farms drawn from</td><td>${esc(s.summary.farms)}</td></tr>`
+    + `<tr><td>Visible pairings</td><td>${esc(s.summary.visiblePairings)}</td></tr>`
+    + `<tr><td>Farms seen by a radar</td><td>${esc(s.summary.farmsSeenByAtLeastOne)}</td></tr>`
+    + `<tr><td>Farms seen by three or more</td><td>${esc(s.summary.farmsSeenByThreeOrMore)}</td></tr>`
+    + `<tr><td>Radars seeing nothing</td><td>${esc(s.summary.radars - s.summary.radarsSeeingSomething)}</td></tr>`
+    + `<tr><td>Terrain profiles run</td><td>${esc(s.profiles)} in ${esc(s.tookMs)} ms</td></tr>`
+    + '</table><hr>'
+    + '<h4>What this is</h4>'
+    + '<p>Line of sight and range only. It asks whether the top of a turbine would be above the '
+    + 'intervening ground as seen from the antenna. It does NOT say a return would cross a '
+    + 'detection threshold, survive the clutter filter, or ever reach a controller. Click a radar '
+    + 'for that.</p>'
+    + `<p>Ground: ${esc(s.terrainUsed)}.</p>`
+    + '<h4 class="warn">Assumptions</h4>'
+    + `<p>${esc(a.tipHeightNote)}</p>`
+    + `<p>${esc(a.antennaHeightNote)}</p>`
+    + `<p>${esc(a.positionNote)}</p>`
+    + `<p>${esc(a.samplesNote)}</p>`
+    + '<hr><h4>Ireland</h4>'
+    + '<p>The coastline is drawn, and four Irish radar points are shown, but they are '
+    + 'unclassified and from a low-confidence source. <strong>No Republic of Ireland wind farm '
+    + 'data is loaded.</strong> Use the site list import on the Site &amp; data tab to add it.</p>'
+    + `<hr><p>Coastline: ${esc(COASTLINE_SOURCE.source)}. ${esc(COASTLINE_SOURCE.licence)}</p>`;
+}
+
+function mapLegend() {
+  const el = $('#map-legend');
+  if (!el) return;
+  // Built from nodes rather than an HTML string. The colours are constants, but
+  // a legend is not worth an exception to the rule that nothing is assembled
+  // into innerHTML, and this version cannot be made unsafe by a later edit.
+  el.textContent = '';
+  const title = document.createElement('div');
+  title.className = 'legend-title';
+  title.textContent = 'MAP';
+  el.append(title);
+  const row = (colour, text) => {
+    const d = document.createElement('div');
+    d.className = 'legend-row';
+    if (colour) {
+      const sw = document.createElement('span');
+      sw.className = 'map-swatch';
+      sw.style.background = colour;
+      d.append(sw);
+    }
+    d.append(document.createTextNode(text));
+    el.append(d);
+    return d;
+  };
+  row(MAP_COLORS.farmActive, 'Farm a radar can see');
+  row(MAP_COLORS.farmHidden, 'Farm no radar can see');
+  row(MAP_COLORS.farmPipeline, 'In planning (layer off by default)');
+  row(MAP_COLORS.radar, 'Radar with farms in sight');
+  row(MAP_COLORS.radarQuiet, 'Radar with none');
+  row(null, 'Heat: how many radars can see the turbines there. '
+    + 'Not a probability of anything.').style.marginTop = '6px';
+}
+
+function buildMapLayers() {
+  const el = $('#map-layers');
+  if (!el) return;
+  const rows = [
+    ['active', 'Operational and under construction'],
+    ['pipeline', 'Consented or in planning'],
+    ['dead', 'Refused, withdrawn or abandoned'],
+    ['radars', 'Radars'],
+    ['heat', 'Heat map'],
+    ['sightlines', 'Sight lines'],
+    ['coverage', 'Horizon circles'],
+  ];
+  el.innerHTML = '';
+  for (const [key, label] of rows) {
+    const lab = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!ukMap.layers[key];
+    cb.addEventListener('change', () => ukMap.setLayer(key, cb.checked));
+    lab.append(cb, document.createTextNode(' ' + label));
+    el.append(lab);
+  }
+}
+
+// The national screen needs the 500 m grid. Without it every pairing is flat
+// sea level, which roughly doubles the number of farms called visible, so the
+// map loads it on first open rather than waiting for someone to ask for real
+// ground on the Site tab.
+async function ensureNationalTerrain() {
+  if (terrainCoarseBlock) return true;
+  try {
+    // fine: false asks for the national grid only. Loading the 100 m blocks
+    // for the whole country would be 27 MB and is not what this needs.
+    const loaded = await loadTerrain({ lat: 55, lon: -3, halfExtentM: 0, fine: false });
+    terrainCoarseBlock = loaded.coarse;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function openUkMap() {
+  const dlg = $('#dlg-map');
+  dlg.showModal();
+  const canvas = $('#map-canvas');
+  if (!ukMap) {
+    ukMap = new UkMap(canvas, {
+      rings: COASTLINE,
+      farms: mapFarms(),
+      radars: mapRadars(),
+      onHover: (hit) => mapPanel(hit),
+      onSelectRadar: (i, repeat) => {
+        if (i === null) { mapPanel(null); return; }
+        // First click selects and reports. A second click on the SAME radar
+        // loads it into the assessment, because loading replaces the current
+        // scenario and should not happen by brushing past a marker.
+        if (repeat) { loadPairingFromMap(i); return; }
+        mapPanel({ kind: 'radar', index: i });
+      },
+    });
+    buildMapLayers();
+    buildMapImport();
+    mapLegend();
+    window.addEventListener('resize', () => { if (dlg.open) ukMap.resize(); });
+  } else {
+    ukMap.farms = mapFarms();
+    ukMap.radars = mapRadars();
+  }
+  ukMap.resize();
+  $('#map-readout').textContent = 'Loading the 500 m national elevation grid\u2026';
+  // Draw once on flat ground so the country appears immediately, then redraw
+  // with real terrain. The panel always says which one is on screen.
+  ukMap.setScreen(runNationalScreen());
+  mapPanel(null);
+  const ok = await ensureNationalTerrain();
+  ukMap.setScreen(runNationalScreen());
+  mapPanel(null);
+  $('#map-readout').textContent = (ok
+    ? 'Real ground, 500 m grid. '
+    : 'ELEVATION DATA DID NOT LOAD: every pairing is flat sea level, which overstates what a radar can see. ')
+    + 'Drag to pan \u00b7 scroll to zoom \u00b7 click a radar, then click it again to load it '
+    + 'into the assessment';
+}
+
+function loadPairingFromMap(radarIndex) {
+  const r = ukMap.radars[radarIndex];
+  const near = ukMap.nearestFarmTo(radarIndex, ACTIVE_STATUSES);
+  if (!near) {
+    $('#map-readout').textContent = `${r.name}: no operational or under-construction farm found `
+      + 'to pair it with. Import a site list to add one.';
+    return;
+  }
+  const f = near.farm;
+  const bearing = (Math.atan2(
+    (f.lon - r.lon) * Math.cos((f.lat + r.lat) / 2 * Math.PI / 180),
+    f.lat - r.lat,
+  ) * 180 / Math.PI + 360) % 360;
+  scenario.site.originLat = Number(f.lat.toFixed(4));
+  scenario.site.originLon = Number(f.lon.toFixed(4));
+  scenario.site.radarLat = Number(r.lat.toFixed(5));
+  scenario.site.radarLon = Number(r.lon.toFixed(5));
+  scenario.farm.centreBearingDeg = Math.round(bearing);
+  scenario.farm.centreRangeM = Math.round(Math.min(near.distanceM, 60000) / 250) * 250;
+  scenario.site.environment = f.offshore ? 'offshore' : 'onshore';
+  scenario.farm.ukPairing = {
+    farm: f.name, radar: r.name, role: r.role,
+    status: f.status, offshore: !!f.offshore, repdRef: f.repdRef || 'n/a',
+    trueRangeM: Math.round(near.distanceM), clamped: near.distanceM > 60000,
+    uncertaintyM: f.imported ? null : 1100,
+    uncertaintyFraction: f.imported ? null : 1100 / Math.max(near.distanceM, 1),
+    placedFrom: 'the national map',
+  };
+  run(false);
+  rebuildRail();
+  $('#dlg-map').close();
+}
+
+// Uploaded sites have to reach the map without a trip back to the Site tab,
+// and the map has to rerun the screen to include them.
+function refreshMapData() {
+  if (!ukMap) return;
+  ukMap.farms = mapFarms();
+  ukMap.radars = mapRadars();
+  ukMap.selected = null;
+  ukMap.setScreen(runNationalScreen());
+  mapPanel(null);
+  const src = [importedSites.source.farms && `farms from ${importedSites.source.farms}`,
+    importedSites.source.radars && `radars from ${importedSites.source.radars}`]
+    .filter(Boolean).join(', ');
+  if (src) $('#map-readout').textContent = `Added ${src}. The screen has been rerun.`;
+}
+
+function buildMapImport() {
+  const el = $('#map-import');
+  if (!el) return;
+  el.textContent = '';
+  const h = document.createElement('h4');
+  h.textContent = 'Add your own data';
+  el.append(h);
+  const mk = (label, fn) => {
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.type = 'button';
+    b.style.width = '100%';
+    b.style.marginTop = '6px';
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    el.append(b);
+  };
+  mk('Wind farm site list (.xlsx or .csv)', importFarmSites);
+  mk('Radar site list (.xlsx or .csv)', importRadarSites);
+  const p = document.createElement('p');
+  p.style.marginTop = '8px';
+  p.textContent = 'One row per site, with a name and a position. Templates are in '
+    + 'samples/. Imported sites are drawn alongside the built-in lists and are '
+    + 'included in the screen. They carry no position uncertainty figure, because '
+    + 'this tool does not know how yours were surveyed.';
+  el.append(p);
+}
+
+$('#btn-map').addEventListener('click', openUkMap);
 
 // Views export as images. The 3D view has to be captured in the same tick as a
 // render, or the drawing buffer has already been cleared.

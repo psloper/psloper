@@ -28,6 +28,7 @@
   </div>
 
   <div class="topbar-actions">
+    <button class="btn" id="btn-map" title="National view: every radar, every wind farm, and which can see which">UK map</button>
     <button class="btn" id="btn-sweep">Sweep &amp; heat map</button>
     <button class="btn" id="btn-baseline" title="Compare the current mitigation set against no mitigation">Mitigation delta</button>
     <button class="btn" id="btn-export">Export</button>
@@ -153,6 +154,28 @@
     <header><h2>Method, sources and limits</h2><button class="btn ghost" value="close">Close</button></header>
   </form>
   <div class="dlg-body" id="method-body"></div>
+</dialog>
+
+<dialog id="dlg-map" class="dlg dlg-full">
+  <form method="dialog">
+    <header><h2>UK and Ireland: radars and wind farms</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="map-wrap">
+    <canvas id="map-canvas"></canvas>
+    <div class="map-overlay map-top-left">
+      <div class="toggles" id="map-layers"></div>
+    </div>
+    <div class="map-overlay map-top-right">
+      <div class="map-panel" id="map-import"></div>
+      <div class="map-panel" id="map-panel" style="margin-top:8px"></div>
+    </div>
+    <div class="map-overlay map-bottom-left">
+      <div class="legend" id="map-legend"></div>
+    </div>
+    <div class="map-overlay map-bottom-right">
+      <div class="readout" id="map-readout"></div>
+    </div>
+  </div>
 </dialog>
 
 <dialog id="dlg-evidence" class="dlg dlg-wide">
