@@ -259,7 +259,12 @@ export const RADAR_SITE_FIELDS = {
 // a turbine schedule, which is one row per machine: use the turbine schedule
 // when you have a layout and this when you have a list of projects.
 export const FARM_SITE_FIELDS = {
-  name:      ['name', 'site', 'site name', 'project', 'project name', 'wind farm', 'windfarm', 'scheme'],
+  // Compressed, space-free column names are what real exports carry: the
+  // planning database's own extract heads these SITENAME and REFID, and
+  // matching on 'site name' and 'ref' alone left every row of it to be matched
+  // by position, which is the weakest method there is.
+  name:      ['name', 'site', 'site name', 'sitename', 'project', 'project name',
+    'projectname', 'wind farm', 'windfarm', 'scheme', 'development'],
   latitude:  TURBINE_FIELDS.latitude,
   longitude: TURBINE_FIELDS.longitude,
   easting:   TURBINE_FIELDS.easting,
@@ -267,7 +272,8 @@ export const FARM_SITE_FIELDS = {
   capacity:  ['capacity', 'capacity mw', 'mw', 'installed capacity', 'rated capacity', 'output'],
   status:    ['status', 'development status', 'stage', 'planning status', 'state'],
   offshore:  ['offshore', 'onshore offshore', 'location type', 'marine', 'sea'],
-  reference: ['reference', 'ref', 'repd', 'repd ref', 'repd reference', 'planning ref', 'application ref', 'id'],
+  reference: ['reference', 'ref', 'repd', 'repd ref', 'repdref', 'repd reference',
+    'planning ref', 'application ref', 'id', 'refid', 'ref id', 'project id'],
   turbines:  ['turbines', 'turbine count', 'number of turbines', 'no of turbines', 'machines'],
   tipHeight: TURBINE_FIELDS.tipHeight,
 };
@@ -283,7 +289,25 @@ export function mapColumns(rows, fields) {
   let best = { score: 0, index: -1, map: {} };
   const limit = Math.min(rows.length, 12);
 
+  // A header row is words. Requiring that before scoring it stops a DATA row
+  // being mistaken for the header, which the synonym prefix rule below makes
+  // easy: 'site one' starts with 'site ', so a first turbine called "Site one"
+  // scored higher than the real header above it and the importer then skipped
+  // every row up to and including it. The prefix rule itself has to stay, or
+  // "Capacity (MW)" stops matching 'capacity'.
+  const looksLikeHeader = (row) => {
+    const filled = row.filter((c) => c != null && c !== '');
+    if (filled.length === 0) return false;
+    const numeric = filled.filter((c) => {
+      if (typeof c === 'number') return true;
+      const t = String(c).trim();
+      return t !== '' && Number.isFinite(Number(t.replace(/,/g, '')));
+    }).length;
+    return numeric <= filled.length * 0.3;
+  };
+
   for (let r = 0; r < limit; r++) {
+    if (!looksLikeHeader(rows[r])) continue;
     const map = {};
     let score = 0;
     rows[r].forEach((cell, c) => {

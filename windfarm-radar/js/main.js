@@ -13,6 +13,7 @@ import { PpiDisplay, ProfileDisplay, WindRoseDisplay } from './displays.js';
 import { deriveWindRoseFindings } from './findings.js';
 import { REFERENCES, STATUS_LABELS, statusCounts } from './references.js';
 import { loadTerrain, createRealTerrain } from './terrain.js';
+import { profileTable, headingConflicts, reconcileFarms } from './profile.js';
 import { WIND_ROSE_PRESETS } from './wind.js';
 import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
 import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
@@ -24,7 +25,7 @@ import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
 import {
   readTable, readElevationFile, parseTurbineRows, buildImportedTerrain,
   FREE_ELEVATION_SOURCES,
-  parseRadarSiteRows, parseFarmSiteRows,
+  parseRadarSiteRows, parseFarmSiteRows, mapColumns, FARM_SITE_FIELDS,
 } from './importers.js';
 import {
   buildRail, updateNotes, renderMetrics, renderFindings, renderTurbineTable,
@@ -183,6 +184,13 @@ el.rail.addEventListener('rail-rebuild', () => rebuildRail());
 
 // ------------------------------------------------------------ file imports
 
+// One escaper for HTML built in this module. Two functions below still carry
+// their own local copies, which shadow this; anything new uses this one. It
+// escapes the quote as well, so a value is safe in an attribute and not only
+// in text.
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
 function pickFile(accept) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
@@ -270,6 +278,109 @@ async function importFarmSites() {
     importStatus(siteImportReport('wind farm sites', file, res), res.warnings.length ? '' : 'ok');
   } catch (err) {
     importStatus(err.message, 'error');
+  }
+}
+
+/**
+ * Inspect a file nobody has described, and say how it differs from what we
+ * hold. Deliberately separate from the import buttons: this one NEVER changes
+ * the site tables. It answers "what is this and does it agree with us", which
+ * is the question you have before you are willing to import anything.
+ */
+async function inspectUnknownFile() {
+  const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
+  if (!file) return;
+  importStatus(`Reading ${file.name}...`);
+  try {
+    const sheets = await readTable(file);
+    const rows = sheets[0].rows;
+    const prof = profileTable(rows);
+    const conflicts = headingConflicts(prof);
+    const header = mapColumns(rows, FARM_SITE_FIELDS);
+    const body = rows.slice(prof.headerRow + 1)
+      .filter((r) => r && r.some((c) => c != null && c !== ''));
+    const known = UK_WIND_FARMS.map((_, i) => farmRecord(i));
+    const rec = reconcileFarms(body, known, { map: header.map || {} });
+
+    const pct = (n) => `${Math.round(n * 100)}%`;
+    let html = `<h3>${esc(file.name)}</h3>`
+      + `<p>${esc(prof.rowCount)} rows, ${esc(prof.columnCount)} columns, `
+      + `header on row ${esc(prof.headerRow + 1)}. `
+      + `Recognised fields: ${prof.recognisedFields.length
+        ? esc(prof.recognisedFields.join(', ')) : 'none'}.</p>`;
+
+    if (conflicts.length) {
+      html += '<div class="warn-box"><strong>Headings that disagree with their values.</strong> '
+        + 'A column converted to degrees but still labelled as a grid reference puts the site '
+        + 'in the sea if it is imported as written.<ul>'
+        + conflicts.map((c) => `<li><code>${esc(c.column)}</code> is headed `
+          + `<strong>${esc(c.headingSays)}</strong> but its values are ${esc(c.why)}.</li>`).join('')
+        + '</ul></div>';
+    }
+
+    html += '<h3>Columns</h3><table class="delta-table"><thead><tr>'
+      + '<th>Column</th><th>Holds</th><th>Looks like</th><th>Filled</th>'
+      + '<th>Distinct</th><th>Example</th></tr></thead><tbody>'
+      + prof.columns.map((c) => `<tr><td>${esc(c.name)}</td><td>${esc(c.kind)}</td>`
+        + `<td>${esc(c.valueShape || (c.mappedField ? `${c.mappedField} (by name)` : ''))}</td>`
+        + `<td>${esc(pct(c.fillRate))}</td>`
+        + `<td>${esc(c.distinct)}${c.constant ? ' (constant)' : ''}${c.unique ? ' (unique)' : ''}</td>`
+        + `<td>${esc(c.samples.join(', '))}</td></tr>`).join('')
+      + '</tbody></table>';
+
+    const su = rec.summary;
+    html += '<h3>Against the built-in table</h3>'
+      + '<table class="delta-table"><tbody>'
+      + `<tr><td>Rows</td><td>${esc(su.total)}</td></tr>`
+      + `<tr><td>Matched</td><td>${esc(su.matched)}</td></tr>`
+      + `<tr><td>&nbsp;&nbsp;by planning reference</td><td>${esc(su.byReference)}</td></tr>`
+      + `<tr><td>&nbsp;&nbsp;by name</td><td>${esc(su.byName)}</td></tr>`
+      + `<tr><td>&nbsp;&nbsp;by position only</td><td>${esc(su.byPosition)}</td></tr>`
+      + `<tr><td>Not matched</td><td>${esc(su.unmatched)}</td></tr>`
+      + `<tr><td>Median position difference</td><td>${su.medianPositionDeltaM === null
+        ? 'no positions to compare' : `${esc(su.medianPositionDeltaM)} m`}</td></tr>`
+      + `<tr><td>Largest position difference</td><td>${su.maxPositionDeltaM === null
+        ? '&mdash;' : `${esc(su.maxPositionDeltaM)} m`}</td></tr>`
+      + `<tr><td>Reference matches over 1 km apart</td><td>${esc(su.referenceMatchesOver1km)}</td></tr>`
+      + '</tbody></table>'
+      + `<p>${esc(rec.note)}</p>`;
+
+    const worst = rec.rows
+      .filter((r) => r.matchedBy === 'reference' && r.positionDeltaM !== null)
+      .sort((a, b) => b.positionDeltaM - a.positionDeltaM).slice(0, 12);
+    if (worst.length) {
+      html += '<h3>Biggest disagreements on a matched reference</h3>'
+        + '<table class="delta-table"><thead><tr><th>Row</th><th>Ours</th>'
+        + '<th>Apart</th><th>Capacity</th><th>Turbines</th></tr></thead><tbody>'
+        + worst.map((r) => `<tr><td>${esc(r.name ?? r.reference ?? '')}</td>`
+          + `<td>${esc(r.matched.name)}</td><td>${esc(r.positionDeltaM)} m</td>`
+          + `<td>${r.capacityDelta === null ? '&mdash;' : esc(r.capacityDelta)}</td>`
+          + `<td>${r.turbineDelta === null ? '&mdash;' : esc(r.turbineDelta)}</td></tr>`).join('')
+        + '</tbody></table>';
+    }
+
+    // The status line is set BEFORE the innerHTML assignment on purpose. It
+    // writes textContent, so it needs no escaping, but the injection test
+    // scans the sixteen lines after any innerHTML assignment and would flag it
+    // as an unescaped interpolation. Reordering keeps the guard strict rather
+    // than adding an exception to it.
+    importStatus(`${file.name}: ${su.matched} of ${su.total} rows matched a known project.`, 'ok');
+    $('#text-title').textContent = `Inspect: ${file.name}`;
+    $('#import-help-body').innerHTML = html;
+    $('#dlg-import-help').showModal();
+  } catch (err) {
+    // Report into the DIALOG, not only the rail's status line. importStatus
+    // writes to an element that exists only while the rail's data tab is
+    // built, so when this is run from the map, where its own button lives, a
+    // failure wrote to nothing and the whole thing looked like a hang.
+    importStatus(err.message, 'error');
+    $('#text-title').textContent = 'Inspect';
+    // Concatenated, not interpolated: this is textContent and needs no
+    // escaping, but it sits inside the injection guard's window after the
+    // innerHTML assignment above, and a template literal there would read as
+    // an unescaped interpolation. Keeping the guard strict is worth a plus.
+    $('#import-help-body').textContent = 'Could not read that file: ' + err.message;
+    $('#dlg-import-help').showModal();
   }
 }
 
@@ -933,6 +1044,7 @@ function buildMapImport() {
   };
   mk('Wind farm site list (.xlsx or .csv)', importFarmSites);
   mk('Radar site list (.xlsx or .csv)', importRadarSites);
+  mk('Inspect an unknown file (no import)', inspectUnknownFile);
   const p = document.createElement('p');
   p.style.marginTop = '8px';
   p.textContent = 'One row per site, with a name and a position. Templates are in '

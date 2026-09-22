@@ -32,16 +32,47 @@ const SAFE = [
   /^t\.(level|visibility)\b/, /^v$/, /^l$/, /^x\.(name|radar)$/,
   /^f\.(label|note)$/, /^result\.scenario\.target\.rcsDbsm$/,
   /^scope === /, /^i < \d/,    // a loop index deciding a static attribute
+  // A ternary choosing between a fixed literal and an escaped value is safe in
+  // both branches. Spelled out rather than loosened to "any ternary", which
+  // would wave through the unescaped branch this exists to catch.
+  /\?\s*'[^']*'\s*:\s*esc\(/,
+  /\?\s*esc\([^)]*\)\s*:\s*'[^']*'$/,
 ];
 
 function unescapedInterpolations(src) {
   const out = [];
   const lines = src.split('\n');
+
+  // HTML is not always built on the line that assigns it. The common shape is
+  // a `let html = ...` built up with `+=` over dozens of lines and assigned to
+  // innerHTML at the end, and a window that only looks FORWARD from the
+  // assignment never sees any of it. That blind spot let a whole rendered
+  // table through unescaped. So: find the identifiers that reach innerHTML,
+  // then scan every line that builds one of them, wherever it is.
+  const sinks = new Set();
+  for (const line of lines) {
+    const m = line.match(/(?:innerHTML|outerHTML)\s*=\s*([A-Za-z_$][\w$]*)\s*;/)
+      || line.match(/insertAdjacentHTML\s*\([^,]+,\s*([A-Za-z_$][\w$]*)\s*\)/);
+    if (m) sinks.add(m[1]);
+  }
+  const startsSink = (line) => [...sinks].some((id) =>
+    new RegExp(`(?:^|[^\\w$])(?:let|const|var)?\\s*${id}\\s*(?:\\+=|=)[^=]`).test(line));
+
+  // A `html += ...` runs over many lines, and the interpolations that matter
+  // are on the CONTINUATION lines, not the one carrying the `+=`. Checking
+  // per-line missed every one of them, so this stays open until the statement
+  // ends. That is the difference between catching an unescaped table cell and
+  // only catching an unescaped first line.
+  let building = false;
   let window = 0;
   lines.forEach((line, n) => {
     if (/(innerHTML|outerHTML|insertAdjacentHTML|document\.write)\s*[=(]/.test(line)) window = 16;
-    if (window <= 0) return;
-    window -= 1;
+    const inWindow = window > 0;
+    if (inWindow) window -= 1;
+    if (startsSink(line)) building = true;
+    const inBuild = building;
+    if (building && /;\s*(\/\/.*)?$/.test(line)) building = false;
+    if (!inWindow && !inBuild) return;
     for (const m of line.matchAll(/\$\{([^}]*)\}/g)) {
       const expr = m[1].trim();
       if (!expr) continue;
