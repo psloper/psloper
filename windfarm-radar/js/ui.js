@@ -6,6 +6,7 @@
 
 import {
   RADAR_PRESETS, TURBINE_PRESETS, TARGET_PRESETS, TERRAIN_PRESETS, REFRACTION_PRESETS,
+  NAMED_TYPE_PROVENANCE,
   RADAR_MOUNTS, antennaHeightAgl,
   radarPresetProvenanceNote,
   TARGET_GROUPS, TARGET_PROVENANCE, tipHeightOf, groundClearanceOf, setTipHeight,
@@ -1098,11 +1099,21 @@ export function updateNotes(noteEls, result, extra = {}) {
   // A radar cross section that looks like a specification but is an estimate is
   // worse than no figure, so the note says which of the two this is.
   const tprov = TARGET_PROVENANCE[sc.target.preset];
+  // A named type carries two different kinds of number and the note has to
+  // separate them: the airframer publishes the span and the length, nobody
+  // publishes the radar cross section, and the radar cross section is the only
+  // one of the three that changes a result.
+  const named = NAMED_TYPE_PROVENANCE.keys.includes(sc.target.preset);
   set('target-note', tp
     ? (tprov
       ? `${esc(tprov.rcs.source)}. "${esc(tprov.rcs.quote)}" ${esc(tprov.rcs.working)} `
         + `${esc(tprov.dimensions)} ${esc(tprov.fluctuation)}`
-      : `${esc(tp.group)}. Representative RCS for the class, not a figure for any particular `
+      : named
+        ? `${esc(tp.role || tp.group)}. Dimensions: ${esc(NAMED_TYPE_PROVENANCE.dimensions)} `
+          + `Radar cross section: ${esc(NAMED_TYPE_PROVENANCE.rcs)}`
+          + (sc.target.preset === 'f35b' ? ` ${esc(NAMED_TYPE_PROVENANCE.lowObservable)}` : '')
+          + ` ${esc(NAMED_TYPE_PROVENANCE.performance)}`
+        : `${esc(tp.group)}. Representative RCS for the class, not a figure for any particular `
         + 'aircraft: real values swing by tens of decibels with aspect and frequency, and figures '
         + 'for specific military platforms are controlled. Use it to explore sensitivity, not to '
         + 'assert performance. The one target here with a document behind it is the CAP 670 test '
