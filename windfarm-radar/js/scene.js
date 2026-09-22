@@ -1035,6 +1035,184 @@ export function turbineGeometry(t, { girth = 1, geo = (k, f) => f() } = {}) {
   return g;
 }
 
+
+/**
+ * The antenna aperture a radar's own numbers imply.
+ *
+ * This is not a recalled dimension, it is the standard aperture-beamwidth
+ * relation: a uniformly illuminated aperture W wide gives a half-power
+ * beamwidth of about 51*lambda/W degrees, and a real tapered illumination
+ * widens that to roughly 65 to 70. Taking 70 and inverting it:
+ *
+ *   W = 70 * lambda / azimuth beamwidth
+ *   H = 70 * lambda / elevation beamwidth
+ *
+ * For the en-route L-band preset, 1.3 GHz and 1.3 degrees azimuth, that is a
+ * 12.4 m wide reflector, which is the size an L-band en-route PSR antenna
+ * actually is. The drawing used to take its width from the SCENE extent
+ * instead, so the same radar came out a different size in a 10 km view and a
+ * 40 km view, and neither was a real size.
+ */
+export function antennaApertureM(radar, taper = 70) {
+  const lambda = 299792458 / Math.max(1, radar.freqHz || 3e9);
+  const w = taper * lambda / Math.max(0.05, radar.azBeamwidthDeg || 1.5);
+  let h = taper * lambda / Math.max(0.05, radar.elBeamwidthDeg || 5);
+  // A cosecant-squared antenna is PHYSICALLY TALLER than its half-power
+  // elevation beamwidth implies, because the shaped part of the aperture
+  // forms the high-angle fill and contributes almost nothing to the main
+  // lobe. Inverting the beamwidth alone gave 1.56 m for the S-band terminal
+  // preset, against about 2.7 to 3 m for the real antenna.
+  //
+  // The 1.8 is EMPIRICAL, not derived: it is the ratio that puts the S-band
+  // terminal and L-band en-route cases on their real heights, and it is
+  // applied only where the model says the radar is shaped at all. A pencil
+  // beam, like the weather preset, keeps the beamwidth figure.
+  const shaped = (radar.cscMaxDeg || 0) > Math.max(4, (radar.elBeamwidthDeg || 5));
+  if (shaped) h *= 1.8;
+  return { widthM: w, heightM: h, lambdaM: lambda, cscShaped: shaped };
+}
+
+/**
+ * A parabolic reflector: a curved sheet, not a flat plate, with a feed at the
+ * focus and a back strut. Width and height are the real aperture; the dish is
+ * a section of a paraboloid whose focal length is 0.4 of the width, which is
+ * a normal f/D for a surveillance antenna.
+ */
+export function reflectorGeometry(widthM, heightM, { cols = 14, rows = 8 } = {}) {
+  const f = widthM * 0.4;
+  const rings = [];
+  // One "ring" per column, running bottom to top, so loftRings sews a sheet.
+  for (let c = 0; c <= cols; c += 1) {
+    const x = (c / cols - 0.5) * widthM;
+    const ring = [];
+    for (let rI = 0; rI <= rows; rI += 1) {
+      const y = (rI / rows - 0.5) * heightM;
+      // Depth of a paraboloid at (x, y), measured back from the rim plane.
+      const z = -(x * x + y * y) / (4 * f);
+      ring.push(new THREE.Vector3(x, y, z));
+    }
+    rings.push(ring);
+  }
+  const verts = [];
+  for (const ring of rings) for (const p of ring) verts.push(p.x, p.y, p.z);
+  const n = rows + 1;
+  const idx = [];
+  for (let c = 0; c < cols; c += 1) {
+    for (let rI = 0; rI < rows; rI += 1) {
+      const a = c * n + rI;
+      const b = (c + 1) * n + rI;
+      idx.push(a, b, b + 1, a, b + 1, a + 1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * One radar installation at TRUE dimensions: structure, mast and antenna, with
+ * every part named in userData.part. The caller assigns materials and scales.
+ *
+ * Shared with the harness for the same reason turbineGeometry is: a harness
+ * that builds the object differently from the application measures a different
+ * object.
+ *
+ * `girth` multiplies structural WIDTHS only. Heights come from the model and
+ * nothing here changes the antenna height, which is the whole of what the
+ * propagation maths takes from the mounting.
+ */
+export function radarGeometry(radar, { girth = 1, vExag = 1 } = {}) {
+  const g = new THREE.Group();
+  const mount = radar.mount || {};
+  const ap = antennaApertureM(radar);
+  // heightAgl is the ANTENNA height, which is where the phase centre sits and
+  // is the only thing the propagation maths takes from the mounting. So the
+  // steelwork has to stop half an aperture BELOW it. It used to run the full
+  // height, so the mast came out through the middle of the dish: on the
+  // terminal preset the mast top was at 12.00 m inside a reflector spanning
+  // 11.16 to 12.78 m.
+  const hAnt = radar.heightAgl * vExag;
+  // Tower and mast widths scale off the ANTENNA, which is the one real
+  // dimension the installation has: a mast is a little narrower than the dish
+  // it carries. They used to come from the scene extent.
+  const towerR = ap.widthM * 0.10 * girth;
+
+  // Build the reflector FIRST and measure it, because how far below the
+  // antenna the steelwork has to stop depends on the dish's tilt and its
+  // curvature, not just on the nominal aperture height. Half the aperture is
+  // not enough: a tilted dish drops its lower rim by the depth times the sine
+  // of the tilt, and on the marine preset that 2 cm was the difference between
+  // a clean mast and one poking through the array.
+  const w = ap.widthM * girth;
+  const h = ap.heightM * girth;
+  const dish = new THREE.Mesh(reflectorGeometry(w, h), null);
+  // `?? 3`, not `|| 3`. A radar with a genuine zero elevation peak, like the
+  // marine preset, was being tilted 3 degrees by a falsy-zero default.
+  dish.rotation.x = -(radar.elPeakDeg ?? 3) * DEG;
+  dish.userData.part = 'reflector';
+  dish.updateMatrixWorld(true);
+  const dishBox = new THREE.Box3().setFromObject(dish);
+  const hTower = Math.max(0, hAnt + dishBox.min.y - h * 0.08);
+
+  if (mount.lattice) {
+    const hStruct = Math.max(0, mount.structureHeightM || 0) * vExag;
+    const hMast = Math.max(hTower - hStruct, 0);
+    const tw = latticeTowerGeometry(hStruct, towerR * 2.6, towerR * 1.5);
+    tw.traverse((m) => { if (m.isMesh) m.userData.part = 'structure'; });
+    g.add(tw);
+    if (hMast > 0) {
+      const pedestal = new THREE.Mesh(
+        new THREE.CylinderGeometry(towerR * 0.55, towerR * 0.75, hMast, 8), null);
+      pedestal.position.y = hStruct + hMast / 2;
+      pedestal.userData.part = 'mast';
+      g.add(pedestal);
+    }
+  } else {
+    const tower = new THREE.Mesh(
+      new THREE.CylinderGeometry(towerR * 0.7, towerR, hTower, 10), null);
+    tower.position.y = hTower / 2;
+    tower.userData.part = 'mast';
+    g.add(tower);
+    if (mount.type === 'building' && mount.structureHeightM > 0) {
+      // A building is not a mast. Drawing it as one hid the fact that most of
+      // the antenna height on a rooftop site is the building.
+      const hB = mount.structureHeightM * vExag;
+      const bw = ap.widthM * 2.6;
+      const bld = new THREE.Mesh(new THREE.BoxGeometry(bw, hB, bw * 0.75), null);
+      bld.position.y = hB / 2;
+      bld.userData.part = 'building';
+      g.add(bld);
+    }
+  }
+
+  // The rotating head.
+  const ant = new THREE.Group();
+  ant.position.y = hAnt;
+  // A surveillance reflector is tilted back so the beam points up a few
+  // degrees. It was drawn bolt upright, and flat.
+  ant.add(dish);
+
+  // The feed, at the focus, on a strut. Without it the dish reads as a plate.
+  const feed = new THREE.Mesh(new THREE.ConeGeometry(w * 0.05, w * 0.11, 10), null);
+  feed.rotation.x = -Math.PI / 2;
+  feed.position.set(0, 0, w * 0.40);
+  feed.userData.part = 'feed';
+  ant.add(feed);
+  const strut = new THREE.Mesh(
+    new THREE.BoxGeometry(w * 0.02, w * 0.02, w * 0.40), null);
+  strut.position.set(0, 0, w * 0.20);
+  strut.userData.part = 'strut';
+  ant.add(strut);
+
+  g.userData.antenna = ant;
+  g.userData.apertureM = ap;
+  g.userData.towerRadiusM = towerR;
+  g.add(ant);
+  return g;
+}
+
 /**
  * A steel lattice tower: four battered legs, horizontal belts, diagonal
  * bracing between the belts, a platform at the top and a caged ladder up one
@@ -1397,65 +1575,37 @@ export class SceneView {
     const base = this.pos(r.radar.east, r.radar.north, r.radar.groundM);
     g.position.copy(base);
 
-    const hTower = r.radar.heightAgl * this.vExag;
-    // The radar structure follows the same girth exaggeration as the turbines.
-    // At a 40 km scene the whole installation is about fourteen pixels across,
-    // measured, so at girth x1 the lattice is correct and invisible; the slider
-    // is what makes it readable. Widths only: heights go through the vertical
-    // exaggeration and nothing here changes the antenna height.
-    const towerR = Math.max(this.extent * 0.0016, 3) * Math.min(this.girthExag || 1, 6);
     const steel = new THREE.MeshStandardMaterial({
       color: 0xa9b6c0, roughness: 0.6, metalness: 0.3,
     });
-    const mount = r.radar.mount;
-    if (mount && mount.lattice) {
-      // A steel lattice: the platform sits at the top of the STRUCTURE and the
-      // antenna on a short pedestal above it, which is how the two heights are
-      // quoted on a drawing. Both are exaggerated vertically like everything
-      // else in this scene.
-      const hStruct = Math.max(0, mount.structureHeightM || 0) * this.vExag;
-      const hMast = Math.max(hTower - hStruct, 0);
-      const tw = latticeTowerGeometry(hStruct, towerR * 2.6, towerR * 1.5);
-      tw.traverse((m) => { if (m.isMesh) m.material = steel; });
-      g.add(tw);
-      if (hMast > 0) {
-        const pedestal = new THREE.Mesh(
-          new THREE.CylinderGeometry(towerR * 0.55, towerR * 0.75, hMast, 8), steel);
-        pedestal.position.y = hStruct + hMast / 2;
-        g.add(pedestal);
-      }
-    } else {
-      const tower = new THREE.Mesh(
-        new THREE.CylinderGeometry(towerR * 0.7, towerR, hTower, 10), steel);
-      tower.position.y = hTower / 2;
-      g.add(tower);
-      if (mount && mount.type === 'building' && mount.structureHeightM > 0) {
-        // A building is not a mast. Drawing it as one hid the fact that most
-        // of the antenna height on a rooftop site is the building.
-        const hB = mount.structureHeightM * this.vExag;
-        const bw = towerR * 6;
-        const bld = new THREE.Mesh(new THREE.BoxGeometry(bw, hB, bw * 0.75),
-          new THREE.MeshStandardMaterial({ color: 0x8b95a0, roughness: 0.85 }));
-        bld.position.y = hB / 2;
-        g.add(bld);
-      }
-    }
-
-    // Rotating antenna reflector.
-    const ant = new THREE.Group();
-    ant.position.y = hTower;
-    const w = Math.max(this.extent * 0.012, 60);
-    const refl = new THREE.Mesh(
-      new THREE.BoxGeometry(w, w * 0.30, w * 0.05),
-      new THREE.MeshStandardMaterial({ color: 0xe2e8ec, roughness: 0.45, metalness: 0.4, side: THREE.DoubleSide }),
-    );
-    refl.position.z = -w * 0.05;
-    ant.add(refl);
+    const dishMat = new THREE.MeshStandardMaterial({
+      color: 0xe2e8ec, roughness: 0.45, metalness: 0.4, side: THREE.DoubleSide,
+    });
+    const bldMat = new THREE.MeshStandardMaterial({ color: 0x8b95a0, roughness: 0.85 });
+    // The structure follows the same girth exaggeration as the turbines. At a
+    // 40 km scene the whole installation is about fourteen pixels across, so
+    // at girth x1 it is correct and invisible; the slider is what makes it
+    // readable. Widths only: heights go through the vertical exaggeration and
+    // nothing here changes the antenna height.
+    const installation = radarGeometry(r.radar, {
+      girth: Math.min(this.girthExag || 1, 6),
+      vExag: this.vExag,
+    });
+    installation.traverse((m) => {
+      if (!m.isMesh) return;
+      const part = m.userData.part;
+      m.material = part === 'reflector' ? dishMat : part === 'building' ? bldMat : steel;
+    });
+    for (const child of [...installation.children]) g.add(child);
+    const ant = installation.userData.antenna;
+    const w = installation.userData.apertureM.widthM
+      * Math.min(this.girthExag || 1, 6);
+    const towerR = installation.userData.towerRadiusM;
+    // The rotation marker, which is what makes the sweep readable at a glance.
     ant.add(new THREE.Mesh(
       new THREE.SphereGeometry(w * 0.05, 8, 6),
       new THREE.MeshStandardMaterial({ color: COLORS.rf, emissive: COLORS.rf, emissiveIntensity: 0.6 }),
     ));
-    g.add(ant);
     this.antenna = ant;
 
     this.groups.radar.add(g);
