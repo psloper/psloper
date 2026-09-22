@@ -62,16 +62,25 @@ test('the scene applies ONE girth factor, and never to a span', () => {
   assert.ok(/const tGirth = girth \/ this\.vExag;/.test(build),
     'tGirth must be girth with the group scale divided out, or the stated factor lies');
 
+  // The assembly itself now lives in turbineGeometry, which the harness shares
+  // with the scene so both measure the same machine. The span-and-width rule
+  // is checked where those lines actually are; inside that function the factor
+  // is its `girth` parameter, which _buildTurbines passes tGirth to.
+  const asm = src.slice(src.indexOf('\nexport function turbineGeometry('),
+    src.indexOf('\n/**\n * A steel lattice tower'));
+  assert.ok(asm.length > 800, 'failed to locate turbineGeometry');
+
   // Spans must not be multiplied by any girth factor.
-  for (const span of ['bladeLen = t.rotorRadiusM', 'nacL = t.nacelleLengthM']) {
-    const line = build.split('\n').find((l) => l.includes(span));
+  for (const span of ['bladeLen = t.rotorRadiusM', 'nacL = t.nacelleLengthM',
+    'const hubY = t.hubHeightM']) {
+    const line = asm.split('\n').find((l) => l.includes(span));
     assert.ok(line, `could not find "${span}"`);
     assert.ok(!/girth/i.test(line), `a span is being scaled by girth: ${line.trim()}`);
   }
   // Widths must be.
-  for (const girth of ['baseR =', 'topR =', 'nacW =', 'nacH =', 'spinR =', 'const chord =']) {
-    const line = build.split('\n').find((l) => l.includes(girth));
-    assert.ok(line && /tGirth/.test(line), `a width is NOT being scaled: ${line?.trim() ?? girth}`);
+  for (const width of ['baseR =', 'topR =', 'nacW =', 'nacH =', 'spinR =', 'const chord =']) {
+    const line = asm.split('\n').find((l) => l.includes(width));
+    assert.ok(line && /girth/.test(line), `a width is NOT being scaled: ${line?.trim() ?? width}`);
   }
 });
 

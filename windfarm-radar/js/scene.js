@@ -875,18 +875,36 @@ export function aerofoilRing(spanY, chord, tc, twistRad, halfPoints = 14) {
 
 // A blade: circular at the root, widest at about an eighth of span, tapering
 // and untwisting to a thin tip. Span runs along +y from the hub.
-const BLADE_STATIONS = [0.00, 0.04, 0.10, 0.18, 0.30, 0.45, 0.62, 0.78, 0.90, 0.97, 1.00];
-const BLADE_CHORD_F  = [0.42, 0.60, 0.96, 1.00, 0.84, 0.66, 0.50, 0.36, 0.25, 0.13, 0.04];
-const BLADE_TWIST_D  = [16.0, 15.2, 13.0, 10.0, 6.2, 3.4, 1.8, 0.8, 0.3, 0.05, 0.0];
-const BLADE_TC       = [1.00, 0.86, 0.50, 0.36, 0.27, 0.22, 0.19, 0.17, 0.155, 0.15, 0.15];
+// Tilt and prebend, the two shape features every machine of this class has and
+// the drawing had neither. Both are DRAWING ONLY: the analysis takes hub
+// height, rotor radius, chord and rpm from the model and never reads the mesh,
+// so changing these moves no result.
+const SHAFT_TILT_DEG = 5;
+const BLADE_PREBEND_F = 0.035;
 
-export function bladeGeometry(spanM, maxChordM) {
-  const rings = BLADE_STATIONS.map((st, i) => aerofoilRing(
-    st * spanM,
-    Math.max(maxChordM * BLADE_CHORD_F[i], maxChordM * 0.03),
-    BLADE_TC[i],
-    BLADE_TWIST_D[i] * DEG,
-  ));
+const BLADE_STATIONS = [0.00, 0.04, 0.10, 0.18, 0.30, 0.45, 0.62, 0.78, 0.90, 0.97, 1.00];
+const BLADE_CHORD_F  = [0.66, 0.70, 0.96, 1.00, 0.84, 0.66, 0.50, 0.36, 0.25, 0.13, 0.04];
+const BLADE_TWIST_D  = [16.0, 15.2, 13.0, 10.0, 6.2, 3.4, 1.8, 0.8, 0.3, 0.05, 0.0];
+const BLADE_TC       = [1.00, 0.95, 0.50, 0.36, 0.27, 0.22, 0.19, 0.17, 0.155, 0.15, 0.15];
+
+export function bladeGeometry(spanM, maxChordM, { prebendM = 0 } = {}) {
+  const rings = BLADE_STATIONS.map((st, i) => {
+    const ring = aerofoilRing(
+      st * spanM,
+      Math.max(maxChordM * BLADE_CHORD_F[i], maxChordM * 0.03),
+      BLADE_TC[i],
+      BLADE_TWIST_D[i] * DEG,
+    );
+    // Prebend: a modern blade is built curved UPWIND so the tip still clears
+    // the tower once it flexes downwind under load. It is specified as a tip
+    // offset and is very close to quadratic in span. The blade was drawn dead
+    // flat, which is a shape no machine of this size is built in.
+    if (prebendM) {
+      const dz = prebendM * st * st;
+      for (const v of ring) v.z += dz;
+    }
+    return ring;
+  });
   return loftRings(rings);
 }
 
@@ -931,6 +949,90 @@ export function spinnerGeometry(radiusM, lengthM, sides = 14) {
     }
     return ring;
   }));
+}
+
+
+/**
+ * One turbine at TRUE dimensions: tower, nacelle, spinner and blades, with
+ * every part named in userData.part. The caller assigns materials, scales the
+ * finished group and hangs the pick proxy off it.
+ *
+ * This is shared with the harness on purpose. While the assembly lived inline
+ * in the scene, a harness could only re-implement it, and a harness that
+ * builds the object differently from the application measures a different
+ * object: exactly how a preset's tail layout reached the screen unchecked on
+ * the aircraft.
+ *
+ * `girth` multiplies structural WIDTHS only, never a span: not the tower
+ * height, not the nacelle length, not the blade length.
+ */
+export function turbineGeometry(t, { girth = 1, geo = (k, f) => f() } = {}) {
+  const g = new THREE.Group();
+  const hubY = t.hubHeightM;
+  const baseR = (t.towerBaseDiameterM ?? 5) / 2 * girth;
+  const topR = (t.towerTopDiameterM ?? 3) / 2 * girth;
+
+  const tower = new THREE.Mesh(geo(`tw:${baseR.toFixed(1)}:${topR.toFixed(1)}:${hubY.toFixed(0)}`,
+    () => new THREE.CylinderGeometry(topR, baseR, hubY, 20, 1)), null);
+  tower.userData.part = 'tower';
+  tower.position.y = hubY / 2;
+  g.add(tower);
+
+  const rotor = new THREE.Group();
+  rotor.position.y = hubY;
+  rotor.rotation.y = (180 - (t.yawDeg ?? 0)) * DEG;
+  g.add(rotor);
+
+  // Nacelle length is a span along the rotor axis, so it is NOT widened; its
+  // width and height are girths, so they are.
+  const nacL = t.nacelleLengthM;
+  const nacW = t.nacelleWidthM * girth;
+  const nacH = t.nacelleHeightM * girth;
+  const nacelle = new THREE.Mesh(geo(`nc:${nacL.toFixed(1)}:${nacW.toFixed(1)}:${nacH.toFixed(1)}`,
+    () => nacelleGeometry(nacL, nacW, nacH)), null);
+  nacelle.userData.part = 'nacelle';
+  rotor.add(nacelle);
+
+  const spinner = new THREE.Group();
+  spinner.position.z = nacL * 0.52;
+  // Shaft tilt: the rotor axis of a modern machine is tilted up about 5
+  // degrees, again for tower clearance. It was drawn exactly horizontal, with
+  // the nacelle symmetric about the hub height to the centimetre. The nacelle
+  // itself stays level, which is how it looks on the machine.
+  spinner.rotation.x = -SHAFT_TILT_DEG * DEG;
+  rotor.add(spinner);
+
+  const spinR = t.hubDiameterM / 2 * girth;
+  const spinL = t.hubDiameterM * 0.95;   // a span, so left alone
+  const nose = new THREE.Mesh(
+    geo(`sp:${spinR.toFixed(1)}:${spinL.toFixed(1)}`, () => spinnerGeometry(spinR, spinL)), null);
+  nose.userData.part = 'spinner';
+  spinner.add(nose);
+
+  const bladeLen = t.rotorRadiusM ?? (t.rotorDiameterM / 2);
+  const chord = (t.bladeChordM ?? 3) * girth;
+  // Prebend of about 3.5% of the blade length at the tip, which is the order
+  // quoted for machines of this class.
+  const prebend = bladeLen * BLADE_PREBEND_F;
+  const bladeGeo = geo(`bl:${bladeLen.toFixed(0)}:${chord.toFixed(1)}:${prebend.toFixed(1)}`,
+    () => bladeGeometry(bladeLen, chord, { prebendM: prebend }));
+  for (let b = 0; b < t.bladeCount; b += 1) {
+    const blade = new THREE.Mesh(bladeGeo, null);
+    blade.userData.part = 'blade';
+    blade.position.y = spinR * 0.5;
+    const arm = new THREE.Group();
+    arm.rotation.z = (b / t.bladeCount) * Math.PI * 2;
+    arm.add(blade);
+    spinner.add(arm);
+  }
+
+  g.userData.spinner = spinner;
+  g.userData.hubHeightM = hubY;
+  g.userData.rotorRadiusM = bladeLen;
+  g.userData.bladeChordM = chord;
+  g.userData.shaftTiltDeg = SHAFT_TILT_DEG;
+  g.userData.prebendM = prebend;
+  return g;
 }
 
 /**
@@ -1581,42 +1683,17 @@ export class SceneView {
         color: COLORS.tower, roughness: 0.55, metalness: 0.15,
         emissive: colour, emissiveIntensity: 0.22,
       });
-      // TRUE tower taper, from the model's own base and top diameters, widened
-      // by the girth multiplier so it is visible across the scene.
-      const baseR = (t.towerBaseDiameterM ?? 5) / 2 * tGirth;
-      const topR = (t.towerTopDiameterM ?? 3) / 2 * tGirth;
-      const tower = new THREE.Mesh(
-        geoCache(`tw:${baseR.toFixed(1)}:${topR.toFixed(1)}:${hubY.toFixed(0)}`,
-          () => new THREE.CylinderGeometry(topR, baseR, hubY, 20, 1)),
-        towerMat,
-      );
-      tower.userData.part = 'tower';
-      tower.position.y = hubY / 2;
-      g.add(tower);
+      const nacelleMat = new THREE.MeshStandardMaterial({
+        color: 0xe6ebee, roughness: 0.5, metalness: 0.2,
+      });
+      const spinnerMat = new THREE.MeshStandardMaterial({
+        color: 0xeef2f5, roughness: 0.45, metalness: 0.1,
+      });
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0xf2f5f7, roughness: 0.4, metalness: 0.05,
+        emissive: colour, emissiveIntensity: 0.3,
+      });
 
-      const rotor = new THREE.Group();
-      rotor.position.y = hubY;
-      // Rotor axis points into the wind; scene z is south, so bearing maps to
-      // a rotation about +Y of (180 - bearing) degrees.
-      rotor.rotation.y = (180 - t.yawDeg) * DEG;
-      g.add(rotor);
-
-      // Nacelle length is a span along the rotor axis, so it is NOT widened;
-      // its width and height are girths, so they are.
-      const nacL = t.nacelleLengthM;
-      const nacW = t.nacelleWidthM * tGirth;
-      const nacH = t.nacelleHeightM * tGirth;
-      const nacelle = new THREE.Mesh(
-        geoCache(`nc:${nacL.toFixed(1)}:${nacW.toFixed(1)}:${nacH.toFixed(1)}`,
-          () => nacelleGeometry(nacL, nacW, nacH)),
-        new THREE.MeshStandardMaterial({ color: 0xe6ebee, roughness: 0.5, metalness: 0.2 }),
-      );
-      nacelle.userData.part = 'nacelle';
-      rotor.add(nacelle);
-
-      const spinner = new THREE.Group();
-      spinner.position.z = nacL * 0.52;
-      rotor.add(spinner);
       // THE ROTOR IS NOT EXAGGERATED, AND MUST NOT BE.
       //
       // It used to carry spinner.scale.y = vExag, so that the drawn tip height
@@ -1629,34 +1706,18 @@ export class SceneView {
       //
       // So the tower height is exaggerated and the rotor is drawn true. The
       // readout says both, because a viewer cannot infer it from the picture.
-
-      const spinR = t.hubDiameterM / 2 * tGirth;
-      const spinL = t.hubDiameterM * 0.95;   // a span, so left alone
-      const nose = new THREE.Mesh(
-        geoCache(`sp:${spinR.toFixed(1)}:${spinL.toFixed(1)}`, () => spinnerGeometry(spinR, spinL)),
-        new THREE.MeshStandardMaterial({ color: 0xeef2f5, roughness: 0.45, metalness: 0.1 }),
-      );
-      nose.userData.part = 'spinner';
-      spinner.add(nose);
-
-      const bladeLen = t.rotorRadiusM;
-      const bladeMat = new THREE.MeshStandardMaterial({
-        color: 0xf2f5f7, roughness: 0.4, metalness: 0.05,
-        emissive: colour, emissiveIntensity: 0.3,
+      const machine = turbineGeometry(t, { girth: tGirth, geo: geoCache });
+      machine.traverse((m) => {
+        if (!m.isMesh) return;
+        const part = m.userData.part;
+        m.material = part === 'tower' ? towerMat
+          : part === 'nacelle' ? nacelleMat
+            : part === 'spinner' ? spinnerMat : bladeMat;
       });
-      // Chord is a girth, so it takes the same factor as everything else.
-      const chord = (t.bladeChordM ?? 3) * tGirth;
-      const bladeGeo = geoCache(`bl:${bladeLen.toFixed(0)}:${chord.toFixed(1)}`,
-        () => bladeGeometry(bladeLen, chord));
-      for (let b = 0; b < t.bladeCount; b++) {
-        const blade = new THREE.Mesh(bladeGeo, bladeMat);
-        blade.userData.part = 'blade';
-        blade.position.y = spinR * 0.5;
-        const arm = new THREE.Group();
-        arm.rotation.z = (b / t.bladeCount) * Math.PI * 2;
-        arm.add(blade);
-        spinner.add(arm);
-      }
+      for (const child of [...machine.children]) g.add(child);
+      const spinner = machine.userData.spinner;
+      const bladeLen = machine.userData.rotorRadiusM;
+
       spinner.userData.rpm = tr.rpm;
       spinner.userData.phase = t.phase;
       g.userData.spinner = spinner;

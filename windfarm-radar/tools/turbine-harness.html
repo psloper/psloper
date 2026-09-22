@@ -1,31 +1,122 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>turbine</title>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Turbine geometry harness</title>
 <script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
-<style>html,body{margin:0;height:100%;background:#0d1216}canvas{display:block}</style></head><body>
+<style>
+body{margin:0;background:#0b0f13;color:#cdd8e1;font:13px system-ui}
+#out{padding:10px 14px;font-family:ui-monospace,monospace;white-space:pre;font-size:12px}
+</style></head><body>
+<div id="out">measuring...</div>
 <script type="module">
 import * as THREE from 'three';
-import { bladeGeometry, nacelleGeometry, spinnerGeometry } from '../js/scene.js';
-const sc = new THREE.Scene(); sc.background = new THREE.Color(0x0d1216);
-const cam = new THREE.PerspectiveCamera(35, 1400/900, 1, 4000);
-cam.position.set(170, 130, 235); cam.lookAt(0, 96, 0);
-const rend = new THREE.WebGLRenderer({ antialias: true }); rend.setSize(1400, 900);
-document.body.append(rend.domElement);
-sc.add(new THREE.HemisphereLight(0xdfe9f2, 0x2a3138, 1.1));
-const d = new THREE.DirectionalLight(0xffffff, 1.5); d.position.set(220, 300, 180); sc.add(d);
-const d2 = new THREE.DirectionalLight(0x8fb6d8, 0.5); d2.position.set(-200, 80, -160); sc.add(d2);
+import { turbineGeometry } from '../js/scene.js';
+import { TURBINE_PRESETS } from '../js/model.js';
 
-const hub = 110, R = 75, chord = 4.2, baseR = 2.75, topR = 1.6;
-const white = new THREE.MeshStandardMaterial({ color: 0xeef2f5, roughness: 0.42, metalness: 0.08 });
-const tower = new THREE.Mesh(new THREE.CylinderGeometry(topR, baseR, hub, 24), white);
-tower.position.y = hub/2; sc.add(tower);
-const rotor = new THREE.Group(); rotor.position.y = hub; rotor.rotation.y = -0.45; sc.add(rotor);
-const nacL = R*0.20, nacW = topR*2.2;
-const nac = new THREE.Mesh(nacelleGeometry(nacL, nacW, nacW*0.92), white); rotor.add(nac);
-const sp = new THREE.Group(); sp.position.z = nacL*0.52; rotor.add(sp);
-sp.add(new THREE.Mesh(spinnerGeometry(topR*1.15, topR*2.1), white));
-const bg = bladeGeometry(R, chord);
-for (let b=0;b<3;b++){ const m=new THREE.Mesh(bg, white); m.position.y = topR*0.5;
-  const arm=new THREE.Group(); arm.rotation.z=(b/3)*Math.PI*2 + 0.35; arm.add(m); sp.add(arm); }
-const grid = new THREE.GridHelper(600, 20, 0x2a3138, 0x1b2228); sc.add(grid);
-rend.render(sc, cam);
-window.__ready = true;
+// Shape checks on the turbine, measured from the SAME function the scene
+// builds with. Sizes were already covered by tools/verify-geometry.mjs, which
+// drives the real page; these are the things a bounding box on the whole
+// machine cannot see.
+const lines = [];
+const fails = [];
+const partBox = (g, name) => {
+  const bb = new THREE.Box3();
+  let found = false;
+  g.traverse((m) => {
+    if (!m.isMesh || m.userData.part !== name) return;
+    found = true; bb.expandByObject(m);
+  });
+  return found ? bb : null;
+};
+
+for (const [key, base] of Object.entries(TURBINE_PRESETS)) {
+  const t = { ...base, rotorRadiusM: base.rotorDiameterM / 2, yawDeg: 180 };
+  const g = turbineGeometry(t, { girth: 1 });
+  g.updateMatrixWorld(true);
+  const R = t.rotorRadiusM;
+  const blade = partBox(g, 'blade');
+  const tower = partBox(g, 'tower');
+  const spin = partBox(g, 'spinner');
+
+  // 1. The tower stands ON the ground and reaches the hub. A tower that
+  // floats or sinks is the first thing a viewer would disbelieve.
+  if (Math.abs(tower.min.y) > 0.01 || Math.abs(tower.max.y - t.hubHeightM) > 0.01) {
+    fails.push(`${key}: tower runs ${tower.min.y.toFixed(2)} to ${tower.max.y.toFixed(2)} `
+      + `against a hub at ${t.hubHeightM}`);
+  }
+
+  // 2. The blade root is a CYLINDER of real size, not a needle. A blade bolts
+  // to the hub through a root about two thirds of its widest chord across; at
+  // 0.42 of max chord it drew 0.92 m on a machine whose hub is 3.0 m across,
+  // so the blade disappeared into the spinner.
+  // Read the blade geometry OFF THE ASSEMBLED MACHINE. Rebuilding it here with
+  // bladeGeometry(R, chord) measured a blade with the default options, not the
+  // one the scene draws, and the prebend check duly failed against a flat
+  // blade that does not exist on screen. Same class of mistake as a harness
+  // that builds an aircraft without its preset's tail layout. The mesh's own
+  // geometry is pre-tilt, because the tilt is a rotation on the parent group,
+  // so this isolates the blade's built-in shape.
+  let pos = null;
+  g.traverse((m) => { if (m.isMesh && m.userData.part === 'blade' && !pos) pos = m.geometry.attributes.position; });
+  if (!pos) { fails.push(`${key}: no blade mesh`); continue; }
+  // Chord is the full width of the root ring, max x minus min x. Taking
+  // max |x| and doubling it, which is what this did, overstates it by 1.4:
+  // aerofoilRing puts the pitch axis at 0.3 chord, so x runs -0.3c to +0.7c
+  // and the larger side is 0.7, not 0.5. The inflated figure cleared the
+  // threshold, so the check passed the needle root it was written to reject.
+  let rootMinX = Infinity, rootMaxX = -Infinity;
+  for (let i = 0; i < pos.count; i += 1) {
+    if (pos.getY(i) >= R * 0.01) continue;
+    rootMinX = Math.min(rootMinX, pos.getX(i));
+    rootMaxX = Math.max(rootMaxX, pos.getX(i));
+  }
+  const rootChord = rootMaxX - rootMinX;
+  if (rootChord < t.bladeChordM * 0.55) {
+    fails.push(`${key}: blade root is ${rootChord.toFixed(2)} m across, `
+      + `under 0.55 of its ${t.bladeChordM} m chord`);
+  }
+
+  // 3. The blade is PREBENT upwind. It was drawn dead flat, which is a shape
+  // no machine of this size is built in. Measured as the z of the tip ring
+  // against the z of the root ring, on one blade, before any tilt.
+  const zAt = (lo, hi) => {
+    let sum = 0, n = 0;
+    for (let i = 0; i < pos.count; i += 1) {
+      const y = pos.getY(i);
+      if (y < lo || y > hi) continue;
+      sum += pos.getZ(i); n += 1;
+    }
+    return n ? sum / n : 0;
+  };
+  const bend = zAt(R * 0.98, R * 1.01) - zAt(-1, R * 0.01);
+  if (bend < R * 0.02) {
+    fails.push(`${key}: blade tip is ${bend.toFixed(2)} m upwind of its root, `
+      + `under 2% of a ${R.toFixed(1)} m blade`);
+  }
+
+  // 4. The rotor axis is TILTED. With the shaft level, all three blades lie in
+  // one plane and their z spread is only the blade's own thickness. A real
+  // machine tilts the shaft about 5 degrees so the low blade stands off the
+  // tower, which spreads the tips fore and aft.
+  const spread = blade.max.z - blade.min.z;
+  const need = 2 * R * Math.sin(3 * Math.PI / 180);
+  if (spread < need) {
+    fails.push(`${key}: blade tips spread ${spread.toFixed(2)} m fore-and-aft, `
+      + `under the ${need.toFixed(2)} m a 3 degree shaft tilt would give`);
+  }
+
+  // 5. The rotor is UPWIND of the tower, and the lowest blade clears it.
+  if (spin.min.z <= tower.max.z) {
+    fails.push(`${key}: spinner starts at z ${spin.min.z.toFixed(2)}, `
+      + `inside the tower at ${tower.max.z.toFixed(2)}`);
+  }
+
+  lines.push(`${key.padEnd(16)} hub ${String(t.hubHeightM).padStart(4)}  rotor `
+    + `${String(t.rotorDiameterM).padStart(4)}  root ${rootChord.toFixed(2).padStart(5)} m  `
+    + `prebend ${bend.toFixed(2).padStart(5)} m  tip spread ${spread.toFixed(2).padStart(6)} m`);
+}
+
+lines.push('');
+lines.push(fails.length ? 'FAIL\n  ' + fails.join('\n  ')
+  : `PASS: ${Object.keys(TURBINE_PRESETS).length} machines, the shape checks hold`);
+document.getElementById('out').textContent = lines.join('\n');
+window.__measured = lines;
+window.__fails = fails;
 </script></body></html>

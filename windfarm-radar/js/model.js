@@ -295,6 +295,39 @@ export function applyRadarMount(scenario, key) {
   });
 }
 
+/**
+ * KNOWN UNCERTAIN INPUT: blade chord.
+ *
+ * `bladeChordM` is the blade's widest chord. It is the one turbine dimension
+ * here that is NOT a headline figure an operator quotes, and unlike hub height
+ * and rotor diameter it is not on a planning drawing either. The values below
+ * give a chord-to-rotor-diameter ratio of 0.027 down to 0.019 across the
+ * range. Published blade geometry for machines of these sizes suggests
+ * something nearer 0.035 down to 0.025, so these are plausibly 25 to 30 per
+ * cent low.
+ *
+ * It has NOT been changed, for one reason: unlike the drawing fixes around it,
+ * this number is an input to rotorSolidity() in rf.js and therefore moves
+ * findings. Changing a figure that drives a result on the strength of recalled
+ * blade geometry, with no datasheet to hand, would be worse than leaving it
+ * visibly flagged. Two consequences to know about:
+ *
+ *   - the drawn blades look more slender than real ones, and that is why;
+ *   - rotor solidity, and the blade return that follows from it, is probably
+ *     UNDERSTATED, which is the non-conservative direction.
+ *
+ * Replace with the blade manufacturer's chord distribution when there is one.
+ * Blade chord is already exposed as an editable field in the wind farm tab.
+ */
+export const BLADE_CHORD_PROVENANCE = {
+  status: 'unverified',
+  drawnRatioRange: [0.019, 0.027],
+  expectedRatioRange: [0.025, 0.035],
+  affectsResults: true,
+  via: 'rotorSolidity() in rf.js',
+  direction: 'understates blade area, so understates the blade return',
+};
+
 export const TURBINE_PRESETS = {
   'small-850': {
     label: '0.85 MW (legacy onshore)',
