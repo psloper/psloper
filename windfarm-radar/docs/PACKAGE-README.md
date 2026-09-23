@@ -1,7 +1,7 @@
 # Wind farm and radar screening tool
 
 Developer: Paul Sloper
-Packaged: 2026-09-22
+Packaged: __BUILD_DATE__
 
 ## Run it
 

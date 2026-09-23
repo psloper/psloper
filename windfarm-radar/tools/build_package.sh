@@ -20,7 +20,9 @@ node "$root/tools/build_offline.mjs" --coarse
 cp "$root/dist/windfarm-radar-offline-200m.html" "$pkg/"
 cp "$root/dist/windfarm-radar-offline-500m.html" "$pkg/"
 
-cp "$root/docs/PACKAGE-README.md" "$pkg/START-HERE.md"
+# The packaged date was typed by hand and was a day out by the time anyone
+# read it. The build stamps it.
+sed "s/__BUILD_DATE__/$(date -u +%Y-%m-%d)/" "$root/docs/PACKAGE-README.md" > "$pkg/START-HERE.md"
 mkdir -p "$pkg/docs"
 for f in "$root"/docs/*; do
   case $(basename "$f") in PACKAGE-README.md) continue ;; esac
@@ -51,7 +53,22 @@ m.note = "This copy carries the 500 m national grid only. The 100 m blocks are "
 fs.writeFileSync(process.argv[2], JSON.stringify(m, null, 1));
 ' "$root/data/terrain/manifest.json" "$pkg/source/data/terrain/manifest.json"
 
-# Example outputs, if a demo run left any behind.
+# Example outputs, regenerated from THIS build rather than copied from whatever
+# a demo run left behind. The hand-made set went three days stale and shipped a
+# picture of the tool before the area map, before figures were embedded in the
+# Office exports and before the terrain had any relief shading. Set
+# SKIP_EXAMPLES=1 to build the package without a browser.
+if [ -z "${SKIP_EXAMPLES:-}" ]; then
+  python3 -m http.server 8791 --bind 127.0.0.1 --directory "$root" >/dev/null 2>&1 &
+  server=$!
+  sleep 2
+  node "$root/tools/make_examples.mjs" "http://127.0.0.1:8791/index.html" || {
+    kill "$server" 2>/dev/null || true
+    echo "example outputs failed to generate" >&2
+    exit 1
+  }
+  kill "$server" 2>/dev/null || true
+fi
 if [ -d "$root/dist/example-outputs" ]; then cp -r "$root/dist/example-outputs" "$pkg/"; fi
 
 cd "$pkg"
