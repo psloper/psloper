@@ -43,13 +43,26 @@ test('every custom property used without a fallback is defined', () => {
     + 'declaration invalid, silently.');
 });
 
+test('no font-size is hard-coded in pixels; every one uses the scale', () => {
+  const hard = [...css.matchAll(/font-size:\s*[0-9.]+px/g)].map((m) => m[0]);
+  assert.deepEqual(hard, [],
+    `${hard.length} hard-coded font sizes. Nine distinct sizes were rendering at `
+    + 'once before the scale was enforced, which is why nothing read as more '
+    + 'important than anything else.');
+});
+
+test('the smallest step on the scale is at least 11px', () => {
+  const m = css.match(/--t-tag:\s*([0-9.]+)px/);
+  assert.ok(m && Number(m[1]) >= 11, 'the type floor dropped below 11px');
+});
+
 test('the type scale is declared and used, not hard-coded font sizes', () => {
   const have = defined(css);
-  for (const token of ['--t-tag', '--t-micro', '--t-small', '--t-body', '--t-ui', '--t-head', '--t-metric']) {
+  for (const token of ['--t-tag', '--t-data', '--t-small', '--t-body', '--t-lead', '--t-metric']) {
     assert.ok(have.has(token), `${token} is missing from the type scale`);
   }
   // The scale must be strictly increasing, or it is not a scale.
-  const sizes = ['--t-tag', '--t-micro', '--t-small', '--t-body', '--t-ui', '--t-head', '--t-metric']
+  const sizes = ['--t-tag', '--t-data', '--t-small', '--t-body', '--t-lead', '--t-metric']
     .map((t) => {
       const m = css.match(new RegExp(`${t}:\\s*([0-9.]+)px`));
       assert.ok(m, `${t} is not declared in px`);

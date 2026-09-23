@@ -508,7 +508,9 @@ export function buildRail(container, tab, scenario, onChange, onPreset) {
 
     const g = document.createElement('section');
     g.className = 'group';
-    const h = document.createElement('h3');
+    // h2: these are top-level sections of the control rail. They were h3
+    // directly under the page h1, which skips a level.
+    const h = document.createElement('h2');
     h.textContent = block.group;
     g.append(h);
     for (const f of block.fields) g.append(makeField(f, scenario, onChange, onPreset, noteEls));
@@ -1212,7 +1214,7 @@ export function renderTurbineTable(table, result, onHover) {
   const tbody = table.querySelector('tbody');
   const dot = (c) => `<span class="dot" style="background:${c}"></span>`;
   tbody.innerHTML = result.turbineResults.map((t) => {
-    const colour = t.visibility === 'masked' ? '#5d6b78'
+    const colour = t.visibility === 'masked' ? '#7e8d9b'
       : t.falsePlot ? '#e8524a'
         : t.snrEffDb > result.radar.requiredSnrDb - 10 ? '#f0a83a' : '#3fd18b';
     // Turbine ids come straight from an imported schedule, so they are
@@ -1221,7 +1223,7 @@ export function renderTurbineTable(table, result, onHover) {
     // the renderer's job to be safe, not the parser's job to mangle the user's
     // labels.
     const id = esc(t.turbine.id);
-    return `<tr data-id="${id}">
+    return `<tr data-id="${id}" tabindex="0">
       <td>${dot(colour)}${id}</td>
       <td>${(t.hub.ground / 1000).toFixed(2)}</td>
       <td>${t.hub.bearing.toFixed(0).padStart(3, '0')}</td>
@@ -1232,9 +1234,24 @@ export function renderTurbineTable(table, result, onHover) {
     </tr>`;
   }).join('');
 
-  tbody.querySelectorAll('tr').forEach((tr) => {
-    tr.addEventListener('mouseenter', () => onHover(tr.dataset.id));
-    tr.addEventListener('mouseleave', () => onHover(null));
+  // Hovering a row highlights that machine in the 3D view. That was the only
+  // way to reach it, which left the feature unavailable to anyone not using a
+  // mouse. Focus does the same thing, so Tab and arrow keys work as well as the
+  // pointer does.
+  tbody.querySelectorAll('tr').forEach((tr, i, rows) => {
+    const show = () => onHover(tr.dataset.id);
+    const hide = () => onHover(null);
+    tr.addEventListener('mouseenter', show);
+    tr.addEventListener('mouseleave', hide);
+    tr.addEventListener('focus', show);
+    tr.addEventListener('blur', hide);
+    tr.addEventListener('keydown', (e) => {
+      const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+      if (!step) return;
+      e.preventDefault();
+      const next = rows[i + step];
+      if (next) next.focus();
+    });
   });
 }
 
@@ -1285,14 +1302,14 @@ export function renderReadout(el, tr, result) {
     ['Return', `${tr.snrEffDb.toFixed(1)} dB SNR`],
     ['Above threshold', tr.falsePlot ? 'YES' : 'no'],
   ];
-  el.innerHTML = `<h4>${esc(t.id)}</h4><dl>${rows
+  el.innerHTML = `<h3>${esc(t.id)}</h3><dl>${rows
     .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`;
 }
 
 export function renderLegend(el, mode, result) {
   if (mode === 'coverage') {
     el.innerHTML = `
-      <h4>Detection margin vs threshold</h4>
+      <h3>Detection margin vs threshold</h3>
       <div class="legend-ramp" style="background:linear-gradient(90deg,#5a1410,#e8524a,#f0a83a,#2f5a46,#3fd18b,#1b3d4a)"></div>
       <div class="legend-scale"><span>-20 dB</span><span>0</span><span>+25 dB</span></div>
       <div class="legend-row" style="margin-top:6px">Shaded at ${(result.coverage ? result.coverage.amsl / M_PER_FT : 0).toFixed(0)} ft, target ${result.scenario.target.rcsDbsm} dBsm</div>`;
@@ -1300,14 +1317,14 @@ export function renderLegend(el, mode, result) {
   }
   if (mode === 'delta') {
     el.innerHTML = `
-      <h4>Margin lost to the wind farm</h4>
+      <h3>Margin lost to the wind farm</h3>
       <div class="legend-ramp" style="background:linear-gradient(90deg,#27313a,#2f4a55,#d9a13a,#e06a3c,#b51f18)"></div>
       <div class="legend-scale"><span>0 dB</span><span>12</span><span>25+ dB</span></div>
       <div class="legend-row" style="margin-top:6px">Difference between this site and the same site with no turbines</div>`;
     return;
   }
   el.innerHTML = `
-    <h4>Turbines and track</h4>
+    <h3>Turbines and track</h3>
     <div class="legend-row"><span class="swatch" style="background:#e8524a"></span>Returns above the detection threshold</div>
     <div class="legend-row"><span class="swatch" style="background:#f0a83a"></span>In sight, below threshold</div>
     <div class="legend-row"><span class="swatch" style="background:#3fd18b"></span>Detected / clear</div>

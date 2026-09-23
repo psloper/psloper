@@ -16,10 +16,16 @@
   --rule:        #222c35;
   --rule-strong: #33414d;
 
-  /* text */
-  --ink:      #cdd8e1;
-  --ink-dim:  #8595a3;
-  --ink-mute: #5d6b78;
+  /* text
+     --ink-mute was #5d6b78, which measured 3.42:1 on --surface and failed
+     WCAG AA (4.5:1) in sixteen places, every one of them under 18.66 px.
+     #7e8d9b is the same hue and saturation lifted until it clears 4.5:1 on
+     the WORST background it ever sits on, which is a severity wash inside a
+     finding card, not the page. --ink-dim moved up with it so the three
+     steps stay tellable apart. */
+  --ink:      #d3dde5;   /* 13.6:1 on --surface */
+  --ink-dim:  #a4b4c2;   /* 8.3:1  */
+  --ink-mute: #7e8d9b;   /* 4.55:1 on the worst wash, 5.49:1 on --surface */
 
   /* meaning */
   --rf:       #45b8d8;   /* radar, beam, RF structures */
@@ -32,20 +38,25 @@
   --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 
-  /* Type scale. Everything used to sit between 10 and 14 px, which is why
-     nothing looked more important than anything else. Six steps, each a clear
-     jump from the last, so a glance tells you what to read first. */
-  --t-tag:    10px;   /* faceplate labels: PLAN POSITION INDICATOR, metric names */
-  --t-micro:  11px;   /* axis numbers, footnotes */
-  --t-small:  12px;   /* notes under a control */
-  --t-body:   13px;   /* prose */
-  --t-ui:     14px;   /* controls, buttons, table body */
-  --t-head:   15px;   /* the product name, dialog titles */
-  --t-metric: 20px;   /* the four numbers the whole tool exists to produce */
+  /* Type scale. Six steps, strictly increasing, with an 11 px floor.
+     Nothing in the interface is allowed below that: the audit found 48
+     elements at 9.5 and 10 px, which is smaller than any dense tool sets
+     body text and smaller than most people can read comfortably. Density
+     now comes from spacing, not from shrinking the letters. */
+  --t-tag:    11px;   /* faceplate labels: PLAN POSITION INDICATOR, metric names */
+  --t-data:   12px;   /* monospaced figures: tables, readouts, axis numbers */
+  --t-small:  13px;   /* notes, secondary controls, buttons */
+  --t-body:   14px;   /* prose and control labels */
+  --t-lead:   16px;   /* the product name, dialog and section titles */
+  --t-metric: 22px;   /* the four numbers the whole tool exists to produce */
 
   /* Every checkbox, radio and slider in the page, including the ones inside
      dialogs that were still rendering in browser blue. */
   accent-color: var(--rf);
+
+  /* Without this the native scrollbars, and any control the sheet does not
+     style, render light against a near-black page. */
+  color-scheme: dark;
 
   --rail-w: 300px;
   --panel-w: 360px;
@@ -53,12 +64,19 @@
 
 * { box-sizing: border-box; }
 
+/* No 300 ms double-tap delay on touch, and a tap highlight we chose rather
+   than the browser's default blue box. */
+button, label, a, summary, .rail-tab, .seg-btn, input, select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--rf) 22%, transparent);
+}
+
 html, body {
   margin: 0; height: 100%;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: var(--t-ui);
+  font-size: var(--t-body);
   line-height: 1.45;
   overflow: hidden;
   /* Lining, fixed-width figures everywhere. Without this the stat columns in
@@ -73,11 +91,22 @@ body {
 
 button, input, select, textarea { font: inherit; color: inherit; }
 
+/* Off-screen until focused, then the first thing a keyboard reaches. Eight
+   top-bar buttons and seven rail tabs stood between Tab and the controls. */
+.skip-link {
+  position: absolute; left: 8px; top: -60px; z-index: 50;
+  background: var(--rf); color: var(--bg);
+  padding: 9px 14px; border-radius: 0 0 3px 3px;
+  font-size: var(--t-small); font-weight: 600; text-decoration: none;
+  transition: top 120ms;
+}
+.skip-link:focus-visible { top: 0; outline: 2px solid var(--ink); outline-offset: 2px; }
+
 /* ------------------------------------------------------------------ topbar */
 
 .topbar {
   display: grid;
-  grid-template-columns: auto minmax(200px, 1fr) auto;
+  grid-template-columns: minmax(0, auto) minmax(200px, 1fr) auto;
   align-items: center;
   gap: 16px;
   padding: 10px 14px;
@@ -85,7 +114,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--rule-strong);
 }
 
-.brand { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand > div { min-width: 0; }
 
 .brand-mark {
   width: 26px; height: 26px; flex: none;
@@ -100,12 +130,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 .topbar h1 {
-  margin: 0; font-size: var(--t-head); font-weight: 600; letter-spacing: -0.005em;
+  margin: 0; text-wrap: balance; overflow-wrap: break-word; font-size: var(--t-lead); font-weight: 600; letter-spacing: -0.005em;
 }
 /* Was tracked-out uppercase, which made a plain sentence look like a label and
    competed with the title directly above it. It is a sentence: set it as one. */
 .brand-sub {
-  margin: 2px 0 0; font-size: var(--t-micro); color: var(--ink-mute);
+  margin: 3px 0 0; font-size: var(--t-tag); color: var(--ink-mute);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .verdict { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -114,7 +145,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
    eight buttons, so it lost. Given room, weight and a tinted field of its own. */
 .verdict-chip {
   flex: none;
-  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  font-family: var(--mono); font-size: var(--t-tag); font-weight: 600;
   letter-spacing: 0.09em; text-transform: uppercase;
   padding: 4px 9px; border-radius: 2px;
   border: 1px solid currentColor;
@@ -155,8 +186,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: var(--surface-2);
   border: 1px solid var(--rule-strong);
   color: var(--ink);
-  padding: 6px 10px;
-  border-radius: 2px;
+  min-height: 28px; padding: 6px 11px;
+  border-radius: 3px;
   font-size: var(--t-small);
   cursor: pointer;
   white-space: nowrap;
@@ -184,7 +215,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   overflow: hidden;
 }
 .rail  { border-right: 1px solid var(--rule-strong); }
-.panel { border-left: 1px solid var(--rule-strong); overflow-y: auto; }
+.panel { border-left: 1px solid var(--rule-strong); overflow-y: auto; overscroll-behavior: contain; }
 
 /* -------------------------------------------------------------- control rail */
 
@@ -198,34 +229,37 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: transparent; border: 0;
   border-bottom: 2px solid transparent;
   padding: 9px 4px;
-  font-size: 11.5px; letter-spacing: 0.03em;
+  font-size: var(--t-small); letter-spacing: 0.03em;
   color: var(--ink-mute); cursor: pointer;
 }
 .rail-tab:hover { color: var(--ink); }
 .rail-tab.is-active { color: var(--rf); border-bottom-color: var(--rf); background: var(--surface-2); }
 
-.rail-body { overflow-y: auto; padding: 12px 14px 32px; flex: 1; }
+.rail-body { overflow-y: auto; overscroll-behavior: contain; padding: 15px 15px 36px; flex: 1; }
 
-.group { margin-bottom: 20px; }
+.group { margin-bottom: 26px; }
 /* Headings in sentence case at a readable size, with the tracked-out uppercase
    kept for faceplate labels only (metric names, instrument captions, legends).
    That split is the hierarchy: a heading you read, a tag you scan. */
-.group > h3 {
+.group > h2 {
   margin: 0 0 10px;
   font-size: var(--t-body); font-weight: 600; letter-spacing: 0;
   color: var(--ink); 
   padding-bottom: 6px; border-bottom: 1px solid var(--rule);
 }
 
-.field { display: block; margin-bottom: 11px; }
+.field { display: block; margin-bottom: 14px; }
 .field > .field-label {
   display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
   font-size: var(--t-body); color: var(--ink-dim); margin-bottom: 5px;
 }
 .field .val { font-family: var(--mono); font-size: var(--t-body); font-weight: 500; color: var(--ink); }
 
+/* 24 px tall, not 18: WCAG 2.2 AA 2.5.8 sets 24x24 as the minimum target and
+   the audit found 33 controls under it, nearly all of them these. The visible
+   track stays 3 px; the extra height is hit area. */
 .field input[type="range"] {
-  width: 100%; height: 18px; margin: 0;
+  width: 100%; height: 24px; margin: 0;
   -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
 }
 .field input[type="range"]::-webkit-slider-runnable-track {
@@ -234,11 +268,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .field input[type="range"]::-moz-range-track { height: 3px; background: var(--surface-3); }
 .field input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 11px; height: 14px; margin-top: -5.5px;
+  width: 12px; height: 16px; margin-top: -6.5px;
   background: var(--rf); border: 0; border-radius: 1px;
 }
 .field input[type="range"]::-moz-range-thumb {
-  width: 11px; height: 14px; background: var(--rf); border: 0; border-radius: 1px;
+  width: 12px; height: 16px; background: var(--rf); border: 0; border-radius: 1px;
 }
 
 .field select, .field input[type="number"], .field input[type="text"] {
@@ -247,29 +281,32 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
   padding: 5px 7px;
-  font-family: var(--mono); font-size: 12.5px;
+  font-family: var(--mono); font-size: var(--t-small);
 }
 .field select:focus, .field input:focus { outline: 1px solid var(--rf); border-color: var(--rf); }
 
 .check {
-  display: flex; align-items: flex-start; gap: 8px;
-  margin-bottom: 9px; cursor: pointer; font-size: 12.5px;
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-bottom: 9px; cursor: pointer; font-size: var(--t-small);
+  min-height: 24px;
 }
-.check input { margin: 2px 0 0; accent-color: var(--rf); flex: none; }
-.check .check-note { display: block; font-size: 11px; color: var(--ink-mute); line-height: 1.35; }
+/* The label is the target, so it carries the 24 px; the box itself only has to
+   be big enough to see. 13 px was too small for either job. */
+.check input { margin: 3px 0 0; accent-color: var(--rf); flex: none; width: 16px; height: 16px; }
+.check .check-note { display: block; font-size: var(--t-data); color: var(--ink-mute); line-height: 1.35; }
 
 .hint {
-  font-size: var(--t-micro); color: var(--ink-mute); line-height: 1.45;
+  font-size: var(--t-data); color: var(--ink-mute); line-height: 1.45;
   margin: -2px 0 14px; padding-left: 9px;
   border-left: 2px solid var(--rule);
 }
 
 .mit-block {
-  border: 1px solid var(--rule);
-  border-left: 2px solid var(--rule-strong);
-  padding: 10px 11px 4px;
-  margin-bottom: 12px;
+  border-left: 3px solid var(--rule-strong);
+  padding: 11px 13px 5px;
+  margin-bottom: 10px;
   background: var(--surface-2);
+  border-radius: 0 3px 3px 0;
 }
 .mit-block.is-on { border-left-color: var(--info); }
 .mit-block > .check { margin-bottom: 6px; font-weight: 500; }
@@ -306,7 +343,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .seg-btn {
   background: transparent; border: 0; border-right: 1px solid var(--rule);
-  padding: 5px 10px; font-size: 11.5px; color: var(--ink-mute); cursor: pointer;
+  min-height: 26px; padding: 5px 10px; font-size: var(--t-small); color: var(--ink-mute); cursor: pointer;
 }
 .seg-btn:last-child { border-right: 0; }
 .seg-btn:hover { color: var(--ink); }
@@ -325,47 +362,51 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* The exaggeration sliders are wider than a column and belong under the list. */
 .toggles label:has(input[type="range"]) {
   grid-column: 1 / -1; justify-content: space-between;
+  gap: 10px;
   margin-top: 2px; padding-top: 5px; border-top: 1px solid var(--rule);
 }
 .toggles label:has(input[type="range"]) + label:has(input[type="range"]) {
   margin-top: 0; padding-top: 0; border-top: 0;
 }
-.toggles label { display: flex; align-items: center; gap: 6px; font-size: var(--t-small); color: var(--ink-dim); cursor: pointer; }
+.toggles label { display: flex; align-items: center; gap: 7px; min-height: 24px; font-size: var(--t-small); color: var(--ink-dim); cursor: pointer; }
 .toggles .full { grid-column: 1 / -1; }
-.toggles input { accent-color: var(--rf); margin: 0; }
+.toggles input { accent-color: var(--rf); margin: 0; width: 16px; height: 16px; flex: none; }
+/* The exaggeration sliders sit outside .field, so they missed the 24 px rule
+   that every other range control got. */
+.toggles input[type="range"] { width: 96px; height: 24px; }
 
 .legend {
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   border: 1px solid var(--rule-strong);
   border-radius: 2px; padding: 8px 10px;
   backdrop-filter: blur(6px);
-  font-size: 11px;
+  font-size: var(--t-data);
   max-width: 260px;
 }
-.legend h4 {
-  margin: 0 0 5px; font-size: 10px; letter-spacing: 0.1em;
+.legend h3 {
+  margin: 0 0 5px; font-size: var(--t-tag); letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--ink-mute); font-weight: 600;
 }
 .legend-row { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; color: var(--ink-dim); }
 .swatch { width: 11px; height: 11px; flex: none; border-radius: 1px; border: 1px solid rgba(0,0,0,0.5); }
 .legend-ramp { height: 9px; border-radius: 1px; margin: 4px 0 3px; }
-.legend-scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ink-mute); }
+.legend-scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: var(--t-tag); color: var(--ink-mute); }
 
 .readout {
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   border: 1px solid var(--rule-strong);
   border-radius: 2px; padding: 8px 10px;
   backdrop-filter: blur(6px);
-  font-family: var(--mono); font-size: 11.5px;
+  font-family: var(--mono); font-size: var(--t-data);
 }
-.readout-hint { font-family: var(--sans); color: var(--ink-mute); font-size: 11px; }
-.readout h4 { margin: 0 0 5px; font-family: var(--sans); font-size: 12px; color: var(--ink); }
+.readout-hint { font-family: var(--sans); color: var(--ink-mute); font-size: var(--t-data); }
+.readout h3 { margin: 0 0 5px; font-family: var(--sans); font-size: var(--t-small); color: var(--ink); }
 .readout dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; }
 .readout dt { color: var(--ink-mute); }
 .readout dd { margin: 0; text-align: right; }
 
 .scalebar {
-  font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim);
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-dim);
   background: color-mix(in srgb, var(--surface) 80%, transparent);
   padding: 3px 8px; border: 1px solid var(--rule);
   border-radius: 2px; backdrop-filter: blur(4px);
@@ -388,12 +429,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   display: grid; grid-template-rows: auto 1fr;
 }
 .display figcaption {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline;
+  gap: 2px 10px; min-height: 30px;
   padding: 6px 10px;
-  font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: var(--t-tag); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--ink-mute); border-bottom: 1px solid var(--rule);
 }
-.cap-note { text-transform: none; letter-spacing: 0; font-family: var(--mono); font-size: 10.5px; }
+.cap-note { text-transform: none; letter-spacing: 0; font-family: var(--mono); font-size: var(--t-data); }
 .display canvas { display: block; width: 100%; height: 100%; min-height: 0; }
 
 /* ---------------------------------------------------------------- panel */
@@ -420,13 +462,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
    noise of a 14 px interface; at 23 px they are the first thing the eye lands
    on in that corner, which is where it should land. */
 .metric .m-value { font-family: var(--mono); font-size: var(--t-metric); line-height: 1.1; }
-.metric .m-sub { font-size: var(--t-micro); color: var(--ink-mute); font-family: var(--mono); }
+.metric .m-sub { font-size: var(--t-data); color: var(--ink-mute); font-family: var(--mono); }
 .metric .m-value { flex: none; }
 .metric[data-level="bad"]  .m-value { color: var(--bad); }
 .metric[data-level="warn"] .m-value { color: var(--warn); }
 .metric[data-level="ok"]   .m-value { color: var(--ok); }
 
-.panel-section { padding: 12px 14px; border-bottom: 1px solid var(--rule); }
+.panel-section { padding: 15px 15px 17px; border-bottom: 1px solid var(--rule); }
 .panel-section h2 {
   margin: 0 0 10px;
   font-size: var(--t-body); font-weight: 600; letter-spacing: 0;
@@ -434,25 +476,31 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .count { font-family: var(--mono); color: var(--ink-mute); letter-spacing: 0; }
 
+/* Forty-nine rules in this sheet drew a 1 px line. A box round every card is
+   what makes an interface look a decade old: the work is done by the surface
+   level and the space between cards, and the only line kept is the severity
+   rule on the left, which carries meaning. */
 .finding {
-  border: 1px solid var(--rule);
   border-left: 3px solid var(--rule-strong);
   background: var(--surface-2);
-  margin-bottom: 8px;
-  border-radius: 2px;
+  margin-bottom: 10px;
+  border-radius: 0 3px 3px 0;
 }
 /* Severity reaches the eye three ways: the rule, a wash across the card, and
    the tag. Two stacked criticals used to fill the panel with one flat red and
    nothing inside them stood out; an 8% wash groups the card without shouting. */
-.finding[data-sev="critical"] { border-left-color: var(--bad);
+/* Every accent used to run at full saturation whatever its size, so a 3 px
+   rule down a tall card shouted as loudly as the chip that is meant to. The
+   rule is mixed back toward the surface; the tag keeps the pure colour. */
+.finding[data-sev="critical"] { border-left-color: color-mix(in srgb, var(--bad) 80%, var(--surface-3));
   background: color-mix(in srgb, var(--bad) 7%, var(--surface-2)); }
-.finding[data-sev="major"]    { border-left-color: var(--warn);
+.finding[data-sev="major"]    { border-left-color: color-mix(in srgb, var(--warn) 80%, var(--surface-3));
   background: color-mix(in srgb, var(--warn) 6%, var(--surface-2)); }
-.finding[data-sev="minor"]    { border-left-color: var(--rf);
+.finding[data-sev="minor"]    { border-left-color: color-mix(in srgb, var(--rf) 80%, var(--surface-3));
   background: color-mix(in srgb, var(--rf) 6%, var(--surface-2)); }
-.finding[data-sev="info"]     { border-left-color: var(--ok);
+.finding[data-sev="info"]     { border-left-color: color-mix(in srgb, var(--ok) 80%, var(--surface-3));
   background: color-mix(in srgb, var(--ok) 6%, var(--surface-2)); }
-.finding[data-sev="check"]    { border-left-color: var(--info);
+.finding[data-sev="check"]    { border-left-color: color-mix(in srgb, var(--info) 80%, var(--surface-3));
   background: color-mix(in srgb, var(--info) 6%, var(--surface-2)); }
 
 .finding > summary {
@@ -463,7 +511,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .finding > summary::-webkit-details-marker { display: none; }
 .finding > summary:hover { background: var(--surface-3); }
 .sev-tag {
-  flex: none; font-family: var(--mono); font-size: 9.5px; font-weight: 700;
+  flex: none; font-family: var(--mono); font-size: var(--t-tag); font-weight: 700;
   letter-spacing: 0.07em; text-transform: uppercase;
   padding: 2px 5px; border-radius: 2px; margin-top: 1px;
 }
@@ -473,39 +521,40 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .finding[data-sev="info"]     .sev-tag { color: var(--ok);   background: color-mix(in srgb, var(--ok) 18%, transparent); }
 .finding[data-sev="check"]    .sev-tag { color: var(--info); background: color-mix(in srgb, var(--info) 18%, transparent); }
 
-.finding-title { font-size: var(--t-body); font-weight: 600; line-height: 1.35; }
+.finding-title { text-wrap: pretty; font-size: var(--t-body); font-weight: 600; line-height: 1.35; }
 .finding-body { padding: 0 10px 10px 10px; font-size: var(--t-small); color: var(--ink-dim); line-height: 1.55; }
 .finding-body p { margin: 0 0 8px; }
 .finding-metrics {
   display: grid; grid-template-columns: auto 1fr; gap: 2px 10px;
-  font-family: var(--mono); font-size: 11.5px;
-  padding: 7px 8px; background: var(--surface); border: 1px solid var(--rule); border-radius: 2px;
+  font-family: var(--mono); font-size: var(--t-data);
+  padding: 9px 10px; background: var(--surface); border-radius: 3px;
 }
 .finding-metrics dt { color: var(--ink-mute); }
 .finding-metrics dd { margin: 0; text-align: right; color: var(--ink); }
 .finding-source {
-  margin-top: 8px; font-size: 11px; color: var(--ink-mute);
+  margin-top: 8px; font-size: var(--t-data); color: var(--ink-mute);
   padding-left: 8px; border-left: 2px solid var(--rule-strong); line-height: 1.4;
 }
 .basis-tag {
-  display: inline-block; font-family: var(--mono); font-size: 9.5px;
+  display: inline-block; font-family: var(--mono); font-size: var(--t-tag);
   letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--ink-mute); border: 1px solid var(--rule-strong);
   padding: 1px 4px; border-radius: 2px; margin-top: 6px;
 }
 
 .table-wrap { overflow-x: auto; }
-table.data { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+table.data { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: var(--t-data); }
 table.data th {
   text-align: right; font-weight: 600; color: var(--ink-mute);
   padding: 4px 5px; border-bottom: 1px solid var(--rule-strong);
-  font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+  font-size: var(--t-tag); letter-spacing: 0.05em; text-transform: uppercase;
   position: sticky; top: 0; background: var(--surface);
 }
 table.data th:first-child, table.data td:first-child { text-align: left; }
 table.data td { padding: 3px 5px; text-align: right; border-bottom: 1px solid var(--rule); }
 table.data tbody tr { cursor: pointer; }
-table.data tbody tr:hover { background: var(--surface-3); }
+table.data tbody tr:hover,
+table.data tbody tr:focus-visible { background: var(--surface-3); outline: 2px solid var(--rf); outline-offset: -2px; }
 table.data tbody tr.is-hot td { color: var(--ink); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
 
@@ -529,10 +578,10 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   padding: 12px 16px; border-bottom: 1px solid var(--rule-strong);
   position: sticky; top: 0; background: var(--surface); z-index: 1;
 }
-.dlg header h2 { margin: 0; font-size: var(--t-head); font-weight: 600; }
-.dlg-body { padding: 16px; overflow-y: auto; max-height: calc(86vh - 56px); font-size: 13px; line-height: 1.6; }
+.dlg header h2 { margin: 0; font-size: var(--t-lead); font-weight: 600; }
+.dlg-body { padding: 18px; overflow-y: auto; overscroll-behavior: contain; max-height: calc(86vh - 56px); font-size: var(--t-body); line-height: 1.6; }
 .dlg-body h3 {
-  font-size: var(--t-head); font-weight: 600; letter-spacing: 0;
+  font-size: var(--t-lead); font-weight: 600; letter-spacing: 0;
   color: var(--ink); margin: 26px 0 9px;
   padding-bottom: 6px; border-bottom: 1px solid var(--rule);
 }
@@ -541,12 +590,12 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 .dlg-body ul { margin: 0 0 12px; padding-left: 18px; color: var(--ink-dim); }
 .dlg-body li { margin-bottom: 5px; }
 .dlg-body code {
-  font-family: var(--mono); font-size: 12px;
+  font-family: var(--mono); font-size: var(--t-small);
   background: var(--surface-2); border: 1px solid var(--rule);
   padding: 1px 4px; border-radius: 2px; color: var(--ink);
 }
 .dlg-body .formula {
-  display: block; font-family: var(--mono); font-size: 12.5px;
+  display: block; font-family: var(--mono); font-size: var(--t-small);
   background: var(--surface-2); border: 1px solid var(--rule);
   border-left: 2px solid var(--rf);
   padding: 9px 11px; margin: 8px 0 12px; white-space: pre-wrap; color: var(--ink);
@@ -556,7 +605,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   border: 1px solid var(--rf); border-left-width: 3px;
   background: color-mix(in srgb, var(--rf) 8%, transparent);
   padding: 9px 11px; margin: 0 0 14px; border-radius: 2px;
-  font-size: 12.5px; color: var(--ink);
+  font-size: var(--t-small); color: var(--ink);
 }
 .dlg-head-actions { display: flex; gap: 6px; align-items: center; }
 
@@ -567,9 +616,9 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   padding: 9px 0; border-bottom: 1px solid var(--rule);
 }
 .export-list li:last-child { border-bottom: 0; }
-.export-name { font-size: 13px; }
+.export-name { font-size: var(--t-body); }
 .export-name code {
-  font-family: var(--mono); font-size: 11px; color: var(--ink-mute);
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-mute);
   background: transparent; border: 0; padding: 0 0 0 4px;
 }
 .export-actions { display: flex; gap: 6px; }
@@ -580,13 +629,13 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   background: var(--bg); color: var(--ink);
   border: 1px solid var(--rule-strong); border-radius: 2px;
   padding: 10px 12px;
-  font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
+  font-family: var(--mono); font-size: var(--t-data); line-height: 1.5;
   white-space: pre; overflow: auto;
 }
 .export-text:focus { outline: 1px solid var(--rf); border-color: var(--rf); }
 
-.delta-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
-.delta-table th { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--rule-strong); color: var(--ink-mute); font-size: 11px; }
+.delta-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: var(--t-small); }
+.delta-table th { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--rule-strong); color: var(--ink-mute); font-size: var(--t-data); }
 .delta-table th:first-child, .delta-table td:first-child { text-align: left; font-family: var(--sans); }
 .delta-table td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--rule); }
 .delta-better { color: var(--ok); }
@@ -598,7 +647,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   border-left-width: 3px;
   background: color-mix(in srgb, var(--warn) 8%, transparent);
   padding: 10px 12px; margin: 0 0 14px; border-radius: 2px;
-  font-size: 12.5px; color: var(--ink);
+  font-size: var(--t-small); color: var(--ink);
 }
 
 .noscript { padding: 40px; text-align: center; color: var(--warn); }
@@ -619,6 +668,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   .displays { grid-template-columns: 1fr; height: auto; }
   .display { height: 300px; }
   .topbar { grid-template-columns: 1fr; gap: 10px; }
+  .brand-sub { white-space: normal; }
   .topbar-actions { flex-wrap: wrap; }
   .verdict-text { white-space: normal; }
 
@@ -628,12 +678,17 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   .vp-bottom-right { display: none; }
   .vp-top-left { max-width: calc(100% - 160px); flex-direction: row; flex-wrap: wrap; }
   .toggles { padding: 5px 7px; }
-  .toggles label { font-size: 10.5px; }
-  .legend { max-width: 200px; font-size: 10px; }
+  .toggles label { font-size: var(--t-data); }
+  .legend { max-width: 200px; font-size: var(--t-data); }
 }
 
 @media (max-width: 720px) {
   .rail-tabs { grid-template-columns: repeat(2, 1fr); }
+  /* 'Loss vs clear site' was wrapping onto three lines inside a 60 px button.
+     One control per row reads, and there is vertical space here to spend. */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .seg-btn { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .vp-top-left { right: 10px; }
   .panel-metrics { grid-template-columns: 1fr; }
   .vp-top-right { top: auto; bottom: 10px; right: 10px; }
   .legend { display: none; }
@@ -655,7 +710,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   padding-top: 14px !important;
 }
 .export-head .export-name {
-  font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-size: var(--t-tag); letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--ink-mute);
 }
 
@@ -690,7 +745,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 
 .sweep-readout {
   margin: 10px 0 0;
-  font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim);
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-dim);
   min-height: 2.6em; line-height: 1.5;
 }
 
@@ -711,10 +766,10 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline;
 }
 .ev-label {
-  font-size: 9.5px; letter-spacing: 0.09em; text-transform: uppercase;
+  font-size: var(--t-tag); letter-spacing: 0.09em; text-transform: uppercase;
   color: var(--ink-mute); font-family: var(--mono);
 }
-.ev-item { font-size: 11px; color: var(--ink-dim); display: inline-flex; align-items: baseline; gap: 5px; }
+.ev-item { font-size: var(--t-data); color: var(--ink-dim); display: inline-flex; align-items: baseline; gap: 5px; }
 .ev-dot {
   width: 7px; height: 7px; border-radius: 50%; flex: none;
   display: inline-block; transform: translateY(-1px);
@@ -727,29 +782,28 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 .ev-dot[data-status="blocked"]        { background: transparent; border: 1.5px solid var(--ink-mute); }
 
 .ev-entry {
-  border: 1px solid var(--rule);
   border-left: 3px solid var(--rule-strong);
   background: var(--surface-2);
-  padding: 12px 14px; margin-bottom: 10px; border-radius: 2px;
+  padding: 13px 15px; margin-bottom: 10px; border-radius: 0 3px 3px 0;
 }
 .ev-entry[data-status="analysed"]       { border-left-color: var(--ok); }
 .ev-entry[data-status="search-summary"] { border-left-color: var(--warn); }
 .ev-entry[data-status="recalled"]       { border-left-color: var(--bad); }
 .ev-entry[data-status="blocked"]        { border-left-color: var(--ink-mute); }
-.ev-entry h4 { margin: 0 0 3px; font-size: 13.5px; color: var(--ink); }
-.ev-meta { margin: 0 0 8px !important; font-size: 11.5px; color: var(--ink-mute); font-family: var(--mono); }
+.ev-entry h3 { margin: 0 0 3px; font-size: var(--t-body); color: var(--ink); }
+.ev-meta { margin: 0 0 8px !important; font-size: var(--t-data); color: var(--ink-mute); font-family: var(--mono); }
 .ev-status {
-  margin: 0 0 10px !important; font-size: 11px; font-family: var(--mono);
+  margin: 0 0 10px !important; font-size: var(--t-data); font-family: var(--mono);
   color: var(--ink-dim); display: flex; align-items: center; gap: 6px;
 }
 .ev-caution { color: var(--warn) !important; }
 .ev-supports {
-  font-family: var(--mono); font-size: 11px; color: var(--ink-mute) !important;
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-mute) !important;
   margin: 8px 0 0 !important; padding-top: 7px; border-top: 1px solid var(--rule);
 }
 
 /* The Office and PDF exports carry a one-line explanation of what you get. */
-.export-name em { display: block; font-style: normal; font-size: 11px;
+.export-name em { display: block; font-style: normal; font-size: var(--t-data);
   color: var(--ink-3, #7d8b98); margin-top: 2px; }
 
 /* ---------------------------------------------------------- national map */
@@ -775,7 +829,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 .map-overlay > * { pointer-events: auto; }
 .map-top-left { top: 10px; left: 10px; width: 330px; display: flex; flex-direction: column; gap: 8px; }
 .map-top-right {
-  top: 10px; right: 10px; bottom: 10px; width: 340px; overflow-y: auto;
+  top: 10px; right: 10px; bottom: 10px; width: 340px; overflow-y: auto; overscroll-behavior: contain;
   /* clears the readout that floats over this corner */
   padding-bottom: 76px;
 }
@@ -788,18 +842,18 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 }
 /* Sentence case, matching every other section heading; the top margin is
    what 'By territory' was missing, so it sat hard against the row above. */
-.map-panel h4 {
+.map-panel h3 {
   margin: 18px 0 8px; font-size: var(--t-body); font-weight: 600;
   color: var(--ink); letter-spacing: 0;
 }
-.map-panel h4:first-child { margin-top: 0; }
-.map-panel .big { font-size: 20px; font-weight: 600; }
-.map-panel table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.map-panel h3:first-child { margin-top: 0; }
+.map-panel .big { font-size: var(--t-metric); font-weight: 600; }
+.map-panel table { width: 100%; border-collapse: collapse; font-size: var(--t-data); }
 .map-panel td { padding: 2px 0; }
 /* nowrap is the fix for the ragged column: '1320 of 1447' was breaking
    across two lines and pulling its row out of line with the rest. */
 .map-panel td:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
-.map-panel .warn { color: var(--warn, #e8c23f); }
+.map-panel .warn, .map-panel h3.warn { color: var(--warn, #e8c23f); }
 .map-panel hr { border: 0; border-top: 1px solid var(--rule); margin: 10px 0; }
 .map-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
 
@@ -815,7 +869,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   text-align: center; pointer-events: none;
 }
 .empty-state p { margin: 0; max-width: 46ch; color: var(--ink-mute); font-size: var(--t-body); line-height: 1.6; }
-.empty-state .empty-lead { color: var(--ink-dim); font-size: var(--t-head); font-weight: 600; }
+.empty-state .empty-lead { color: var(--ink-dim); font-size: var(--t-lead); font-weight: 600; }
 [data-state="filled"] > .empty-state { display: none; }
 
 @media (max-width: 1699px) {

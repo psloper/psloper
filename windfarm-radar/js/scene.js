@@ -1349,7 +1349,20 @@ export class SceneView {
       track: true, zones: true, rings: true, labels: true,
     };
     this.time = 0;
-    this.animate = true;
+    // The rotors turn by default, but not for someone whose system asks for
+    // reduced motion. The CSS media query only reaches CSS transitions; a
+    // three.js render loop has to be told. The Animate checkbox still works
+    // either way, so the preference sets the default rather than removing the
+    // choice, and a later change of the system setting is picked up live.
+    const lessMotion = typeof matchMedia === 'function'
+      && matchMedia('(prefers-reduced-motion: reduce)');
+    this.animate = !(lessMotion && lessMotion.matches);
+    if (lessMotion && typeof lessMotion.addEventListener === 'function') {
+      lessMotion.addEventListener('change', (e) => {
+        this.animate = !e.matches;
+        if (typeof this.onMotionPreference === 'function') this.onMotionPreference(this.animate);
+      });
+    }
 
     this.renderer = new THREE.WebGLRenderer({
       canvas, antialias: true, powerPreference: 'high-performance',

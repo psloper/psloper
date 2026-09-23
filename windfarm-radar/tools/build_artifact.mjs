@@ -22,7 +22,12 @@ const css = readFileSync(join(root, 'css', 'style.css'), 'utf8');
 const body = html.slice(html.indexOf('<body>') + '<body>'.length, html.indexOf('</body>'));
 if (!body.includes('<header class="topbar">')) throw new Error('body markers moved');
 
+// The artifact host supplies the document's <head>, so this build emits a
+// fragment. The title already rides along at the top of it; theme-color goes
+// the same way so a phone tints its chrome to match the page instead of
+// framing a near-black tool in white.
 const page = `<title>Wind Farm Radar Assessor</title>
+<meta name="theme-color" content="#080b0e" />
 
 <script type="importmap">
 { "imports": { "three": "./js/vendor/three.module.js" } }

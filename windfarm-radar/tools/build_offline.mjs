@@ -101,6 +101,11 @@ const page = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Wind Farm / Radar Interference Assessor (offline)</title>
 <meta name="description" content="Self-contained offline build. No network, no server, no install." />
+<!-- Matches the page background, so a mobile browser tints its own chrome to
+     match instead of framing a near-black page in white. This head is written
+     here rather than copied from index.html, which is how it went missing:
+     tools/verify-a11y.mjs run against the BUILT file is what caught it. -->
+<meta name="theme-color" content="#080b0e" />
 <style>
 ${css}
 </style>

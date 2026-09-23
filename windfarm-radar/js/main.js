@@ -212,7 +212,7 @@ function importStatus(text, level) {
 async function importTurbines() {
   const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
   if (!file) return;
-  importStatus(`Reading ${file.name}...`);
+  importStatus(`Reading ${file.name}\u2026`);
   try {
     const sheets = await readTable(file);
     const { turbines, warnings } = parseTurbineRows(sheets[0].rows, {
@@ -243,7 +243,7 @@ function siteImportReport(kind, file, res) {
 async function importRadarSites() {
   const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
   if (!file) return;
-  importStatus(`Reading ${file.name}...`);
+  importStatus(`Reading ${file.name}\u2026`);
   try {
     const sheets = await readTable(file);
     const res = parseRadarSiteRows(sheets[0].rows, {
@@ -264,7 +264,7 @@ async function importRadarSites() {
 async function importFarmSites() {
   const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
   if (!file) return;
-  importStatus(`Reading ${file.name}...`);
+  importStatus(`Reading ${file.name}\u2026`);
   try {
     const sheets = await readTable(file);
     const res = parseFarmSiteRows(sheets[0].rows, {
@@ -291,7 +291,7 @@ async function importFarmSites() {
 async function inspectUnknownFile() {
   const file = await pickFile('.xlsx,.xlsm,.csv,.tsv,.txt');
   if (!file) return;
-  importStatus(`Reading ${file.name}...`);
+  importStatus(`Reading ${file.name}\u2026`);
   try {
     const sheets = await readTable(file);
     const rows = sheets[0].rows;
@@ -448,7 +448,7 @@ async function loadRealTerrain(say = importStatus) {
 async function importTerrain() {
   const file = await pickFile('.asc,.grd,.kml,.kmz,.xlsx,.xlsm,.csv,.tsv,.txt');
   if (!file) return;
-  importStatus(`Reading ${file.name}...`);
+  importStatus(`Reading ${file.name}\u2026`);
   try {
     const { points, note } = await readElevationFile(file, {
       origin: { lat: scenario.site.originLat, lon: scenario.site.originLon },
@@ -576,6 +576,11 @@ document.querySelectorAll('[data-shade]').forEach((btn) => {
   });
 });
 
+// Grouped figures in the viewer's own locale rather than a hardcoded en-GB
+// format, so 15,846 reads correctly wherever the file is opened. Built once:
+// Intl.NumberFormat is expensive to construct and this runs per repaint.
+const NUM = new Intl.NumberFormat();
+
 // --------------------------------------------------------- layer toggles
 
 const LAYERS = [
@@ -605,6 +610,8 @@ function buildToggles() {
   acb.type = 'checkbox';
   acb.checked = view.animate;
   acb.addEventListener('change', () => { view.animate = acb.checked; });
+  // Keep the box in step when the system motion preference changes mid-session.
+  view.onMotionPreference = (on) => { acb.checked = on; };
   anim.append(acb, document.createTextNode('Animate'));
   el.toggles.append(anim);
 
@@ -616,7 +623,6 @@ function buildToggles() {
   slider.type = 'range';
   slider.min = 1; slider.max = 20; slider.step = 1;
   slider.value = view.vExag;
-  slider.style.width = '86px';
   slider.addEventListener('input', () => {
     view.vExag = Number(slider.value);
     out.textContent = `×${view.vExag}`;
@@ -636,7 +642,6 @@ function buildToggles() {
   const gslider = document.createElement('input');
   gslider.type = 'range';
   gslider.min = 1; gslider.max = 40; gslider.step = 1;
-  gslider.style.width = '86px';
   const syncGirth = () => {
     gslider.value = view.girthExag ?? 1;
     gout.textContent = `\u00d7${view.girthExag ?? 1}`;
@@ -703,7 +708,7 @@ $('#btn-evidence').addEventListener('click', () => {
     </div>
     ${REFERENCES.map((r) => `
       <article class="ev-entry" data-status="${r.status}">
-        <h4>${esc(r.title)}</h4>
+        <h3>${esc(r.title)}</h3>
         <p class="ev-meta">${esc([r.authors, r.org, r.venue, r.year, r.type].filter(Boolean).join(' \u00b7 '))}</p>
         <p class="ev-status"><span class="ev-dot" data-status="${r.status}"></span>${esc(STATUS_LABELS[r.status])}</p>
         ${r.reports ? `<p><strong>What it reports.</strong> ${esc(r.reports)}</p>` : ''}
@@ -791,7 +796,7 @@ function mapPanel(hit) {
     const r = ukMap.radars[hit.index];
     const b = s.byRadar[hit.index];
     const near = ukMap.nearestFarmTo(hit.index, ACTIVE_STATUSES);
-    el.innerHTML = `<h4>Radar</h4><div class="big">${esc(r.name)}</div>`
+    el.innerHTML = `<h3>Radar</h3><div class="big">${esc(r.name)}</div>`
       + `<div>${esc(r.role)}${r.imported ? ' &middot; imported' : ''}</div><hr>`
       + '<table>'
       + `<tr><td>Operational or building, in sight</td><td>${esc(b.visibleActive)}</td></tr>`
@@ -808,7 +813,7 @@ function mapPanel(hit) {
   if (hit && hit.kind === 'farm') {
     const f = ukMap.farms[hit.index];
     const b = s.byFarm[hit.index];
-    el.innerHTML = `<h4>Wind farm</h4><div class="big">${esc(f.name || '(unnamed record)')}</div>`
+    el.innerHTML = `<h3>Wind farm</h3><div class="big">${esc(f.name || '(unnamed record)')}</div>`
       + `<div>${esc(f.status)}${f.imported ? ' &middot; imported' : ''}</div><hr>`
       + '<table>'
       + `<tr><td>Capacity</td><td>${esc(farmCapacityLabel(f))}</td></tr>`
@@ -827,7 +832,7 @@ function mapPanel(hit) {
   const fc = offshoreFlagConflicts();
   const conflicts = fc.onshoreInSea.length + fc.offshoreOnLand.length;
   const terr = territoryCounts();
-  el.innerHTML = '<h4>National screen</h4>'
+  el.innerHTML = '<h3>National screen</h3>'
     + '<table>'
     + `<tr><td>Radars</td><td>${esc(s.summary.radars)}</td></tr>`
     + `<tr><td>Planning records screened</td><td>${esc(s.summary.farms)}</td></tr>`
@@ -841,16 +846,16 @@ function mapPanel(hit) {
     // How much of the answer rests on recorded figures and how much on an
     // assumption. A screen that cannot say which is which invites its numbers
     // to be read as measurements.
-    + '<hr><h4>What the data carries</h4>'
+    + '<hr><h3>What the data carries</h3>'
     + '<table>'
-    + `<tr><td>Turbines counted</td><td>${esc(cov.turbines.toLocaleString('en-GB'))}</td></tr>`
+    + `<tr><td>Turbines counted</td><td>${esc(NUM.format(cov.turbines))}</td></tr>`
     + `<tr><td>Farms with a turbine count</td><td>${esc(cov.withCount)} of ${esc(cov.live)}</td></tr>`
     + `<tr><td>Farms with a recorded tip height</td><td>${esc(cov.withHeight)} of ${esc(cov.live)}</td></tr>`
     + `<tr><td>Records whose offshore flag and position disagree</td><td>${esc(conflicts)}</td></tr>`
     + `<tr><td>Pairings at a recorded height</td><td>${esc(s.tipHeights.recorded)}</td></tr>`
     + `<tr><td>Pairings at the ${esc(s.tipHeights.fallbackM)} m fallback</td><td>${esc(s.tipHeights.assumed)}</td></tr>`
     + '</table>'
-    + '<h4>By territory</h4><table>'
+    + '<h3>By territory</h3><table>'
     + Object.entries(terr).sort((a, b) => b[1] - a[1])
       .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')
     + '</table>'
@@ -858,18 +863,18 @@ function mapPanel(hit) {
     + 'every farm here is one point, and at the two sites with ground truth that point is about '
     + '1.1 km from the array. Import a layout on the Site and data tab to assess a real one.</p>'
     + '<hr>'
-    + '<h4>What this is</h4>'
+    + '<h3>What this is</h3>'
     + '<p>Line of sight and range only. It asks whether the top of a turbine would be above the '
     + 'intervening ground as seen from the antenna. It does NOT say a return would cross a '
     + 'detection threshold, survive the clutter filter, or ever reach a controller. Click a radar '
     + 'for that.</p>'
     + `<p>Ground: ${esc(s.terrainUsed)}.</p>`
-    + '<h4 class="warn">Assumptions</h4>'
+    + '<h3 class="warn">Assumptions</h3>'
     + `<p>${esc(a.tipHeightNote)}</p>`
     + `<p>${esc(a.antennaHeightNote)}</p>`
     + `<p>${esc(a.positionNote)}</p>`
     + `<p>${esc(a.samplesNote)}</p>`
-    + '<hr><h4>Ireland</h4>'
+    + '<hr><h3>Ireland</h3>'
     + '<p>The coastline is drawn, and four Irish radar points are shown, but they are '
     + 'unclassified and from a low-confidence source. <strong>No Republic of Ireland wind farm '
     + 'data is loaded.</strong> Use the site list import on the Site &amp; data tab to add it.</p>'

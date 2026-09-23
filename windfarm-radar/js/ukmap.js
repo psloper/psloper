@@ -476,23 +476,34 @@ export class UkMap {
     const px = km * 1000 * ppm;
     // Bottom centre. Bottom right put it underneath the readout panel, which
     // is an HTML overlay, so it was drawn every frame and never seen.
-    const x = Math.max(18, this.w / 2 - px / 2), y = this.h - 14;
+    const x = Math.max(18, this.w / 2 - px / 2), y = this.h - 16;
+    const heatNote = this.layers.heat && this.heatRadiusKm && !this.heatTooClose
+      ? `heat spreads each farm over ${this.heatRadiusKm.toFixed(0)} km` : null;
     ctx.save();
-    ctx.strokeStyle = 'rgba(220, 232, 240, 0.85)';
-    ctx.fillStyle = 'rgba(220, 232, 240, 0.85)';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+
+    // A plate behind the block. Both captions and the bar were being drawn
+    // straight onto the map: at 500 km the heat note landed on top of the
+    // '500 km' label and on a site marker, and all three were unreadable.
+    const plateW = Math.max(px, heatNote ? ctx.measureText(heatNote).width : 0) + 26;
+    const plateH = heatNote ? 50 : 32;
+    const cx = x + px / 2;
+    ctx.fillStyle = 'rgba(8, 11, 14, 0.72)';
+    ctx.beginPath();
+    ctx.roundRect(cx - plateW / 2, y - plateH + 8, plateW, plateH, 3);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(220, 232, 240, 0.9)';
+    ctx.fillStyle = 'rgba(220, 232, 240, 0.9)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x, y - 5); ctx.lineTo(x, y); ctx.lineTo(x + px, y); ctx.lineTo(x + px, y - 5);
     ctx.stroke();
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${km} km`, x + px / 2, y - 8);
-    // The heat kernel's real size, stated next to the bar that gives it scale.
-    if (this.layers.heat && this.heatRadiusKm && !this.heatTooClose) {
-      ctx.textAlign = 'center';
-      ctx.fillStyle = 'rgba(220, 232, 240, 0.55)';
-      ctx.fillText(`heat spreads each farm over ${this.heatRadiusKm.toFixed(0)} km`,
-        x + px / 2, y - 22);
+    ctx.fillText(`${km} km`, cx, y - 9);
+    if (heatNote) {
+      ctx.fillStyle = 'rgba(220, 232, 240, 0.62)';
+      ctx.fillText(heatNote, cx, y - 28);
     }
     ctx.restore();
   }
