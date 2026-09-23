@@ -28,13 +28,16 @@
   </div>
 
   <div class="topbar-actions">
-    <button class="btn" id="btn-map" title="National view: every radar, every wind farm, and which can see which">UK map</button>
+    <button class="btn primary" id="btn-map" title="National view: every radar, every wind farm, and which can see which">UK map</button>
+    <span class="sep" aria-hidden="true"></span>
     <button class="btn" id="btn-sweep">Sweep &amp; heat map</button>
     <button class="btn" id="btn-baseline" title="Compare the current mitigation set against no mitigation">Mitigation delta</button>
     <button class="btn" id="btn-export">Export</button>
+    <span class="sep" aria-hidden="true"></span>
     <button class="btn" id="btn-evidence">Evidence</button>
     <button class="btn" id="btn-import-help">Data in &amp; out</button>
     <button class="btn" id="btn-method">Method &amp; limits</button>
+    <span class="sep" aria-hidden="true"></span>
     <button class="btn ghost" id="btn-reset">Reset</button>
   </div>
 </header>
@@ -164,10 +167,10 @@
     <canvas id="map-canvas"></canvas>
     <div class="map-overlay map-top-left">
       <div class="toggles" id="map-layers"></div>
+      <div class="map-panel" id="map-import"></div>
     </div>
     <div class="map-overlay map-top-right">
-      <div class="map-panel" id="map-import"></div>
-      <div class="map-panel" id="map-panel" style="margin-top:8px"></div>
+      <div class="map-panel" id="map-panel"></div>
     </div>
     <div class="map-overlay map-bottom-left">
       <div class="legend" id="map-legend"></div>
@@ -297,8 +300,13 @@
       <button class="btn" id="sweep-run" type="button">Run sweep</button>
     </div>
     <div class="sweep-progress" id="sweep-progress" hidden><div class="sweep-bar" id="sweep-bar"></div></div>
-    <div class="sweep-canvas-wrap"><canvas id="sweep-canvas"></canvas></div>
-    <p class="sweep-readout" id="sweep-readout">Every cell is a complete re-analysis. Pick two parameters and a metric, then run.</p>
+    <div class="sweep-canvas-wrap" id="sweep-wrap"><canvas id="sweep-canvas"></canvas>
+      <div class="empty-state" id="sweep-empty">
+        <p class="empty-lead">No sweep run yet</p>
+        <p>Every cell here is a complete re-analysis at one pair of values. Choose two parameters and a metric above, then run the sweep.</p>
+      </div>
+    </div>
+    <p class="sweep-readout" id="sweep-readout">Ready.</p>
   </div>
 </dialog>
 

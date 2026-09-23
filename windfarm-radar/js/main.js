@@ -609,7 +609,6 @@ function buildToggles() {
   el.toggles.append(anim);
 
   const vx = document.createElement('label');
-  vx.style.marginTop = '4px';
   const out = document.createElement('span');
   out.style.fontFamily = 'var(--mono)';
   out.textContent = `×${view.vExag}`;
@@ -1390,6 +1389,7 @@ async function doSweep() {
       onProgress: (t) => { bar.style.width = `${(t * 100).toFixed(0)}%`; },
     });
     drawSweepCanvas(null);
+    $('#sweep-wrap').dataset.state = 'filled';
     const n = sweepResult.steps * sweepResult.steps;
     $('#sweep-readout').textContent = `${n} analyses. `
       + `${sweepResult.metric.label} ranges from ${sweepResult.metric.format(sweepResult.min)} to `

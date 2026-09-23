@@ -39,9 +39,32 @@ function ramp(stops, t) {
   return new THREE.Color(stops[0][1]);
 }
 
+// Relief shading for the elevation view, baked into the vertex colours.
+//
+// The hypsometric tint alone maps height to hue. Over ground whose relief is
+// small next to the extent drawn, that puts almost every vertex in the same
+// band and the whole scene reads as one olive wash: the terrain is there, but
+// its shape is not. A hillshade restores the shape.
+//
+// It is computed from the mesh normals against a fixed north-west sun, the
+// cartographic convention, so relief reads the same wherever the camera is.
+// The scene light cannot do this job: orbit round to look down-sun and it
+// flattens everything, which is exactly the view the screenshots showed.
+//
+// It is applied to the ELEVATION view only. Coverage and loss views encode a
+// measured value in the colour, and multiplying that by a shading term would
+// make the surface a prettier picture of a wrong number.
+const SHADE_SUN = [-0.60, 0.72, -0.35];
+// Flat ground (normal straight up) gives lambert = SHADE_SUN[1] = 0.72, so
+// these are chosen to put it at 0.40 + 0.72 * 0.62 = 0.85. A slope turned into
+// the sun reaches 1.0 and a slope turned away falls to the floor. Getting this
+// wrong the first time lit the plain instead of shading it.
+const SHADE_FLOOR = 0.40;
+const SHADE_GAIN = 0.62;
+
 const ELEVATION_RAMP = [
-  [0.00, 0x2b3a43], [0.22, 0x3f5a4a], [0.48, 0x63764f],
-  [0.72, 0x8b8560], [0.90, 0xa89a80], [1.00, 0xd8d5cc],
+  [0.00, 0x18242c], [0.24, 0x26362f], [0.50, 0x3a4636],
+  [0.74, 0x55543d], [0.90, 0x6f6852], [1.00, 0x8d8574],
 ];
 
 // Detection margin is a signed quantity measured against a threshold, so it is
@@ -1338,7 +1361,11 @@ export class SceneView {
     this.renderer.setClearColor(0x080b0e, 1);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(0x080b0e, 30000, 140000);
+    // Deliberately NOT the clear colour. Fogging distant ground to the same
+    // near-black as the sky erases the horizon; a slightly lifted blue-grey
+    // leaves a haze band where the ground ends, which is what gives the view
+    // its sense of distance.
+    this.scene.fog = new THREE.Fog(0x0b131a, 30000, 140000);
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 5, 400000);
     this.controls = new Orbit(this.camera, canvas);
@@ -1352,8 +1379,10 @@ export class SceneView {
       return this.y(r.terrain.heightAt(east, north), this.rangeFromRadar(east, north));
     };
 
-    this.scene.add(new THREE.HemisphereLight(0x7f95a8, 0x1d241d, 1.15));
-    const sun = new THREE.DirectionalLight(0xfff0dc, 1.35);
+    this.scene.add(new THREE.HemisphereLight(0x8ea6ba, 0x1d241d, 1.05));
+    // Pulled back from 1.35: the terrain now carries its own baked hillshade,
+    // and two shading terms multiplied together blew out the lit slopes.
+    const sun = new THREE.DirectionalLight(0xfff0dc, 0.95);
     sun.position.set(-1, 1.6, 0.9).multiplyScalar(30000);
     this.scene.add(sun);
 
@@ -1513,6 +1542,13 @@ export class SceneView {
       return lerp(lerp(a, b, tx), lerp(c, d, tx), tz);
     };
 
+    // Normals are recomputed whenever the mesh is rebuilt, so they already
+    // carry the vertical exaggeration the view is drawn at. That is what we
+    // want: the relief you see shaded is the relief you see in silhouette.
+    const nrm = geo.attributes.normal;
+    const [sx, sy, sz] = SHADE_SUN;
+    const relief = mode !== 'coverage' && mode !== 'delta';
+
     const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const east = pos.getX(i);
@@ -1530,6 +1566,10 @@ export class SceneView {
         else c.setHex(0x14191e);
       } else {
         c.copy(ramp(ELEVATION_RAMP, (h - hMin) / span));
+      }
+      if (relief) {
+        const lambert = nrm.getX(i) * sx + nrm.getY(i) * sy + nrm.getZ(i) * sz;
+        c.multiplyScalar(Math.min(1, SHADE_FLOOR + SHADE_GAIN * Math.max(lambert, 0)));
       }
       col.setXYZ(i, c.r, c.g, c.b);
     }

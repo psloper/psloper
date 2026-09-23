@@ -32,6 +32,21 @@
   --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 
+  /* Type scale. Everything used to sit between 10 and 14 px, which is why
+     nothing looked more important than anything else. Six steps, each a clear
+     jump from the last, so a glance tells you what to read first. */
+  --t-tag:    10px;   /* faceplate labels: PLAN POSITION INDICATOR, metric names */
+  --t-micro:  11px;   /* axis numbers, footnotes */
+  --t-small:  12px;   /* notes under a control */
+  --t-body:   13px;   /* prose */
+  --t-ui:     14px;   /* controls, buttons, table body */
+  --t-head:   15px;   /* the product name, dialog titles */
+  --t-metric: 20px;   /* the four numbers the whole tool exists to produce */
+
+  /* Every checkbox, radio and slider in the page, including the ones inside
+     dialogs that were still rendering in browser blue. */
+  accent-color: var(--rf);
+
   --rail-w: 300px;
   --panel-w: 360px;
 }
@@ -43,9 +58,12 @@ html, body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: var(--t-ui);
   line-height: 1.45;
   overflow: hidden;
+  /* Lining, fixed-width figures everywhere. Without this the stat columns in
+     the national screen went ragged the moment a value wrapped. */
+  font-variant-numeric: tabular-nums;
 }
 
 body {
@@ -59,10 +77,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .topbar {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(200px, 1fr) auto;
   align-items: center;
-  gap: 24px;
-  padding: 10px 16px;
+  gap: 16px;
+  padding: 10px 14px;
   background: var(--surface);
   border-bottom: 1px solid var(--rule-strong);
 }
@@ -82,15 +100,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 .topbar h1 {
-  margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+  margin: 0; font-size: var(--t-head); font-weight: 600; letter-spacing: -0.005em;
 }
+/* Was tracked-out uppercase, which made a plain sentence look like a label and
+   competed with the title directly above it. It is a sentence: set it as one. */
 .brand-sub {
-  margin: 1px 0 0; font-size: 11px; color: var(--ink-mute);
-  letter-spacing: 0.04em; text-transform: uppercase;
+  margin: 2px 0 0; font-size: var(--t-micro); color: var(--ink-mute);
 }
 
 .verdict { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
+/* The verdict is the answer. It was a 10 px chip between a title and a row of
+   eight buttons, so it lost. Given room, weight and a tinted field of its own. */
 .verdict-chip {
   flex: none;
   font-family: var(--mono); font-size: 11px; font-weight: 600;
@@ -103,20 +124,40 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .verdict-chip[data-level="minor"]    { color: var(--rf);   background: color-mix(in srgb, var(--rf) 12%, transparent); }
 .verdict-chip[data-level="info"]     { color: var(--ok);   background: color-mix(in srgb, var(--ok) 12%, transparent); }
 
+/* Two lines rather than an ellipsis. The verdict is a sentence the user is
+   meant to read, and '12 turbines r...' is not one.
+
+   Below 1700 px the brand and eight buttons leave under 150 px for it, which is
+   not enough for a sentence either. There the chip carries the verdict on its
+   own and the Findings panel carries the detail, so the sentence is dropped
+   rather than shown as a stub. */
 .verdict-text {
-  font-size: 13px; color: var(--ink-dim);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.3;
+  font-size: var(--t-small); color: var(--ink-dim);
 }
 
-.topbar-actions { display: flex; gap: 6px; }
+/* One action is the way in to everything else; the rest are peers. A single
+   emphasised button stops the row reading as eight equal choices. */
+.topbar-actions { display: flex; gap: 5px; align-items: center; }
+.btn.primary {
+  color: var(--rf);
+  border-color: color-mix(in srgb, var(--rf) 55%, var(--rule-strong));
+  background: color-mix(in srgb, var(--rf) 12%, var(--surface-2));
+}
+.btn.primary:hover { background: color-mix(in srgb, var(--rf) 20%, var(--surface-2)); }
+.topbar-actions .sep {
+  width: 1px; align-self: stretch; margin: 2px 4px;
+  background: var(--rule-strong);
+}
 
 .btn {
   background: var(--surface-2);
   border: 1px solid var(--rule-strong);
   color: var(--ink);
-  padding: 6px 11px;
+  padding: 6px 10px;
   border-radius: 2px;
-  font-size: 12.5px;
+  font-size: var(--t-small);
   cursor: pointer;
   white-space: nowrap;
   transition: background 120ms, border-color 120ms;
@@ -166,19 +207,22 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .rail-body { overflow-y: auto; padding: 12px 14px 32px; flex: 1; }
 
 .group { margin-bottom: 20px; }
+/* Headings in sentence case at a readable size, with the tracked-out uppercase
+   kept for faceplate labels only (metric names, instrument captions, legends).
+   That split is the hierarchy: a heading you read, a tag you scan. */
 .group > h3 {
-  margin: 0 0 9px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--ink-mute);
-  padding-bottom: 5px; border-bottom: 1px solid var(--rule);
+  margin: 0 0 10px;
+  font-size: var(--t-body); font-weight: 600; letter-spacing: 0;
+  color: var(--ink); 
+  padding-bottom: 6px; border-bottom: 1px solid var(--rule);
 }
 
 .field { display: block; margin-bottom: 11px; }
 .field > .field-label {
   display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-  font-size: 12px; color: var(--ink-dim); margin-bottom: 4px;
+  font-size: var(--t-body); color: var(--ink-dim); margin-bottom: 5px;
 }
-.field .val { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+.field .val { font-family: var(--mono); font-size: var(--t-body); font-weight: 500; color: var(--ink); }
 
 .field input[type="range"] {
   width: 100%; height: 18px; margin: 0;
@@ -215,8 +259,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .check .check-note { display: block; font-size: 11px; color: var(--ink-mute); line-height: 1.35; }
 
 .hint {
-  font-size: 11px; color: var(--ink-mute); line-height: 1.4;
-  margin: -4px 0 12px; padding-left: 8px;
+  font-size: var(--t-micro); color: var(--ink-mute); line-height: 1.45;
+  margin: -2px 0 14px; padding-left: 9px;
   border-left: 2px solid var(--rule);
 }
 
@@ -246,7 +290,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .vp-overlay { position: absolute; z-index: 2; pointer-events: none; }
 .vp-overlay > * { pointer-events: auto; }
-.vp-top-left     { top: 10px; left: 10px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+/* Bounded so the scale caption wraps instead of running under the layer panel
+   on the right, where its last words were being clipped. */
+.vp-top-left     { top: 10px; left: 10px; right: 340px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .vp-top-right    { top: 10px; right: 10px; }
 .vp-bottom-left  { bottom: 10px; left: 10px; }
 .vp-bottom-right { bottom: 10px; right: 10px; max-width: 320px; }
@@ -266,14 +312,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg-btn:hover { color: var(--ink); }
 .seg-btn.is-active { color: var(--bg); background: var(--rf); font-weight: 600; }
 
+/* Two columns. As one list this panel was tall enough to cover the scale
+   caption behind it and to dominate the view it is meant to sit quietly over. */
 .toggles {
-  display: flex; flex-direction: column; gap: 3px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   border: 1px solid var(--rule-strong);
-  border-radius: 2px; padding: 7px 9px;
+  border-radius: 2px; padding: 8px 10px;
   backdrop-filter: blur(6px);
 }
-.toggles label { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-dim); cursor: pointer; }
+/* The exaggeration sliders are wider than a column and belong under the list. */
+.toggles label:has(input[type="range"]) {
+  grid-column: 1 / -1; justify-content: space-between;
+  margin-top: 2px; padding-top: 5px; border-top: 1px solid var(--rule);
+}
+.toggles label:has(input[type="range"]) + label:has(input[type="range"]) {
+  margin-top: 0; padding-top: 0; border-top: 0;
+}
+.toggles label { display: flex; align-items: center; gap: 6px; font-size: var(--t-small); color: var(--ink-dim); cursor: pointer; }
+.toggles .full { grid-column: 1 / -1; }
 .toggles input { accent-color: var(--rf); margin: 0; }
 
 .legend {
@@ -346,22 +404,33 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--rule-strong);
   flex: none;
 }
-.metric { background: var(--surface); padding: 9px 11px; }
-.metric .m-label {
-  font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase;
-  color: var(--ink-mute); display: block; margin-bottom: 2px;
+.metric {
+  background: var(--surface); padding: 11px 13px 12px;
+  display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px;
 }
-.metric .m-value { font-family: var(--mono); font-size: 17px; line-height: 1.15; }
-.metric .m-sub { font-size: 10.5px; color: var(--ink-mute); font-family: var(--mono); }
+/* Reserved height, because three of the four labels wrap to two lines and the
+   fourth does not: without it the big numbers sat on three different baselines. */
+.metric .m-label {
+  flex-basis: 100%;
+  font-size: var(--t-tag); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-mute); margin-bottom: 5px;
+  min-height: 2.3em;
+}
+/* These four are the output of the whole tool. At 17 px they sat inside the
+   noise of a 14 px interface; at 23 px they are the first thing the eye lands
+   on in that corner, which is where it should land. */
+.metric .m-value { font-family: var(--mono); font-size: var(--t-metric); line-height: 1.1; }
+.metric .m-sub { font-size: var(--t-micro); color: var(--ink-mute); font-family: var(--mono); }
+.metric .m-value { flex: none; }
 .metric[data-level="bad"]  .m-value { color: var(--bad); }
 .metric[data-level="warn"] .m-value { color: var(--warn); }
 .metric[data-level="ok"]   .m-value { color: var(--ok); }
 
 .panel-section { padding: 12px 14px; border-bottom: 1px solid var(--rule); }
 .panel-section h2 {
-  margin: 0 0 9px;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--ink-mute);
+  margin: 0 0 10px;
+  font-size: var(--t-body); font-weight: 600; letter-spacing: 0;
+  color: var(--ink);
 }
 .count { font-family: var(--mono); color: var(--ink-mute); letter-spacing: 0; }
 
@@ -372,11 +441,19 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-bottom: 8px;
   border-radius: 2px;
 }
-.finding[data-sev="critical"] { border-left-color: var(--bad); }
-.finding[data-sev="major"]    { border-left-color: var(--warn); }
-.finding[data-sev="minor"]    { border-left-color: var(--rf); }
-.finding[data-sev="info"]     { border-left-color: var(--ok); }
-.finding[data-sev="check"]    { border-left-color: var(--info); }
+/* Severity reaches the eye three ways: the rule, a wash across the card, and
+   the tag. Two stacked criticals used to fill the panel with one flat red and
+   nothing inside them stood out; an 8% wash groups the card without shouting. */
+.finding[data-sev="critical"] { border-left-color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 7%, var(--surface-2)); }
+.finding[data-sev="major"]    { border-left-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 6%, var(--surface-2)); }
+.finding[data-sev="minor"]    { border-left-color: var(--rf);
+  background: color-mix(in srgb, var(--rf) 6%, var(--surface-2)); }
+.finding[data-sev="info"]     { border-left-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 6%, var(--surface-2)); }
+.finding[data-sev="check"]    { border-left-color: var(--info);
+  background: color-mix(in srgb, var(--info) 6%, var(--surface-2)); }
 
 .finding > summary {
   cursor: pointer; padding: 8px 10px;
@@ -396,8 +473,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .finding[data-sev="info"]     .sev-tag { color: var(--ok);   background: color-mix(in srgb, var(--ok) 18%, transparent); }
 .finding[data-sev="check"]    .sev-tag { color: var(--info); background: color-mix(in srgb, var(--info) 18%, transparent); }
 
-.finding-title { font-size: 12.5px; line-height: 1.35; }
-.finding-body { padding: 0 10px 10px 10px; font-size: 12px; color: var(--ink-dim); line-height: 1.5; }
+.finding-title { font-size: var(--t-body); font-weight: 600; line-height: 1.35; }
+.finding-body { padding: 0 10px 10px 10px; font-size: var(--t-small); color: var(--ink-dim); line-height: 1.55; }
 .finding-body p { margin: 0 0 8px; }
 .finding-metrics {
   display: grid; grid-template-columns: auto 1fr; gap: 2px 10px;
@@ -444,15 +521,21 @@ table.data tbody tr.is-hot td { color: var(--ink); }
   width: 100%;
   max-height: 86vh;
 }
-.dlg::backdrop { background: rgba(4, 6, 8, 0.72); }
+/* The app behind a dialog is dense and bright. At 0.72 with no blur it stayed
+   legible through the sheet and competed with the dialog's own content. */
+.dlg::backdrop { background: rgba(3, 5, 7, 0.86); backdrop-filter: blur(3px); }
 .dlg header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 12px 16px; border-bottom: 1px solid var(--rule-strong);
   position: sticky; top: 0; background: var(--surface); z-index: 1;
 }
-.dlg header h2 { margin: 0; font-size: 14px; }
+.dlg header h2 { margin: 0; font-size: var(--t-head); font-weight: 600; }
 .dlg-body { padding: 16px; overflow-y: auto; max-height: calc(86vh - 56px); font-size: 13px; line-height: 1.6; }
-.dlg-body h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rf); margin: 20px 0 8px; }
+.dlg-body h3 {
+  font-size: var(--t-head); font-weight: 600; letter-spacing: 0;
+  color: var(--ink); margin: 26px 0 9px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--rule);
+}
 .dlg-body h3:first-child { margin-top: 0; }
 .dlg-body p { margin: 0 0 10px; color: var(--ink-dim); }
 .dlg-body ul { margin: 0 0 12px; padding-left: 18px; color: var(--ink-dim); }
@@ -597,6 +680,7 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 .sweep-bar { height: 100%; width: 0; background: var(--rf); transition: width 120ms linear; }
 
 .sweep-canvas-wrap {
+  position: relative;          /* the empty state is absolutely placed over it */
   background: var(--bg);
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
@@ -684,22 +768,56 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 .dlg-full[open] { display: flex; flex-direction: column; }
 .dlg-full > form { flex: 0 0 auto; }
 .dlg-full .map-wrap { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; }
+/* One line per layer here; see note on .toggles. */
+#map-layers { grid-template-columns: 1fr; }
 .map-wrap canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 .map-overlay { position: absolute; pointer-events: none; }
 .map-overlay > * { pointer-events: auto; }
-.map-top-left { top: 10px; left: 10px; }
-.map-top-right { top: 10px; right: 10px; bottom: 10px; width: 330px; overflow-y: auto; }
+.map-top-left { top: 10px; left: 10px; width: 330px; display: flex; flex-direction: column; gap: 8px; }
+.map-top-right {
+  top: 10px; right: 10px; bottom: 10px; width: 340px; overflow-y: auto;
+  /* clears the readout that floats over this corner */
+  padding-bottom: 76px;
+}
 .map-bottom-left { bottom: 10px; left: 10px; }
 .map-bottom-right { bottom: 10px; right: 10px; max-width: 460px; }
 .map-panel {
-  background: rgba(10, 16, 22, 0.92); border: 1px solid var(--line);
-  border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.5;
+  background: rgba(10, 16, 22, 0.94); border: 1px solid var(--rule-strong);
+  border-radius: 3px; padding: 11px 13px; font-size: var(--t-small); line-height: 1.5;
+  backdrop-filter: blur(6px);
 }
-.map-panel h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+/* Sentence case, matching every other section heading; the top margin is
+   what 'By territory' was missing, so it sat hard against the row above. */
+.map-panel h4 {
+  margin: 18px 0 8px; font-size: var(--t-body); font-weight: 600;
+  color: var(--ink); letter-spacing: 0;
+}
+.map-panel h4:first-child { margin-top: 0; }
 .map-panel .big { font-size: 20px; font-weight: 600; }
 .map-panel table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
 .map-panel td { padding: 2px 0; }
-.map-panel td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+/* nowrap is the fix for the ragged column: '1320 of 1447' was breaking
+   across two lines and pulling its row out of line with the rest. */
+.map-panel td:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
 .map-panel .warn { color: var(--warn, #e8c23f); }
-.map-panel hr { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+.map-panel hr { border: 0; border-top: 1px solid var(--rule); margin: 10px 0; }
 .map-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+/* ------------------------------------------------------------ empty states */
+
+/* A panel that has not been filled yet was a 700 px void with its instruction
+   set below it, outside the space it described, and the button that fills it in
+   a far corner. An empty panel is the best place to say what goes in it. */
+.empty-state {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 0 15%;
+  text-align: center; pointer-events: none;
+}
+.empty-state p { margin: 0; max-width: 46ch; color: var(--ink-mute); font-size: var(--t-body); line-height: 1.6; }
+.empty-state .empty-lead { color: var(--ink-dim); font-size: var(--t-head); font-weight: 600; }
+[data-state="filled"] > .empty-state { display: none; }
+
+@media (max-width: 1699px) {
+  .verdict-text { display: none; }
+}
