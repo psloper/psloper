@@ -20,6 +20,7 @@ import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
 import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
 import { UkMap, MAP_COLORS } from './ukmap.js';
 import { nationalScreen, ACTIVE_STATUSES } from './national.js';
+import { auditRadarSites, requestText, TIER_LABELS } from './completeness.js';
 import {
   loadSites, saveSites, liveRadars, isDecommissioned, withDecommissioned,
   makeBackup, readBackup,
@@ -261,6 +262,7 @@ async function importRadarSites() {
     importedSites.radars = res.sites;
     importedSites.source.radars = file.name;
     saveSites(importedSites);
+    showRadarCompleteness(res.sites, file.name);
     rebuildRail();
     refreshMapData();
     importStatus(siteImportReport('radar sites', file, res), res.warnings.length ? '' : 'ok');
@@ -1634,3 +1636,103 @@ window.addEventListener('keydown', (e) => {
     buildToggles();
   }
 });
+
+// ------------------------------------------------ imported radar completeness
+
+/**
+ * Say what the imported file did not contain, and draft the request for it.
+ *
+ * A sparse radar import used to succeed quietly and fall back to the Radar
+ * tab's representative figures, which meant a file with nothing but a name and
+ * a position produced an answer that looked exactly as authoritative as one
+ * built from an operator's datasheet. This is the panel that stops that.
+ */
+function showRadarCompleteness(sites, filename) {
+  const audit = auditRadarSites(sites);
+  if (audit.complete) {
+    importStatus(`${sites.length} radar site(s) imported from ${filename}. `
+      + 'Every parameter that decides the answer was supplied.', 'ok');
+    return;
+  }
+
+  const body = $('#import-help-body');
+  const title = $('#import-help-title');
+  if (!body || !title) return;
+  title.textContent = 'What this radar file did not contain';
+  body.textContent = '';
+
+  const p1 = document.createElement('p');
+  p1.textContent = `${sites.length} site(s) imported from ${filename}. `
+    + `${audit.decidingMissing} of the 6 parameters that decide the answer are missing. `
+    + 'Where a figure is absent the tool uses the representative value on the Radar tab, '
+    + 'which is not a measurement of your site.';
+  body.append(p1);
+
+  const p2 = document.createElement('p');
+  p2.className = 'dlg-note';
+  p2.textContent = `Largest single effect among the missing figures: ${audit.worstMissingDb.toFixed(1)} dB `
+    + 'on the worst detection margin. That is the measured effect of getting it wrong, '
+    + 'not an estimate.';
+  body.append(p2);
+
+  for (const tier of ['decides', 'useful', 'conditional']) {
+    const group = audit.fields.filter((f) => f.tier === tier && f.missing > 0);
+    if (!group.length) continue;
+    const h = document.createElement('h3');
+    h.textContent = TIER_LABELS[tier];
+    body.append(h);
+    const table = document.createElement('table');
+    table.className = 'delta-table';
+    const head = document.createElement('tr');
+    for (const c of ['Parameter', 'Missing for', 'Moves the result by']) {
+      const th = document.createElement('th');
+      th.textContent = c;
+      head.append(th);
+    }
+    table.append(head);
+    for (const f of group) {
+      const tr = document.createElement('tr');
+      const name = document.createElement('td');
+      name.textContent = f.label + (f.unit ? ` (${f.unit})` : '');
+      if (f.why) name.title = f.why;
+      const where = document.createElement('td');
+      where.textContent = f.missing === audit.total
+        ? 'every site' : `${f.missing} of ${audit.total}`;
+      const moves = document.createElement('td');
+      moves.textContent = f.movesDb ? `${f.movesDb.toFixed(1)} dB` : '';
+      tr.append(name, where, moves);
+      table.append(tr);
+    }
+    body.append(table);
+  }
+
+  const note = document.createElement('p');
+  note.textContent = 'Add the missing columns to your file and import it again. '
+    + 'The column names the tool accepts are listed under "Import 2: a radar site list" '
+    + 'in Data in & out.';
+  body.append(note);
+
+  const copy = document.createElement('button');
+  copy.className = 'btn primary';
+  copy.type = 'button';
+  copy.textContent = 'Copy a request for the missing parameters';
+  copy.addEventListener('click', async () => {
+    const text = requestText(audit, { siteLabel: sites.length === 1 ? sites[0].name : 'the radar sites below' });
+    try {
+      await navigator.clipboard.writeText(text);
+      copy.textContent = 'Copied. Paste it into an email.';
+    } catch (err) {
+      // Clipboard access is refused in some sandboxes. Show the text instead
+      // of failing silently, which is the whole point of the panel.
+      $('#text-title').textContent = 'Request for radar parameters';
+      $('#text-body').value = text;
+      $('#dlg-import-help').close();
+      $('#dlg-text').showModal();
+    }
+  });
+  body.append(copy);
+
+  $('#dlg-import-help').showModal();
+  importStatus(`${sites.length} radar site(s) imported from ${filename}, with `
+    + `${audit.decidingMissing} deciding parameter(s) missing.`, 'warn');
+}

@@ -250,9 +250,18 @@ export const RADAR_SITE_FIELDS = {
   role:        ['role', 'type', 'category', 'class', 'kind', 'function'],
   antennaHeight: ['antenna height', 'height', 'height agl', 'agl', 'mast height', 'tower height', 'aerial height'],
   groundLevel: ['ground', 'ground level', 'elevation', 'amsl', 'site elevation', 'ground amsl'],
-  band:        ['band', 'frequency', 'freq', 'freq ghz', 'frequency ghz'],
+  band:        ['band', 'frequency band', 'freq band'],
   operator:    ['operator', 'owner', 'authority', 'agency'],
   notes:       ['notes', 'note', 'comment', 'comments', 'remarks', 'description'],
+  // The six that decide the answer. Five of these had no column at all, so a
+  // schedule containing them was silently reduced to a name and a position and
+  // the tool went on using its own representative figures instead.
+  frequency:   ['frequency', 'freq', 'frequency mhz', 'freq mhz', 'frequency ghz', 'freq ghz', 'tx frequency'],
+  azBeamwidth: ['azimuth beamwidth', 'az beamwidth', 'azimuth 3db', 'horizontal beamwidth', 'az bw'],
+  elBeamwidth: ['elevation beamwidth', 'el beamwidth', 'elevation 3db', 'vertical beamwidth', 'el bw'],
+  beamTilt:    ['beam tilt', 'tilt', 'elevation of peak gain', 'boresight elevation', 'el peak'],
+  gain:        ['gain', 'antenna gain', 'gain dbi', 'peak gain'],
+  peakPower:   ['peak power', 'transmit power', 'tx power', 'power', 'power kw', 'peak power kw'],
 };
 
 // Wind farm SITES, meaning one row per project. This is a different thing from
@@ -312,18 +321,32 @@ export function mapColumns(rows, fields) {
     if (!looksLikeHeader(rows[r])) continue;
     const map = {};
     let score = 0;
+    // Exact match first, across EVERY field, before any prefix match is
+    // considered. The prefix rule is what lets 'antenna height m' match
+    // 'antenna height', but it also let the 'elevation' alias on ground level
+    // swallow a column headed 'elevation beamwidth', purely because ground
+    // level is declared earlier in the object. Which column wins should not
+    // depend on declaration order.
+    const claim = (field, c) => {
+      if (map[field] !== undefined) return false;
+      map[field] = c;
+      score += 1;
+      return true;
+    };
+    const unmatched = [];
     rows[r].forEach((cell, c) => {
       const n = norm(cell);
       if (!n) return;
-      for (const [field, synonyms] of Object.entries(fields)) {
-        if (map[field] !== undefined) continue;
-        if (synonyms.some((s) => n === s || n.startsWith(`${s} `) || n === `${s}s`)) {
-          map[field] = c;
-          score += 1;
-          return;
-        }
-      }
+      const exact = Object.entries(fields)
+        .find(([, syn]) => syn.some((sy) => n === sy || n === `${sy}s`));
+      if (exact) claim(exact[0], c);
+      else unmatched.push([n, c]);
     });
+    for (const [n, c] of unmatched) {
+      const pref = Object.entries(fields)
+        .find(([field, syn]) => map[field] === undefined && syn.some((sy) => n.startsWith(`${sy} `)));
+      if (pref) claim(pref[0], c);
+    }
     if (score > best.score) best = { score, index: r, map };
   }
   return best;
@@ -458,6 +481,28 @@ const ROLE_WORDS = [
 ];
 
 /** One row per radar site. */
+/**
+ * Frequency in whatever unit the sheet used.
+ *
+ * A column can say 2800, 2.8 or 2800000000 and mean the same radar. Guessing
+ * by magnitude is safe here because the bands are decades apart: no air
+ * surveillance radar runs at 2800 GHz or 2.8 Hz.
+ */
+export function frequencyHz(raw) {
+  const n = numberFrom(raw);
+  if (n == null || n <= 0) return null;
+  if (n < 100) return n * 1e9;        // GHz
+  if (n < 100000) return n * 1e6;     // MHz
+  return n;                            // already Hz
+}
+
+/** Peak power quoted in kW or W. Air surveillance sets are kW to MW. */
+export function wattsFrom(raw) {
+  const n = numberFrom(raw);
+  if (n == null || n <= 0) return null;
+  return n < 1000 ? n * 1000 : n;
+}
+
 export function parseRadarSiteRows(rows, opts = {}) {
   let defaultedRole = 0;
   let defaultedHeight = 0;
@@ -479,6 +524,16 @@ export function parseRadarSiteRows(rows, opts = {}) {
       band: String(get('band') ?? '').trim() || null,
       operator: String(get('operator') ?? '').trim() || null,
       notes: String(get('notes') ?? '').trim() || null,
+      // The six that decide the answer. Stored as null when absent rather than
+      // filled from the Radar tab here: the completeness audit has to be able
+      // to tell a supplied figure from a representative one, and a default
+      // written in at import time is indistinguishable from a measurement.
+      freqHz: frequencyHz(get('frequency')),
+      azBeamwidthDeg: numberFrom(get('azBeamwidth')),
+      elBeamwidthDeg: numberFrom(get('elBeamwidth')),
+      elPeakDeg: numberFrom(get('beamTilt')),
+      gainDbi: numberFrom(get('gain')),
+      peakPowerW: wattsFrom(get('peakPower')),
       imported: true,
     };
   });

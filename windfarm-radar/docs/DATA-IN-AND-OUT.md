@@ -185,6 +185,12 @@ pairing**.
 | `easting`, `northing` | **Required*** | Metres in your grid | The row is skipped |
 | `role` | Optional | `en-route`, `aerodrome`, `air defence`, `weather`, `marine` | Listed as unclassified |
 | `antenna height` | **Strongly advised** | Metres above ground to the aerial | Falls back to the Radar tab value, which is a guess |
+| `azimuth beamwidth` | **Strongly advised** | Degrees, the 3 dB width | Falls back to the Radar tab |
+| `elevation beamwidth` | **Strongly advised** | Degrees, the 3 dB width | Falls back to the Radar tab |
+| `beam tilt` | **Strongly advised** | Degrees, the elevation of peak gain | Falls back to the Radar tab |
+| `frequency` | **Strongly advised** | GHz, MHz or Hz; the unit is worked out from the magnitude | Falls back to the Radar tab |
+| `gain` | **Strongly advised** | dBi | Falls back to the Radar tab |
+| `peak power` | Useful | kW or W | Falls back to the Radar tab |
 | `ground level` | Optional | Metres above sea level at the site | Nothing |
 | `band` | Optional | L-band, S-band, C-band, X-band | Nothing |
 | `operator` | Optional | Who runs it | Nothing |
@@ -196,7 +202,34 @@ pairing**.
 > directly: the distance a radar can see goes as the square root of its height.
 > A 10 m error moves the horizon by kilometres.
 
-### Step 3 to 7: exactly as above
+### What the tool tells you it is missing
+
+Those six columns after `name` and the position are the ones that decide the
+answer. They are ranked, and the ranking is measured rather than asserted:
+each figure in `docs/RADAR-PARAMETERS-TO-ASK-FOR.md` is the effect on the
+worst detection margin of getting that parameter wrong.
+
+| Parameter | A plausible error | Moves the worst margin by |
+|---|---|---|
+| Antenna height | out by 10 m | **10.6 dB** |
+| Azimuth beamwidth | out by 0.4 deg | **8.2 dB** |
+| Elevation beamwidth | out by 1 deg | **8.0 dB** |
+| Beam tilt | out by 2 deg | **7.5 dB** |
+| Frequency | S-band assumed, actually L-band | **6.7 dB** |
+| Antenna gain | out by 3 dB | **6.0 dB** |
+
+If any of them is absent, a panel opens straight after the import saying which
+ones, for how many of your sites, and what each is worth. It also drafts a
+request you can copy and send to the radar operator, ordered so the thing worth
+chasing hardest is at the top. An operator handed an unexplained list of twelve
+parameters usually sends nothing back; one told why a number matters usually
+finds it.
+
+Nothing is filled in silently. Where a figure is missing the tool uses the
+representative value on the Radar tab and the panel says so, because a default
+written in at import time is indistinguishable from a measurement afterwards.
+
+## Step 3 to 7: exactly as above
 
 Same save, same import button, same message, same picker. Imported radars appear
 in the radar dropdown as their own group.
