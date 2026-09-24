@@ -20,6 +20,10 @@ import { SWEEP_PARAMS, SWEEP_METRICS, runSweep, sweepToCsv } from './sweep.js';
 import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
 import { UkMap, MAP_COLORS } from './ukmap.js';
 import { nationalScreen, ACTIVE_STATUSES } from './national.js';
+import {
+  loadSites, saveSites, liveRadars, isDecommissioned, withDecommissioned,
+  makeBackup, readBackup,
+} from './store.js';
 import { UK_WIND_FARMS, UK_RADAR_SITES, farmRecord, farmCapacityLabel,
   farmAttributeCoverage, offshoreFlagConflicts, territoryCounts } from './uksites.js';
 import { drawSweep, cellAt, sweepToPng, sweepToSvg } from './heatmap.js';
@@ -161,7 +165,10 @@ function schedule() {
 // Imported site lists live alongside the built-in ones and are offered in the
 // same pickers. They are kept separate from the built-in data so that a user's
 // own survey positions are never confused with planning-database positions.
-export const importedSites = { radars: [], farms: [], source: {} };
+// Loaded from storage rather than started empty: an import that vanishes on
+// reload is the commonest complaint about tools like this, and the fix is
+// simply to read back what was written.
+export const importedSites = loadSites();
 
 function rebuildRail() {
   setImportedSites(importedSites);
@@ -253,6 +260,7 @@ async function importRadarSites() {
     if (!res.sites.length) { importStatus(res.warnings.join(' '), 'error'); return; }
     importedSites.radars = res.sites;
     importedSites.source.radars = file.name;
+    saveSites(importedSites);
     rebuildRail();
     refreshMapData();
     importStatus(siteImportReport('radar sites', file, res), res.warnings.length ? '' : 'ok');
@@ -274,6 +282,7 @@ async function importFarmSites() {
     if (!res.sites.length) { importStatus(res.warnings.join(' '), 'error'); return; }
     importedSites.farms = res.sites;
     importedSites.source.farms = file.name;
+    saveSites(importedSites);
     rebuildRail();
     refreshMapData();
     importStatus(siteImportReport('wind farm sites', file, res), res.warnings.length ? '' : 'ok');
@@ -392,6 +401,7 @@ function clearImportedSites() {
   importedSites.radars = [];
   importedSites.farms = [];
   importedSites.source = {};
+  saveSites(importedSites);
   rebuildRail();
   importStatus('Imported site lists cleared. The built-in UK data is unchanged.', 'ok');
 }
@@ -765,13 +775,32 @@ function mapFarms() {
 }
 
 function mapRadars() {
-  return [
+  // liveRadars drops the built-in sites marked out of service. Imported radars
+  // are never filtered: you put those there yourself, and Clear removes them.
+  return liveRadars([
     ...UK_RADAR_SITES.map(radarRowToObject),
     ...importedSites.radars.map((r) => ({
       name: r.name, role: r.role || 'unclassified', lat: r.lat, lon: r.lon,
       heightAgl: r.heightAgl, imported: true,
     })),
-  ];
+  ], importedSites);
+}
+
+/**
+ * Mark a built-in radar as out of service, or bring it back.
+ *
+ * Radar sites do close. The screen has always been able to filter wind farms
+ * by planning status but had no equivalent for radars, so a decommissioned
+ * site kept appearing in every result with no way to say otherwise.
+ */
+export function setRadarDecommissioned(name, off) {
+  importedSites.decommissioned = withDecommissioned(importedSites, name, off);
+  saveSites(importedSites);
+  if (ukMap) {
+    ukMap.radars = mapRadars();
+    ukMap.setScreen(runNationalScreen());
+    mapPanel(null);
+  }
 }
 
 function runNationalScreen() {
@@ -808,6 +837,17 @@ function mapPanel(hit) {
       + '</table><hr>'
       + `<p>Click again to load <strong>${esc(r.name)}</strong> against its nearest active `
       + 'farm into the full assessment.</p>';
+    if (!r.imported) {
+      const off = document.createElement('button');
+      off.className = 'btn';
+      off.type = 'button';
+      off.style.width = '100%';
+      off.textContent = 'Mark as out of service';
+      off.title = 'Removes this site from the national screen. Reversible, and '
+        + 'listed under the screen totals so it can be brought back.';
+      off.addEventListener('click', () => setRadarDecommissioned(r.name, true));
+      el.append(off);
+    }
     return;
   }
   if (hit && hit.kind === 'farm') {
@@ -832,6 +872,33 @@ function mapPanel(hit) {
   const fc = offshoreFlagConflicts();
   const conflicts = fc.onshoreInSea.length + fc.offshoreOnLand.length;
   const terr = territoryCounts();
+  // Built after the innerHTML below, so it is not wiped by it.
+  const restoreList = () => {
+    const names = importedSites.decommissioned ?? [];
+    if (!names.length) return;
+    const wrap = document.createElement('div');
+    const h = document.createElement('h3');
+    h.textContent = `Out of service (${names.length})`;
+    wrap.append(h);
+    for (const name of names) {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.alignItems = 'center';
+      row.style.gap = '8px';
+      row.style.marginBottom = '4px';
+      const label = document.createElement('span');
+      label.textContent = name;
+      const back = document.createElement('button');
+      back.className = 'btn ghost';
+      back.type = 'button';
+      back.textContent = 'Restore';
+      back.addEventListener('click', () => setRadarDecommissioned(name, false));
+      row.append(label, back);
+      wrap.append(row);
+    }
+    el.append(wrap);
+  };
   el.innerHTML = '<h3>National screen</h3>'
     + '<table>'
     + `<tr><td>Radars</td><td>${esc(s.summary.radars)}</td></tr>`
@@ -879,6 +946,7 @@ function mapPanel(hit) {
     + 'unclassified and from a low-confidence source. <strong>No Republic of Ireland wind farm '
     + 'data is loaded.</strong> Use the site list import on the Site &amp; data tab to add it.</p>'
     + `<hr><p>Coastline: ${esc(COASTLINE_SOURCE.source)}. ${esc(COASTLINE_SOURCE.licence)}</p>`;
+  restoreList();
 }
 
 function mapLegend() {
@@ -1244,7 +1312,7 @@ document.querySelectorAll('[data-export]').forEach((btn) => {
       const b = btn;
       const was = b.textContent;
       b.disabled = true; b.textContent = 'Building...';
-      downloadExport(kind, result, currentDelta(), collectFigures())
+      downloadExport(kind, { ...result, sites: importedSites }, currentDelta(), collectFigures())
         .catch((err) => { b.textContent = 'Failed'; console.error(err); })
         .finally(() => { setTimeout(() => { b.disabled = false; b.textContent = was; }, 600); });
       return;
@@ -1288,10 +1356,25 @@ $('#import-scenario').addEventListener('change', async (e) => {
   if (!file) return;
   try {
     const text = await file.text();
-    scenario = mergeDeep(defaultScenario(), JSON.parse(text));
+    const backup = readBackup(text);
+    scenario = mergeDeep(defaultScenario(), backup.scenario);
+    if (!backup.legacy) {
+      importedSites.radars = backup.sites.radars;
+      importedSites.farms = backup.sites.farms;
+      importedSites.decommissioned = backup.sites.decommissioned;
+      importedSites.source = backup.sites.source;
+      saveSites(importedSites);
+      if (ukMap) { ukMap.farms = mapFarms(); ukMap.radars = mapRadars(); }
+    }
     run(false);
     rebuildRail();
     $('#dlg-export').close();
+    const n = backup.sites.radars.length + backup.sites.farms.length;
+    importStatus(backup.legacy
+      ? 'Settings restored. That file predates the backup format, so it carried no '
+        + 'imported site lists.'
+      : `Restored: settings, ${n} imported site${n === 1 ? '' : 's'}, `
+        + `${backup.sites.decommissioned.length} marked out of service.`, 'ok');
   } catch (err) {
     alert(`Could not read that scenario file: ${err.message}`);
   }

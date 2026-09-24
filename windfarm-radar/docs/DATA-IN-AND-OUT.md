@@ -28,7 +28,7 @@ A panel opens listing everything available.
 | The numbers to work on yourself | **Assessment** | `.csv` | Excel |
 | The turbine-by-turbine results | **Turbines** | `.csv` | Excel |
 | The aircraft track | **Flight track** | `.csv` | Excel |
-| To reload this exact set-up later | **Scenario** | `.json` | this tool |
+| To keep everything, including data you imported | **Backup: settings and imported data** | `.json` | this tool |
 | A picture of a sweep | Heat map **PNG** or **SVG** | image | anything |
 
 ## Step 3a. If you chose PDF
@@ -61,9 +61,27 @@ without converting anything first.
 Use the **View / copy** button beside it instead, then select all the text and
 copy it into a file yourself. The content is identical.
 
-## Step 5. To reload a scenario later
+## Step 5. Backups
 
-Export **Scenario** as `.json`, keep the file, and open it with the scenario
+Export **Backup: settings and imported data** as `.json`. It carries the whole
+scenario, every site list you imported, and any radar you marked out of
+service. Open it later with **Load a saved backup**.
+
+**What a backup does not carry: imported elevation data.** A raster runs to
+megabytes and would not fit alongside everything else, so keep the `.asc` or
+`.csv` next to the backup and re-import it. The backup file says so inside
+itself rather than leaving you to find out.
+
+Your imported site lists also persist on their own, without a backup: close
+the tab, come back, and they are still there. The backup is for moving them to
+another machine, or keeping a copy before you change something.
+
+A backup file written by an older build held the settings alone. Those still
+open; the tool says the file carried no site lists rather than silently
+restoring nothing.
+
+Older wording, for anyone with a file from before: export **Scenario** as
+`.json`, keep the file, and open it with the scenario
 import. Everything comes back, including imported turbine schedules.
 
 ---
