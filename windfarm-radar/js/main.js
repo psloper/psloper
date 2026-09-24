@@ -21,6 +21,7 @@ import { COASTLINE, COASTLINE_SOURCE } from './coastline.js';
 import { UkMap, MAP_COLORS } from './ukmap.js';
 import { nationalScreen, ACTIVE_STATUSES } from './national.js';
 import { auditRadarSites, requestText, TIER_LABELS } from './completeness.js';
+import { progress } from './walkthrough.js';
 import {
   loadSites, saveSites, liveRadars, isDecommissioned, withDecommissioned,
   makeBackup, readBackup,
@@ -233,6 +234,7 @@ async function importTurbines() {
     scenario.farm.count = turbines.length;
     run(false);
     rebuildRail();
+    milestone('farm');
     importStatus(`${turbines.length} turbines imported from ${file.name}.`
       + (warnings.length ? ` ${warnings.join(' ')}` : ''), 'ok');
   } catch (err) {
@@ -1007,6 +1009,23 @@ function buildMapLayers() {
     lab.append(cb, document.createTextNode(' ' + label));
     el.append(lab);
   }
+
+  // Set here rather than in a settings panel nobody opens: this is the screen
+  // the preference is about, so it is the screen to turn it off from.
+  const start = document.createElement('label');
+  start.className = 'full';
+  start.style.borderTop = '1px solid var(--rule)';
+  start.style.marginTop = '4px';
+  start.style.paddingTop = '6px';
+  const scb = document.createElement('input');
+  scb.type = 'checkbox';
+  scb.checked = importedSites.openMapOnStart !== false;
+  scb.addEventListener('change', () => {
+    importedSites.openMapOnStart = scb.checked;
+    saveSites(importedSites);
+  });
+  start.append(scb, document.createTextNode(' Open this map when the tool starts'));
+  el.append(start);
 }
 
 // The national screen needs the 500 m grid. Without it every pairing is flat
@@ -1027,6 +1046,7 @@ async function ensureNationalTerrain() {
 }
 
 async function openUkMap() {
+  milestone('map');
   const dlg = $('#dlg-map');
   dlg.showModal();
   const canvas = $('#map-canvas');
@@ -1070,6 +1090,7 @@ async function openUkMap() {
 }
 
 function loadPairingFromMap(radarIndex) {
+  milestone('pick');
   const r = ukMap.radars[radarIndex];
   const near = ukMap.nearestFarmTo(radarIndex, ACTIVE_STATUSES);
   if (!near) {
@@ -1314,6 +1335,7 @@ document.querySelectorAll('[data-export]').forEach((btn) => {
       const b = btn;
       const was = b.textContent;
       b.disabled = true; b.textContent = 'Building...';
+      milestone('export');
       downloadExport(kind, { ...result, sites: importedSites }, currentDelta(), collectFigures())
         .catch((err) => { b.textContent = 'Failed'; console.error(err); })
         .finally(() => { setTimeout(() => { b.disabled = false; b.textContent = was; }, 600); });
@@ -1619,6 +1641,25 @@ rebuildRail();
 view.setView('orbit');
 requestAnimationFrame(frame);
 
+// The national map is where the work starts: you find a radar, then drop into
+// its assessment. Opening on a single synthetic pairing meant the map had to be
+// discovered behind a button, and people assessed the example scenario without
+// realising 2,694 real records were a click away.
+//
+// Turned off from inside the map itself, and the choice persists, because
+// somebody iterating on one site does not want it in their face on every
+// reload.
+const firstRun = !importedSites.milestones || !Object.keys(importedSites.milestones).length;
+if (firstRun) {
+  // On a first run the guide comes up instead, because its own first step is
+  // the button that opens the map. Two things opening at once would fight.
+  requestAnimationFrame(() => { buildGuide(); $('#dlg-guide').showModal(); });
+} else if (importedSites.openMapOnStart !== false) {
+  // After the first frame, so the 3D view is already up behind it rather than
+  // the map opening over a black rectangle.
+  requestAnimationFrame(() => openUkMap());
+}
+
 // Keyboard shortcuts for the things worth reaching for quickly.
 window.addEventListener('keydown', (e) => {
   if (e.target.matches('input, select, textarea')) return;
@@ -1736,3 +1777,101 @@ function showRadarCompleteness(sites, filename) {
   importStatus(`${sites.length} radar site(s) imported from ${filename}, with `
     + `${audit.decidingMissing} deciding parameter(s) missing.`, 'warn');
 }
+
+// ------------------------------------------------------------ step by step
+
+/** Mark a milestone as passed. Idempotent, and persisted. */
+function milestone(id) {
+  if (importedSites.milestones?.[id]) return;
+  importedSites.milestones = { ...importedSites.milestones, [id]: true };
+  saveSites(importedSites);
+}
+
+/**
+ * What the application knows about how far you have got.
+ *
+ * Live state where it can be read, a persisted milestone where it cannot. The
+ * distinction matters: whether real terrain is loaded is a fact about right
+ * now, whether you have ever exported a report is a fact about history.
+ */
+function guideState() {
+  const m = importedSites.milestones ?? {};
+  return {
+    mapOpened: Boolean(m.map),
+    pairingLoaded: Boolean(m.pick),
+    realTerrain: Boolean(result?.terrain?.real),
+    radarSupplied: importedSites.radars.length > 0,
+    importedRadars: importedSites.radars.length,
+    turbinesImported: Boolean(m.farm),
+    anyMitigation: anyMitigation(),
+    exported: Boolean(m.export),
+  };
+}
+
+function buildGuide() {
+  const body = $('#guide-body');
+  if (!body) return;
+  const st = guideState();
+  const p = progress(st);
+  body.textContent = '';
+
+  const lead = document.createElement('p');
+  lead.className = 'dlg-lead';
+  lead.textContent = `${p.done} of ${p.total} steps done. Work down the list. `
+    + 'A step ticks when the tool can see you have done it, not when you have read it.';
+  body.append(lead);
+
+  let i = 0;
+  for (const step of p.steps) {
+    i += 1;
+    const state = step.done(st);
+    const box = document.createElement('div');
+    box.className = 'mit-block';
+    if (state === true) box.classList.add('is-on');
+
+    const h = document.createElement('h3');
+    h.style.margin = '0 0 4px';
+    h.textContent = `${i}. ${step.title}`;
+    if (state === true) h.textContent += '  ✓';
+    box.append(h);
+
+    const t = document.createElement('p');
+    t.style.margin = '0 0 8px';
+    t.textContent = step.body;
+    box.append(t);
+
+    const note = typeof step.note === 'function' ? step.note(st) : null;
+    if (note) {
+      const n = document.createElement('p');
+      n.className = 'hint';
+      n.style.margin = '0 0 8px';
+      n.textContent = note;
+      box.append(n);
+    }
+
+    if (step.action) {
+      const b = document.createElement('button');
+      b.className = state === true ? 'btn ghost' : 'btn primary';
+      b.type = 'button';
+      b.textContent = step.action;
+      b.addEventListener('click', () => {
+        $('#dlg-guide').close();
+        if (step.tab) {
+          const tab = document.querySelector(`.rail-tab[data-tab="${step.tab}"]`);
+          if (tab) tab.click();
+        } else if (step.id === 'export') {
+          $('#dlg-export').showModal();
+        } else {
+          openUkMap();
+        }
+      });
+      box.append(b);
+    }
+    body.append(box);
+  }
+}
+
+$('#btn-guide').addEventListener('click', () => {
+  buildGuide();
+  $('#dlg-guide').showModal();
+});

@@ -22,7 +22,13 @@ export const BACKUP_VERSION = 1;
 
 /** Nothing imported, nothing switched off. */
 export function emptySites() {
-  return { radars: [], farms: [], decommissioned: [], source: {} };
+  return {
+    radars: [], farms: [], decommissioned: [], source: {}, openMapOnStart: true,
+    // Which steps of the guided route have been passed. Persisted because a
+    // list that resets every reload cannot tell you where you got to on a job
+    // you left half finished yesterday.
+    milestones: {},
+  };
 }
 
 /**
@@ -45,6 +51,14 @@ export function normaliseSites(raw) {
     s.decommissioned = [...new Set(raw.decommissioned.filter((n) => typeof n === 'string' && n))];
   }
   if (raw.source && typeof raw.source === 'object') s.source = { ...raw.source };
+  // A preference, not data, but it belongs to the same lifetime: it is about
+  // how you use the tool rather than what one assessment asks.
+  if (typeof raw.openMapOnStart === 'boolean') s.openMapOnStart = raw.openMapOnStart;
+  if (raw.milestones && typeof raw.milestones === 'object') {
+    for (const [k, v] of Object.entries(raw.milestones)) {
+      if (v === true) s.milestones[k] = true;
+    }
+  }
   return s;
 }
 

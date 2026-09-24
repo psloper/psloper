@@ -35,6 +35,19 @@ page.on('pageerror', (e) => errors.push(String(e)));
 await page.goto(URL_, { waitUntil: 'networkidle' });
 await page.waitForTimeout(4000);
 
+// A fresh browser profile is a first run, so the application opens whatever it
+// shows a new user. That is correct behaviour and it intercepts every click
+// after it, which is how this script found the guide the day it was added.
+// Close anything open rather than naming one dialog, so a future first-run
+// panel does not break the build again.
+const dismissed = await page.evaluate(() => {
+  const open = [...document.querySelectorAll('dialog[open]')];
+  for (const d of open) d.close();
+  return open.map((d) => d.id);
+});
+if (dismissed.length) console.log(`dismissed on first run: ${dismissed.join(', ')}`);
+await page.waitForTimeout(500);
+
 /** Click something that produces a download and save it under its own name. */
 async function grab(selector, label) {
   try {
