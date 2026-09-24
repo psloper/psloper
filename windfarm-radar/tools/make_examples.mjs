@@ -48,22 +48,46 @@ const dismissed = await page.evaluate(() => {
 if (dismissed.length) console.log(`dismissed on first run: ${dismissed.join(', ')}`);
 await page.waitForTimeout(500);
 
-/** Click something that produces a download and save it under its own name. */
-async function grab(selector, label) {
+// One listener for the whole run, rather than a waitForEvent per click.
+//
+// The per-click version raced: the workbook now carries four embedded figures
+// and took longer than its 30 s window, so it was recorded as a failure and
+// then ARRIVED, and the next step's wait caught it. The log claimed the
+// Markdown report had produced a .xlsx. A download that is late must not be
+// able to attach itself to the wrong step.
+const landed = [];
+page.on('download', async (dl) => {
+  const name = dl.suggestedFilename();
   try {
-    const [dl] = await Promise.all([
-      page.waitForEvent('download', { timeout: 30000 }),
-      page.click(selector),
-    ]);
-    const name = dl.suggestedFilename();
     await dl.saveAs(join(out, name));
-    console.log(`  ${label.padEnd(24)} ${name}`);
-    return name;
+    landed.push(name);
+  } catch (e) {
+    errors.push(`saving ${name}: ${e.message}`);
+  }
+});
+
+/** Click something that produces a download, and wait for THAT file to land. */
+async function grab(selector, label, timeoutMs = 90000) {
+  const before = landed.length;
+  try {
+    await page.click(selector);
   } catch (e) {
     errors.push(`${label}: ${e.message}`);
-    console.log(`  ${label.padEnd(24)} FAILED: ${e.message}`);
+    console.log(`  ${label.padEnd(24)} FAILED to click: ${e.message}`);
     return null;
   }
+  const deadline = Date.now() + timeoutMs;
+  while (landed.length === before && Date.now() < deadline) {
+    await page.waitForTimeout(250);
+  }
+  if (landed.length === before) {
+    errors.push(`${label}: no file after ${timeoutMs / 1000}s`);
+    console.log(`  ${label.padEnd(24)} FAILED: nothing downloaded in ${timeoutMs / 1000}s`);
+    return null;
+  }
+  const name = landed[landed.length - 1];
+  console.log(`  ${label.padEnd(24)} ${name}`);
+  return name;
 }
 
 console.log('documents and tables');
@@ -104,6 +128,7 @@ await ctx.close();
 await browser.close();
 
 const files = readdirSync(out);
+console.log(`downloads that landed: ${landed.length}`);
 const bytes = files.reduce((n, f) => n + statSync(join(out, f)).size, 0);
 writeFileSync(join(out, 'README.md'),
   `# Example outputs\n\n`
