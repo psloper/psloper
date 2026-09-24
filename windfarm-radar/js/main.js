@@ -1080,7 +1080,10 @@ function buildMapImport() {
   const el = $('#map-import');
   if (!el) return;
   el.textContent = '';
-  const h = document.createElement('h4');
+  // h3, matching every other panel heading. This was missed by the heading-level
+  // migration because it is a createElement call, not a literal tag, so it lost
+  // its styling when .map-panel h4 became .map-panel h3.
+  const h = document.createElement('h3');
   h.textContent = 'Add your own data';
   el.append(h);
   const mk = (label, fn) => {
