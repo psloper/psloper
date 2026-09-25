@@ -1,0 +1,89 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Radar three-view</title>
+<script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
+<style>body{margin:0;background:#eef1f5}canvas{display:block}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { radarGeometry, antennaApertureM } from '../js/scene.js';
+import { RADAR_PRESETS, RADAR_MOUNTS } from '../js/model.js';
+
+// One installation, three orthographic views at a KNOWN scale over a metre
+// grid, built with the SAME function the scene uses. Girth 1, vExag 1: this is
+// the true installation.
+const q = new URL(location).searchParams;
+const key = q.get('t') || 'psr-terminal';
+const mountKey = q.get('m') || 'ground-mast';
+const p = RADAR_PRESETS[key];
+const mount = { ...RADAR_MOUNTS[mountKey], type: mountKey };
+const radar = { ...p, mount, heightAgl: (mount.structureHeightM || 0) + (mount.mastHeightM || 0) };
+const ap = antennaApertureM(radar);
+
+const W = 1400, VIEW = 560, H = VIEW * 3;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(W, H); renderer.setClearColor(0xeef1f5, 1);
+renderer.setScissorTest(true);
+
+const tall = radar.heightAgl + ap.heightM;
+const scale = Math.min((W - 60) / (Math.max(ap.widthM, tall) * 1.4), (VIEW - 30) / (tall * 1.15));
+const grid = tall > 40 ? 5 : 2;
+
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffffff, 0x97a2ae, 2.1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(1.6, 2.0, 2.0); scene.add(sun);
+const ext = Math.max(ap.widthM, tall) * 1.0;
+const a = [], b = [];
+for (let v = -Math.ceil(ext / grid) * grid; v <= ext; v += grid) {
+  const t = Math.abs(v % (grid * 5)) < 1e-6 ? b : a;
+  t.push(new THREE.Vector3(v, -ext, 0), new THREE.Vector3(v, ext, 0));
+  t.push(new THREE.Vector3(-ext, v, 0), new THREE.Vector3(ext, v, 0));
+  t.push(new THREE.Vector3(v, 0, -ext), new THREE.Vector3(v, 0, ext));
+  t.push(new THREE.Vector3(-ext, 0, v), new THREE.Vector3(ext, 0, v));
+  t.push(new THREE.Vector3(0, v, -ext), new THREE.Vector3(0, v, ext));
+  t.push(new THREE.Vector3(0, -ext, v), new THREE.Vector3(0, ext, v));
+}
+const mk = (arr, c) => new THREE.LineSegments(
+  new THREE.BufferGeometry().setFromPoints(arr), new THREE.LineBasicMaterial({ color: c }));
+scene.add(mk(a, 0xc7d0da)); scene.add(mk(b, 0x9aa7b4));
+scene.add(mk([new THREE.Vector3(-ext, 0, 0), new THREE.Vector3(ext, 0, 0),
+  new THREE.Vector3(0, 0, -ext), new THREE.Vector3(0, 0, ext)], 0x33414d));
+
+const g = radarGeometry(radar, { girth: 1, vExag: 1 });
+const mat = new THREE.MeshStandardMaterial({ color: 0x3a4653, roughness: 0.5,
+  metalness: 0.1, side: THREE.DoubleSide });
+g.traverse((m) => { if (m.isMesh) m.material = mat; });
+scene.add(g);
+g.updateMatrixWorld(true);
+
+const mid = tall / 2;
+const views = [
+  { pos: [0, mid, 600], up: [0, 1, 0], y: VIEW * 2 },   // front, facing the dish
+  { pos: [600, mid, 0], up: [0, 1, 0], y: VIEW },       // side, shows the tilt
+  { pos: [0, 600, 0], up: [0, 0, -1], y: 0 },           // plan
+];
+for (const v of views) {
+  const cam = new THREE.OrthographicCamera(
+    -W / (2 * scale), W / (2 * scale), VIEW / (2 * scale), -VIEW / (2 * scale), 0.1, 3000);
+  cam.position.set(...v.pos); cam.up.set(...v.up);
+  cam.lookAt(0, v.y === 0 ? 0 : mid, 0);
+  renderer.setViewport(0, v.y, W, VIEW); renderer.setScissor(0, v.y, W, VIEW);
+  renderer.render(scene, cam);
+}
+
+const parts = {};
+const bb = new THREE.Box3();
+g.traverse((m) => {
+  if (!m.isMesh) return;
+  const n = m.userData.part || 'unnamed';
+  bb.setFromObject(m);
+  const e = parts[n] || (parts[n] = { minX: Infinity, maxX: -Infinity, minY: Infinity,
+    maxY: -Infinity, minZ: Infinity, maxZ: -Infinity });
+  e.minX = Math.min(e.minX, bb.min.x); e.maxX = Math.max(e.maxX, bb.max.x);
+  e.minY = Math.min(e.minY, bb.min.y); e.maxY = Math.max(e.maxY, bb.max.y);
+  e.minZ = Math.min(e.minZ, bb.min.z); e.maxZ = Math.max(e.maxZ, bb.max.z);
+});
+window.__parts = parts;
+window.__meta = { key, mountKey, label: p.label, heightAgl: radar.heightAgl,
+  apW: ap.widthM, apH: ap.heightM, grid, elPeak: radar.elPeakDeg };
+window.__drawn = true;
+</script></body></html>

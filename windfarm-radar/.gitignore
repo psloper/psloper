@@ -1,0 +1,6 @@
+build/
+dist/
+.offline-build/
+
+# Harness screenshots, written by tools/verify-aircraft.mjs when SHOT is unset.
+*-harness.png

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wind Farm / Radar Interference Assessor</title>
+<meta name="description" content="3D screening tool for wind turbine effects on primary surveillance radar, and the mitigations available." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0d10'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%2345b8d8' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='16' r='5' fill='none' stroke='%2345b8d8' stroke-width='1'/%3E%3Cpath d='M16 16 L26 11' stroke='%233fd18b' stroke-width='2'/%3E%3C/svg%3E" />
+<meta name="theme-color" content="#080b0e" />
+<link rel="stylesheet" href="css/style.css" />
+<script type="importmap">
+{ "imports": { "three": "../js/vendor/three.module.js" } }
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#rail-body">Skip to the controls</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <h1>Wind Farm / Radar Interference Assessor</h1>
+      <p class="brand-sub">First-order screening model &middot; primary surveillance radar<span id="byline"></span></p>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict" role="status" aria-live="polite">
+    <span class="verdict-chip" data-level="info" id="verdict-chip">Ready</span>
+    <span class="verdict-text" id="verdict-text">Set up a scenario to run an assessment.</span>
+  </div>
+
+  <div class="topbar-actions">
+    <button class="btn primary" id="btn-map" title="National view: every radar, every wind farm, and which can see which">UK map</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="btn" id="btn-sweep">Sweep &amp; heat map</button>
+    <button class="btn" id="btn-baseline" title="Compare the current mitigation set against no mitigation">Mitigation delta</button>
+    <button class="btn" id="btn-export">Export</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="btn" id="btn-evidence">Evidence</button>
+    <button class="btn" id="btn-import-help">Data in &amp; out</button>
+    <button class="btn" id="btn-guide" title="A prompted route through the tool, from opening it to having an answer">Step by step</button>
+    <button class="btn" id="btn-method">Method &amp; limits</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="btn ghost" id="btn-reset">Reset</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ===================================================== control rail -->
+  <aside class="rail" id="rail">
+    <nav class="rail-tabs" role="tablist">
+      <button class="rail-tab is-active" data-tab="radar" role="tab">Radar</button>
+      <button class="rail-tab" data-tab="farm" role="tab">Wind farm</button>
+      <button class="rail-tab" data-tab="site" role="tab">Site &amp; data</button>
+      <button class="rail-tab" data-tab="terrain" role="tab">Terrain</button>
+      <button class="rail-tab" data-tab="wind" role="tab">Wind</button>
+      <button class="rail-tab" data-tab="flight" role="tab">Flight</button>
+      <button class="rail-tab" data-tab="mitigation" role="tab">Mitigation</button>
+    </nav>
+    <div class="rail-body" id="rail-body"><!-- built by ui.js --></div>
+  </aside>
+
+  <!-- ========================================================= viewport -->
+  <section class="stage">
+    <div class="viewport" id="viewport">
+      <canvas id="scene3d"></canvas>
+
+      <div class="vp-overlay vp-top-left">
+        <div class="seg" role="group" aria-label="Camera preset">
+          <button class="seg-btn is-active" data-view="orbit">Orbit</button>
+          <button class="seg-btn" data-view="radar">From radar</button>
+          <button class="seg-btn" data-view="plan">Plan</button>
+          <button class="seg-btn" data-view="profile">Section</button>
+        </div>
+        <div class="seg" role="group" aria-label="Terrain shading">
+          <button class="seg-btn is-active" data-shade="terrain">Elevation</button>
+          <button class="seg-btn" data-shade="coverage">Detection margin</button>
+          <button class="seg-btn" data-shade="delta">Loss vs clear site</button>
+        </div>
+        <div class="scalebar" id="scalebar"></div>
+      </div>
+
+      <div class="vp-overlay vp-top-right">
+        <div class="toggles" id="layer-toggles"><!-- built by ui.js --></div>
+      </div>
+
+      <div class="vp-overlay vp-bottom-left">
+        <div class="legend" id="legend"><!-- built by ui.js --></div>
+      </div>
+
+      <div class="vp-overlay vp-bottom-right">
+        <div class="readout" id="readout">
+          <span class="readout-hint">Drag to orbit &middot; scroll to zoom &middot; hover a turbine for its numbers</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="displays">
+      <figure class="display">
+        <figcaption>
+          <span>Plan position indicator</span>
+          <span class="cap-note" id="ppi-note"></span>
+        </figcaption>
+        <canvas id="ppi"></canvas>
+      </figure>
+      <figure class="display">
+        <figcaption>
+          <span>Vertical section along <span id="profile-bearing">...</span></span>
+          <span class="cap-note">curvature applied at the modelled k-factor</span>
+        </figcaption>
+        <canvas id="profile"></canvas>
+      </figure>
+      <figure class="display display-narrow">
+        <figcaption>
+          <span>Wind rose</span>
+          <span class="cap-note" id="rose-caption">not yet swept</span>
+        </figcaption>
+        <canvas id="windrose"></canvas>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ========================================================= findings -->
+  <aside class="panel" id="panel">
+    <div class="panel-metrics" id="metrics"><!-- built by ui.js --></div>
+
+    <div class="panel-section">
+      <h2>Findings</h2>
+      <div class="findings" id="findings"></div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Turbines <span class="count" id="turbine-count"></span></h2>
+      <div class="table-wrap">
+        <table class="data" id="turbine-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Range</th><th>Brg</th><th>Sight</th>
+              <th>Aspect</th><th>Doppler</th><th>Return</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- ============================================================= dialogs -->
+<dialog id="dlg-import-help" class="dlg dlg-wide">
+  <form method="dialog">
+    <header><h2 id="import-help-title">Getting data in and out</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="import-help-body"></div>
+</dialog>
+
+<dialog id="dlg-guide" class="dlg">
+  <form method="dialog">
+    <header><h2>Step by step</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="guide-body"></div>
+</dialog>
+
+<dialog id="dlg-method" class="dlg">
+  <form method="dialog">
+    <header><h2>Method, sources and limits</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="method-body"></div>
+</dialog>
+
+<dialog id="dlg-map" class="dlg dlg-full">
+  <form method="dialog">
+    <header><h2>UK and Ireland: radars and wind farms</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="map-wrap">
+    <canvas id="map-canvas"></canvas>
+    <div class="map-overlay map-top-left">
+      <div class="toggles" id="map-layers"></div>
+      <div class="map-panel" id="map-import"></div>
+    </div>
+    <div class="map-overlay map-top-right">
+      <div class="map-panel" id="map-panel"></div>
+    </div>
+    <div class="map-overlay map-bottom-left">
+      <div class="legend" id="map-legend"></div>
+    </div>
+    <div class="map-overlay map-bottom-right">
+      <div class="readout" id="map-readout"></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlg-evidence" class="dlg dlg-wide">
+  <form method="dialog">
+    <header><h2>Evidence register</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="evidence-body"></div>
+</dialog>
+
+<dialog id="dlg-export" class="dlg">
+  <form method="dialog">
+    <header><h2>Export</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body">
+    <p class="dlg-lead">Everything runs locally in your browser. Nothing is uploaded.</p>
+    <p class="dlg-note" id="download-note" hidden>
+      This copy is running inside a sandboxed frame, which blocks downloads.
+      Use <strong>View</strong> to read or copy the content instead.
+    </p>
+    <ul class="export-list">
+      <li><span class="export-name">Assessment report <code>.pdf</code>
+        <em>opens a print view; choose &ldquo;Save as PDF&rdquo;</em></span>
+        <span class="export-actions">
+          <button class="btn" data-export="pdf">PDF</button>
+        </span></li>
+      <li><span class="export-name">Assessment report <code>.docx</code>
+        <em>editable in Word</em></span>
+        <span class="export-actions">
+          <button class="btn" data-export="word" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="word" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">All tables <code>.xlsx</code>
+        <em>summary, turbines, flight track and evidence, one sheet each</em></span>
+        <span class="export-actions">
+          <button class="btn" data-export="excel" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="excel" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Assessment report <code>.md</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="report" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="report" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Full results <code>.json</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="json" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="json" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Turbine table <code>.csv</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="turbines" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="turbines" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Flight track results <code>.csv</code></span>
+        <span class="export-actions">
+          <button class="btn" data-export="track" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="track" data-mode="view">View</button>
+        </span></li>
+      <li><span class="export-name">Backup: settings and imported data <code>.json</code>
+        <em>reload it later with Load a saved backup, below</em></span>
+        <span class="export-actions">
+          <button class="btn" data-export="scenario" data-mode="download">Download</button>
+          <button class="btn ghost" data-export="scenario" data-mode="view">View</button>
+        </span></li>
+      <li class="export-head"><span class="export-name">Images</span></li>
+      <li><span class="export-name">3D view <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="scene">Capture</button></span></li>
+      <li><span class="export-name">Plan position indicator <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="ppi">Capture</button></span></li>
+      <li><span class="export-name">Vertical section <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="profile">Capture</button></span></li>
+      <li><span class="export-name">Wind rose <code>.png</code></span>
+        <span class="export-actions"><button class="btn" data-image="windrose">Capture</button></span></li>
+      <li><span class="export-name">Heat maps <code>.png</code> <code>.svg</code></span>
+        <span class="export-actions"><button class="btn ghost" id="export-to-sweep">Open sweep</button></span></li>
+      <li><span class="export-name">Load a saved backup</span>
+        <span class="export-actions">
+          <label class="btn file-btn">Choose file<input type="file" id="import-scenario" accept="application/json" hidden /></label>
+        </span></li>
+    </ul>
+  </div>
+</dialog>
+
+<dialog id="dlg-text" class="dlg">
+  <form method="dialog">
+    <header>
+      <h2 id="text-title">Export</h2>
+      <span class="dlg-head-actions">
+        <button class="btn" id="btn-copy" type="button">Copy</button>
+        <button class="btn ghost" value="close">Close</button>
+      </span>
+    </header>
+  </form>
+  <div class="dlg-body">
+    <textarea id="text-body" class="export-text" readonly spellcheck="false"></textarea>
+  </div>
+</dialog>
+
+<dialog id="dlg-sweep" class="dlg dlg-wide">
+  <form method="dialog">
+    <header>
+      <h2>Parameter sweep</h2>
+      <span class="dlg-head-actions">
+        <button class="btn" id="sweep-png" type="button">PNG</button>
+        <button class="btn" id="sweep-svg" type="button">SVG</button>
+        <button class="btn" id="sweep-csv" type="button">CSV</button>
+        <button class="btn ghost" value="close">Close</button>
+      </span>
+    </header>
+  </form>
+  <div class="dlg-body">
+    <div class="sweep-controls">
+      <label class="field"><span class="field-label"><span>Horizontal axis</span></span>
+        <select id="sweep-x"></select></label>
+      <label class="field"><span class="field-label"><span>Vertical axis</span></span>
+        <select id="sweep-y"></select></label>
+      <label class="field"><span class="field-label"><span>Colour</span></span>
+        <select id="sweep-metric"></select></label>
+      <label class="field"><span class="field-label"><span>Grid</span><span class="val" id="sweep-steps-out"></span></span>
+        <input type="range" id="sweep-steps" min="6" max="26" step="2" value="14" /></label>
+      <button class="btn" id="sweep-run" type="button">Run sweep</button>
+    </div>
+    <div class="sweep-progress" id="sweep-progress" hidden><div class="sweep-bar" id="sweep-bar"></div></div>
+    <div class="sweep-canvas-wrap" id="sweep-wrap"><canvas id="sweep-canvas"></canvas>
+      <div class="empty-state" id="sweep-empty">
+        <p class="empty-lead">No sweep run yet</p>
+        <p>Every cell here is a complete re-analysis at one pair of values. Choose two parameters and a metric above, then run the sweep.</p>
+      </div>
+    </div>
+    <p class="sweep-readout" id="sweep-readout">Ready.</p>
+  </div>
+</dialog>
+
+<dialog id="dlg-delta" class="dlg">
+  <form method="dialog">
+    <header><h2>Mitigation delta</h2><button class="btn ghost" value="close">Close</button></header>
+  </form>
+  <div class="dlg-body" id="delta-body"></div>
+</dialog>
+
+<noscript><p class="noscript">This tool needs JavaScript and WebGL.</p></noscript>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

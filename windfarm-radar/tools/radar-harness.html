@@ -1,0 +1,133 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Radar geometry harness</title>
+<script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
+<style>
+body{margin:0;background:#0b0f13;color:#cdd8e1;font:13px system-ui}
+#out{padding:10px 14px;font-family:ui-monospace,monospace;white-space:pre;font-size:12px}
+</style></head><body>
+<div id="out">measuring...</div>
+<script type="module">
+import * as THREE from 'three';
+import { radarGeometry, antennaApertureM } from '../js/scene.js';
+import { RADAR_PRESETS, RADAR_MOUNTS } from '../js/model.js';
+
+const C = 299792458;
+const lines = [];
+const fails = [];
+const partBox = (g, name) => {
+  const bb = new THREE.Box3();
+  let found = false;
+  g.traverse((m) => {
+    if (!m.isMesh || m.userData.part !== name) return;
+    found = true; bb.expandByObject(m);
+  });
+  return found ? bb : null;
+};
+const build = (key, mountKey) => {
+  const p = RADAR_PRESETS[key];
+  const mount = { ...RADAR_MOUNTS[mountKey], type: mountKey };
+  const radar = { ...p, mount,
+    heightAgl: (mount.structureHeightM || 0) + (mount.mastHeightM || 0) };
+  const g = radarGeometry(radar, { girth: 1, vExag: 1 });
+  g.updateMatrixWorld(true);
+  return { radar, g };
+};
+
+for (const key of Object.keys(RADAR_PRESETS)) {
+  for (const mountKey of ['ground-mast', 'lattice-tower', 'building']) {
+    const { radar, g } = build(key, mountKey);
+    const ap = antennaApertureM(radar);
+    const refl = partBox(g, 'reflector');
+    const feed = partBox(g, 'feed');
+    const tag = `${key}/${mountKey}`;
+
+    // 1. THE ANTENNA SITS AT heightAgl. That number is the whole of what the
+    // propagation maths takes from the mounting, so the drawing must not
+    // disturb it, whatever the aperture or the mount.
+    const centre = (refl.max.y + refl.min.y) / 2;
+    if (Math.abs(centre - radar.heightAgl) > ap.heightM * 0.12) {
+      fails.push(`${tag}: antenna centre at ${centre.toFixed(2)} m against a `
+        + `stated ${radar.heightAgl} m AGL`);
+    }
+
+    // 2. The aperture comes from the RADAR, not the scene. The drawn width
+    // must equal 70*lambda/azBeamwidth. It used to be max(sceneExtent*0.012,
+    // 60), so the terminal preset drew at least 60 m wide against the 5.4 m
+    // its own beamwidth implies, and the same radar changed size when the
+    // view zoomed.
+    const lambda = C / radar.freqHz;
+    const want = 70 * lambda / radar.azBeamwidthDeg;
+    const drawn = refl.max.x - refl.min.x;
+    if (Math.abs(drawn - want) > want * 0.02) {
+      fails.push(`${tag}: reflector ${drawn.toFixed(2)} m wide against the `
+        + `${want.toFixed(2)} m its ${radar.azBeamwidthDeg} deg beam at `
+        + `${(lambda * 100).toFixed(1)} cm implies`);
+    }
+
+    // 3. The mast stops BELOW the antenna. It used to run the full antenna
+    // height, so it came out through the middle of the dish.
+    const mast = partBox(g, 'mast');
+    if (mast && mast.max.y > refl.min.y + ap.heightM * 0.05) {
+      fails.push(`${tag}: mast reaches ${mast.max.y.toFixed(2)} m, through a `
+        + `reflector that starts at ${refl.min.y.toFixed(2)} m`);
+    }
+
+    // 4. The reflector is a CURVED dish, not a flat plate. A flat plate was
+    // what it was: BoxGeometry, 5% of the width thick.
+    const depth = refl.max.z - refl.min.z;
+    const paraboloid = (drawn * drawn / 4 + ap.heightM * ap.heightM / 4)
+      / (4 * (drawn * 0.4));
+    if (depth < paraboloid * 0.6) {
+      fails.push(`${tag}: reflector is ${depth.toFixed(2)} m deep, against the `
+        + `${paraboloid.toFixed(2)} m of an f/D 0.4 dish, so it is flat`);
+    }
+
+    // 7. A cosecant-squared antenna is PHYSICALLY TALLER than inverting its
+    // half-power elevation beamwidth alone would give, because the shaped part
+    // of the aperture forms the high-angle fill and adds almost nothing to the
+    // main lobe. This checks the invariant, not the constant: asserting the
+    // 1.8 the code uses would only prove the code contains 1.8.
+    const plainH = 70 * lambda / radar.elBeamwidthDeg;
+    if (ap.cscShaped && ap.heightM <= plainH * 1.05) {
+      fails.push(`${tag}: shaped to ${radar.cscMaxDeg} deg but the aperture is `
+        + `${ap.heightM.toFixed(2)} m, no taller than the ${plainH.toFixed(2)} m its `
+        + `${radar.elBeamwidthDeg} deg beamwidth alone implies`);
+    }
+    if (!ap.cscShaped && Math.abs(ap.heightM - plainH) > plainH * 0.02) {
+      fails.push(`${tag}: a pencil beam should take its height straight from the `
+        + `beamwidth, ${plainH.toFixed(2)} m, but drew ${ap.heightM.toFixed(2)} m`);
+    }
+
+    // 5. The feed is AHEAD of the dish, near the focus.
+    if (feed.min.z < refl.max.z) {
+      fails.push(`${tag}: feed starts at z ${feed.min.z.toFixed(2)}, behind the `
+        + `reflector rim at ${refl.max.z.toFixed(2)}`);
+    }
+
+    if (mountKey === 'ground-mast') {
+      lines.push(`${key.padEnd(13)} ${(lambda * 100).toFixed(1).padStart(5)} cm  `
+        + `az ${String(radar.azBeamwidthDeg).padStart(4)} el ${String(radar.elBeamwidthDeg).padStart(4)}  `
+        + `aperture ${ap.widthM.toFixed(2).padStart(6)} x ${ap.heightM.toFixed(2).padStart(5)} m  `
+        + `${ap.cscShaped ? 'csc^2 shaped' : 'pencil beam '}  depth ${depth.toFixed(2)} m`);
+    }
+  }
+}
+
+// 6. The SAME radar must draw the SAME size whatever else is on screen. The
+// old code took the antenna width from the scene extent, so it did not.
+const a = build('psr-terminal', 'ground-mast');
+const b = build('psr-enroute', 'ground-mast');
+const ratioDrawn = (partBox(a.g, 'reflector').max.x - partBox(a.g, 'reflector').min.x)
+  / (partBox(b.g, 'reflector').max.x - partBox(b.g, 'reflector').min.x);
+const ratioWant = (antennaApertureM(a.radar).widthM) / (antennaApertureM(b.radar).widthM);
+if (Math.abs(ratioDrawn - ratioWant) > 0.02) {
+  fails.push(`two presets draw at a ${ratioDrawn.toFixed(3)} width ratio against `
+    + `the ${ratioWant.toFixed(3)} their apertures imply`);
+}
+
+lines.push('');
+lines.push(fails.length ? 'FAIL\n  ' + fails.join('\n  ')
+  : `PASS: ${Object.keys(RADAR_PRESETS).length} radars on 3 mounts, the shape checks hold`);
+document.getElementById('out').textContent = lines.join('\n');
+window.__measured = lines;
+window.__fails = fails;
+</script></body></html>

@@ -1,0 +1,55 @@
+Ordnance Survey: "A guide to coordinate systems in Great Britain"
+Page: "Ordnance Survey coordinate systems"
+docs.os.uk/more-than-maps/a-guide-to-coordinate-systems-in-great-britain/
+  ordnance-survey-coordinate-systems
+
+Supplied by the user as text. Every Ordnance Survey host is blocked by the
+network egress policy of the environment this tool was built in, so the page
+could not be fetched here and this is the text as given.
+
+This page describes the FRAMEWORK. It does not contain the projection
+constants, the Helmert transformation parameters, or the worked example, all
+of which js/osgb.js uses and which remain unverified against an OS document.
+
+--- text as supplied ---
+
+Let's now take a look at the coordinate systems used by OS for mapping Great
+Britain. There are three coordinate systems to consider:
+
+* OS Net, a modern 3-D TRF using the ETRS89 datum. This coordinate system is
+  the basis of modern Ordnance Survey 'control survey' (the surveyor's jargon
+  for adding local points to a TRF for mapping purposes), and is the basis of
+  definition of all Ordnance Survey coordinates. A subset of OS Net has been
+  ratified as the official densification of ETRF89 in GB.
+
+* The National Grid, a 'traditional' horizontal coordinate system, which
+  consists of: a traditional geodetic datum using the Airy 1830 ellipsoid; a
+  TRF called OSGB36 (Ordnance Survey Great Britain 1936) which was observed by
+  theodolite triangulation of trig pillars; and a Transverse Mercator map
+  projection allowing the use of easting and northing coordinates. This
+  coordinate system is important because it is used to describe the horizontal
+  positions of features on British maps. However, its historical origins and
+  observation methods are not of interest to most users and will be skipped
+  over in this booklet. National Grid coordinates are nowadays determined by
+  GNSS plus a transformation rather than theodolite triangulation.
+
+* Ordnance Datum Newlyn (ODN), a 'traditional' vertical coordinate system,
+  consisting of a tide-gauge datum with initial point at Newlyn (Cornwall), and
+  a TRF observed by spirit levelling between 200 fundamental bench marks (FBMs)
+  across Britain. The TRF is densified by more than half a million
+  lower-accuracy bench marks. Each bench mark has an orthometric height only
+  (not ellipsoid height or accurate horizontal position). This coordinate
+  system is important because it is used to describe vertical positions of
+  features on British maps (for example, spot heights and contours) in terms of
+  height above 'mean sea level'. Again, its historical origins and observation
+  methods are not of interest to most users. The word 'Datum' in the title
+  refers, strictly speaking, to the tide-gauge initial point only, not to the
+  national TRF of levelled bench marks.
+
+Because triangulation networks need hilltop stations whereas levelling networks
+need low-lying, easily accessible routes, there are hardly any common points
+between the height bench mark network and the OSGB36 horizontal network. OS Net
+provides a single 3-D TRF that unifies ODN and OSGB36 via transformation
+software. Using transformation techniques, precise positions can be determined
+by GNSS in ETRS89 using OS Net and then converted to National Grid and ODN
+coordinates. This is the approach used today by Ordnance Survey.

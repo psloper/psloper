@@ -1,0 +1,80 @@
+#!/bin/sh
+# Build the hand-over package: the two offline builds, the documents, the
+# samples, example outputs and the source, with a checksum list.
+#
+# The zip is NOT committed. It is 15 MB of already-compressed data, so every
+# rebuild would add 15 MB to the repository history permanently, the same trap
+# the pre-baked terrain has. Build it when you need it.
+#
+#   sh tools/build_package.sh [output-directory]
+set -e
+root=$(cd "$(dirname "$0")/.." && pwd)
+out=${1:-"$root/dist"}
+work=$(mktemp -d)
+pkg="$work/windfarm-radar"
+mkdir -p "$pkg/source"
+
+# The builds, made fresh so the package can never ship stale code.
+node "$root/tools/build_offline.mjs" --200m
+node "$root/tools/build_offline.mjs" --coarse
+cp "$root/dist/windfarm-radar-offline-200m.html" "$pkg/"
+cp "$root/dist/windfarm-radar-offline-500m.html" "$pkg/"
+
+# The packaged date was typed by hand and was a day out by the time anyone
+# read it. The build stamps it.
+sed "s/__BUILD_DATE__/$(date -u +%Y-%m-%d)/" "$root/docs/PACKAGE-README.md" > "$pkg/START-HERE.md"
+mkdir -p "$pkg/docs"
+for f in "$root"/docs/*; do
+  case $(basename "$f") in PACKAGE-README.md) continue ;; esac
+  cp -r "$f" "$pkg/docs/"
+done
+cp -r "$root/samples" "$pkg/samples"
+
+# Source, for review. The 100 m terrain blocks are 27 MB and stay in the
+# repository; the package carries the 500 m grid, and the manifest says so, so
+# the source tree runs rather than failing to load anything.
+for d in js css test tools samples calibration; do cp -r "$root/$d" "$pkg/source/"; done
+cp "$root/index.html" "$root/package.json" "$root/README.md" "$pkg/source/"
+# docs/ goes into the source tree as well as the package root. Two tests read
+# their evidence files from source/docs/evidence, and without them the source
+# a reviewer is handed fails its own suite for a packaging reason rather than a
+# real one. It is 392 KB, so the duplication is cheap.
+cp -r "$root/docs" "$pkg/source/"
+rm -rf "$pkg/source/tools/__pycache__"
+mkdir -p "$pkg/source/data/terrain"
+cp "$root/data/uk-wind-farms.json" "$root/data/uk-radar-sites.json" "$pkg/source/data/"
+cp "$root/data/terrain/uk-500m.bin" "$pkg/source/data/terrain/"
+node -e '
+const fs = require("fs");
+const m = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+m.blocks = []; m.coarseOnly = true;
+m.note = "This copy carries the 500 m national grid only. The 100 m blocks are "
+  + "in the git repository; they are 27 MB and were left out of the hand-over package.";
+fs.writeFileSync(process.argv[2], JSON.stringify(m, null, 1));
+' "$root/data/terrain/manifest.json" "$pkg/source/data/terrain/manifest.json"
+
+# Example outputs, regenerated from THIS build rather than copied from whatever
+# a demo run left behind. The hand-made set went three days stale and shipped a
+# picture of the tool before the area map, before figures were embedded in the
+# Office exports and before the terrain had any relief shading. Set
+# SKIP_EXAMPLES=1 to build the package without a browser.
+if [ -z "${SKIP_EXAMPLES:-}" ]; then
+  python3 -m http.server 8791 --bind 127.0.0.1 --directory "$root" >/dev/null 2>&1 &
+  server=$!
+  sleep 2
+  node "$root/tools/make_examples.mjs" "http://127.0.0.1:8791/index.html" || {
+    kill "$server" 2>/dev/null || true
+    echo "example outputs failed to generate" >&2
+    exit 1
+  }
+  kill "$server" 2>/dev/null || true
+fi
+if [ -d "$root/dist/example-outputs" ]; then cp -r "$root/dist/example-outputs" "$pkg/"; fi
+
+cd "$pkg"
+find . -type f ! -name SHA256SUMS.txt | sed 's|^\./||' | sort | xargs sha256sum > SHA256SUMS.txt
+mkdir -p "$out"
+rm -f "$out/windfarm-radar-package.zip"
+cd "$work" && zip -rq "$out/windfarm-radar-package.zip" windfarm-radar
+rm -rf "$work"
+ls -l "$out/windfarm-radar-package.zip"

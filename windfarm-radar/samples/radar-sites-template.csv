@@ -1,0 +1,5 @@
+name,latitude,longitude,role,antenna height,azimuth beamwidth,elevation beamwidth,beam tilt,frequency,gain,peak power,ground level,operator,notes
+Example En-route Site,53.45008,-0.30825,en-route,20,1.4,4.8,4,1.3,34,25,177,Example ANSP,Position from the site survey
+Example Airport,52.83100,-1.32806,aerodrome,12,1.4,4.8,4,2.8,34,25,94,Example Airport Ltd,Watchman-class primary
+Example Air Defence Site,54.90000,-2.10000,air defence,25,,,,,,,230,Example MOD,Antenna height only; the rest still to be obtained
+Example Weather Radar,51.68000,-3.40000,weather,15,,,,,,,310,Example Met Service,Position confirmed; parameters not yet requested
