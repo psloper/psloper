@@ -875,3 +875,20 @@ table.data tbody tr.is-hot td { color: var(--ink); }
 @media (max-width: 1699px) {
   .verdict-text { display: none; }
 }
+
+/* The band between the one-row layout and the stacked one used to crush the
+   title. With the verdict sentence hidden the chip needs about 90 px, but its
+   grid track kept a 200 px minimum while the brand's track had a minimum of
+   zero, and the eight action buttons could not wrap, so they took the rest:
+   at 1366 px the title ran to 6 lines, and at 1200 px the brand was 0 px wide
+   and the h1 rendered 34 lines, one character each.
+
+   Give the brand a floor wide enough for its longest line to break between
+   words, and let the buttons wrap onto a second row instead of squeezing it.
+   Measured at 1920, 1700, 1500, 1366, 1200, 1180, 900, 768 and 390 px; the
+   line count is asserted by tools/verify-a11y.mjs so it cannot come back. */
+@media (min-width: 1181px) and (max-width: 1699px) {
+  .topbar { grid-template-columns: minmax(240px, 1fr) auto minmax(0, auto); }
+  .topbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
+}

@@ -8,9 +8,10 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
-  defaultScenario, RADAR_MOUNTS, applyRadarMount, antennaHeightAgl,
+  defaultScenario, RADAR_MOUNTS, applyRadarMount, antennaHeightAgl, RADAR_PRESETS,
 } from '../js/model.js';
 import { analyse } from '../js/analysis.js';
 
@@ -25,6 +26,7 @@ import {
   azimuthGainDb, elevationGainDb, tipSpeed, dopplerHz, blindSpeed,
   foldVelocity, mtiResponseDb, rotorSolidity, rotorBlockageLossDb,
   pulsesPerScan, rangeResolution, unambiguousRange, farFieldDistance,
+  UNIFORM_APERTURE_SIDELOBE_DB,
 } from '../js/rf.js';
 
 const close = (a, b, tol, msg) =>
@@ -148,6 +150,66 @@ test('Gaussian beam is -3 dB at half the 3 dB beamwidth', () => {
 
 test('azimuth pattern floors at the sidelobe level', () => {
   close(azimuthGainDb(45, 1.4, -30), -30, 1e-9, 'far out');
+});
+
+// The flat sidelobe region is an upper-bound envelope, not a picture of a real
+// lobe structure. This is the check that earns that claim: against a uniform
+// rectangular aperture, whose far-field pattern sin(u)/u can be written down
+// exactly, the model must sit AT OR ABOVE every sidelobe peak when its floor
+// is set to that aperture's own first sidelobe level.
+//
+// The aperture is sized so its -3 dB full beamwidth equals the beamwidth the
+// model is given, which is the only way the two are comparable at all.
+test('the flat sidelobe floor upper-bounds a real aperture pattern', () => {
+  const bw = 1.4;
+  const DEG = Math.PI / 180;
+  const U_HALF_POWER = 1.3915576;              // sin(u)/u = 1/sqrt(2)
+  const k = U_HALF_POWER / Math.sin((bw / 2) * DEG);
+  const sincDb = (u) => 20 * Math.log10(Math.abs(Math.sin(u) / u));
+
+  // Sidelobe peaks of sin(u)/u: the solutions of tan(u) = u above pi.
+  const peaks = [4.493409, 7.725252, 10.904122, 14.066194, 17.220755, 20.371303];
+  const firstSidelobeDb = sincDb(peaks[0]);
+  close(firstSidelobeDb, UNIFORM_APERTURE_SIDELOBE_DB, 1e-3,
+    'the exported uniform-aperture constant is the one the maths gives');
+
+  const shortfalls = peaks.map((u) => {
+    const thetaDeg = Math.asin(u / k) / DEG;
+    return azimuthGainDb(thetaDeg, bw, firstSidelobeDb) - sincDb(u);
+  });
+  assert.ok(shortfalls.every((d) => d >= -1e-6),
+    `model dips below an aperture sidelobe peak: ${shortfalls.map((d) => d.toFixed(3))}`);
+  close(shortfalls[0], 0, 1e-6, 'it meets the first sidelobe exactly');
+  assert.ok(shortfalls[1] > 4 && shortfalls[5] > 12,
+    `it should sit further above each later peak, got ${shortfalls.map((d) => d.toFixed(1))}`);
+
+  // Inside the main lobe the Gaussian is not identical to sin(u)/u. State how
+  // far it can fall below rather than implying it never does.
+  let worst = Infinity;
+  for (let th = 0; th <= 60; th += 0.002) {
+    const u = k * Math.sin(th * DEG);
+    const ref = Math.abs(u) < 1e-12 ? 0 : sincDb(u);
+    worst = Math.min(worst, azimuthGainDb(th, bw, firstSidelobeDb) - ref);
+  }
+  assert.ok(worst > -0.06, `main-lobe shortfall grew to ${worst.toFixed(3)} dB`);
+});
+
+// The bug this replaced: the azimuth floor was picked by
+// `radar.rangeSidelobeDb > -60 ? -35 : -45`, over a slider whose own range is
+// -60 to -20. The comparison was false only at exactly -60, so the -45 branch
+// was unreachable in practice and the answer was always -35, taken from a
+// pulse-compression property that has nothing to do with the antenna.
+test('the azimuth sidelobe floor is an input, not a function of the waveform', () => {
+  const src = readFileSync(new URL('../js/analysis.js', import.meta.url), 'utf8');
+  assert.ok(!/azimuthGainDb\([^)]*rangeSidelobeDb/s.test(src),
+    'the azimuth pattern is reading the range sidelobe level again');
+  assert.ok(src.includes('radar.azSidelobeFloorDb'),
+    'the azimuth pattern should read its own named parameter');
+  for (const preset of Object.values(RADAR_PRESETS)) {
+    assert.equal(typeof preset.azSidelobeFloorDb, 'number',
+      'every preset must state its own azimuth sidelobe level');
+    assert.ok(preset.azSidelobeFloorDb < 0 && preset.azSidelobeFloorDb >= -60);
+  }
 });
 
 test('cosecant-squared region holds constant power for constant altitude', () => {

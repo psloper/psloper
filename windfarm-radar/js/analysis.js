@@ -23,7 +23,7 @@ import {
 import {
   wavelength, receivedPowerW, noisePowerW, linToDb, dbToLin,
   albersheimSnrDb, albersheimInRange, knifeEdgeLossDb, fresnelParameter,
-  fresnelRadius, azimuthGainDb, elevationGainDb, tipSpeed, dopplerHz,
+  fresnelRadius, azimuthGainDb, elevationGainDb, DEFAULT_AZ_SIDELOBE_DB, tipSpeed, dopplerHz,
   blindSpeed, foldVelocity, mtiResponseDb, rotorBlockageLossDb,
   matchedBandwidth, rangeResolution, unambiguousRange, pulsesPerScan,
   farFieldDistance, apertureFromBeamwidth,
@@ -85,7 +85,13 @@ function atmosphericLossDb(radar, rangeM) {
 
 function twoWayGain(radar, elDeg, azOffsetDeg) {
   const el = elevationGainDb(elDeg, radar);
-  const az = azimuthGainDb(azOffsetDeg, radar.azBeamwidthDeg, radar.rangeSidelobeDb > -60 ? -35 : -45);
+  // Peak azimuth sidelobe level: an antenna property. It used to be derived
+  // here from rangeSidelobeDb, which is a pulse-compression waveform property
+  // and unrelated to aperture illumination, through a comparison that was
+  // never false over the slider's own range (-60 to -20) and so always
+  // returned -35. It is now an explicit radar input.
+  const az = azimuthGainDb(azOffsetDeg, radar.azBeamwidthDeg,
+    radar.azSidelobeFloorDb ?? DEFAULT_AZ_SIDELOBE_DB);
   return radar.g0Lin * dbToLin(el + az);
 }
 

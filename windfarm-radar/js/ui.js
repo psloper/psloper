@@ -66,6 +66,12 @@ export const TABS = {
       { type: 'range', path: 'radar.elBeamwidthDeg', label: 'Elevation beamwidth', min: 0.5, max: 30, step: 0.1, fmt: (v) => `${v}°` },
       { type: 'range', path: 'radar.elPeakDeg', label: 'Beam peak elevation', min: 0, max: 15, step: 0.25, fmt: (v) => `${v}°` },
       { type: 'range', path: 'radar.cscMaxDeg', label: 'Cosecant-squared to', min: 1, max: 50, step: 1, fmt: (v) => `${v}°` },
+      // Antenna properties, not waveform properties. Kept next to the
+      // beamwidths they belong with, and deliberately not next to the
+      // 'Peak range sidelobe' control, which is a pulse-compression figure
+      // these two were once wrongly derived from.
+      { type: 'range', path: 'radar.azSidelobeFloorDb', label: 'Peak azimuth sidelobe', min: -50, max: -13, step: 1, fmt: (v) => `${v} dB` },
+      { type: 'range', path: 'radar.elSidelobeFloorDb', label: 'Peak elevation sidelobe', min: -60, max: -13, step: 1, fmt: (v) => `${v} dB` },
       { type: 'hint', text: 'Elevation shape decides how strongly low turbines are illuminated compared with '
         + 'aircraft above them. A narrow, tilted beam is the single biggest lever a radar has here.' },
     ] },

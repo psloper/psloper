@@ -36,6 +36,26 @@ clutter notch, so the rejection figure never applies; a stopped rotor sits
 inside it. Ask for MTI figures only when parked machines are part of the
 assessment.
 
+The peak **azimuth sidelobe level** behaves the same way, but the condition is
+the geometry rather than the rotor. Measured against farm range, with a 10 dB
+error in the level:
+
+| farm range | worst turbine clutter cost | margin shift | tracks lost |
+|---|---|---|---|
+| 2 km | 38.1 dB | 20.0 dB | 0 becomes 2 |
+| 3 km | 28.2 dB | 20.0 dB | 0 becomes 1 |
+| 4 km | 19.3 dB | 8.7 dB | none |
+| 5 km | 10.8 dB | 3.0 dB | none |
+| 9 km | 24.4 dB | 0.2 dB | none |
+| 20 km | 13.9 dB | 0.0 dB | none |
+
+A turbine only sits in the sidelobe region once the array subtends more than
+about 1.7 beamwidths, so the closer the farm the more this one number decides.
+Ask for it whenever the array is inside about 5 km. It is an antenna property.
+It is **not** the pulse-compression range sidelobe level, which is what
+operators tend to send when asked for "the sidelobe level", and which the tool
+used to use for both until this was corrected.
+
 ## What makes no measurable difference
 
 Instrumented range, dynamic range, pulse width, range sidelobe level,

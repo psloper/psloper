@@ -175,6 +175,32 @@ for (const w of [390, 768, 1366]) {
   await p2.close();
 }
 
+// --- the page title is not crushed into a column of letters ------------------
+//
+// The overflow check above passes this happily, because a crushed element does
+// not overflow: it collapses. Between 1181 and 1500 px the topbar's action
+// buttons could not wrap and the brand's grid track had no minimum, so the
+// title was squeezed until `overflow-wrap: break-word` split it mid-word. At
+// 1366 px it ran to 6 lines ('Interfere / nce'); at 1200 px the brand measured
+// 0 px and the h1 rendered 34 lines, one character each. Nothing failed.
+//
+// A heading broken mid-word is the symptom, so measure the symptom: how many
+// lines the title takes. Two is a wrap, six is a fault.
+for (const w of [1920, 1700, 1500, 1366, 1200, 1180, 900, 768, 390]) {
+  const p3 = await browser.newPage({ viewport: { width: w, height: 900 } });
+  await p3.goto(URL_, { waitUntil: 'networkidle' });
+  const h = await p3.evaluate(() => {
+    const h1 = document.querySelector('.topbar h1');
+    const cs = getComputedStyle(h1);
+    const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+    return { lines: Math.round(h1.getBoundingClientRect().height / lh),
+      width: Math.round(h1.getBoundingClientRect().width) };
+  });
+  note(h.lines <= 3 && h.width > 40, `page title stays readable at ${w}px`,
+    `${h.lines} line(s), ${h.width}px wide`);
+  await p3.close();
+}
+
 await browser.close();
 console.log(failures.length ? `\n${failures.length} FAILING: ${failures.join('; ')}` : '\nall interface checks pass');
 process.exit(failures.length ? 1 : 0);

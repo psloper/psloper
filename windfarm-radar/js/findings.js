@@ -40,6 +40,13 @@ const nm = (m) => `${(m / M_PER_NM).toFixed(1)} NM`;
 const pct = (f) => `${(f * 100).toFixed(0)}%`;
 const db = (x) => `${x >= 0 ? '+' : ''}${x.toFixed(1)} dB`;
 
+// The offset at which the Gaussian main lobe has fallen to the sidelobe
+// level, so everything beyond it is the flat floor. -12(th/bw)^2 = floor.
+function sidelobeOnsetDeg(radar) {
+  const floor = radar.azSidelobeFloorDb ?? -30;
+  return radar.azBeamwidthDeg * Math.sqrt(-floor / 12);
+}
+
 export function deriveFindings(scenario, radar, turbineResults, points, summary, blankZone, naizZone, infill, surface) {
   const f = [];
   const add = (x) => f.push(x);
@@ -224,12 +231,23 @@ export function deriveFindings(scenario, radar, turbineResults, points, summary,
         + (top ? `, dominated by ${top.id} at ${Math.abs(top.dR).toFixed(0)} m range offset and `
           + `${Math.abs(top.dAz).toFixed(2)}° in azimuth` : '')
         + `. This is the desensitisation region: reduced probability of detection over and around the farm, `
-        + 'not only directly behind it.',
+        + 'not only directly behind it.'
+        // Say when the answer is resting on the assumed antenna figure rather
+        // than on the geometry. Beyond about 1.7 beamwidths the Gaussian main
+        // lobe has dropped through the floor, so the clutter from that turbine
+        // is set by a number nobody published.
+        + (top && Math.abs(top.dAz) > sidelobeOnsetDeg(radar)
+          ? ` The dominant turbine sits ${Math.abs(top.dAz).toFixed(2)}° off boresight, past the `
+            + `${sidelobeOnsetDeg(radar).toFixed(2)}° where the main lobe has fallen to the sidelobe `
+            + `level, so this figure rests on the assumed ${radar.azSidelobeFloorDb} dB peak azimuth `
+            + 'sidelobe rather than on the beam shape. Ask the operator for the real figure.'
+          : ''),
       basis: 'computed',
       metrics: {
         'Worst clutter cost': db(-w.turbineClutterCostDb),
         'Detection margin there': db(w.effectiveMarginDb),
         'Worst signal-to-clutter': `${w.scrDb.toFixed(1)} dB`,
+        'Peak azimuth sidelobe (assumed)': `${radar.azSidelobeFloorDb} dB`,
         'Range sidelobe floor': `${radar.rangeSidelobeDb} dB`,
       },
     });

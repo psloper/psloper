@@ -31,6 +31,7 @@ export const RADAR_PRESETS = {
     pulseWidthS: 60e-6, compressedBandwidthHz: 1.2e6, prfHz: 1100, rpm: 15,
     noiseFigureDb: 3.5, systemLossDb: 6, mtiRejectionDb: 45, mtiNotchMs: 4,
     dopplerSpreadGainDb: 0, rangeSidelobeDb: -35, dynamicRangeDb: 70,
+    azSidelobeFloorDb: -30, elSidelobeFloorDb: -40,
     heightAgl: 12, instrumentedRangeM: 110000,
   },
   'psr-enroute': {
@@ -41,6 +42,7 @@ export const RADAR_PRESETS = {
     pulseWidthS: 100e-6, compressedBandwidthHz: 1.0e6, prfHz: 750, rpm: 6,
     noiseFigureDb: 3.0, systemLossDb: 6, mtiRejectionDb: 48, mtiNotchMs: 5,
     dopplerSpreadGainDb: 0, rangeSidelobeDb: -38, dynamicRangeDb: 75,
+    azSidelobeFloorDb: -30, elSidelobeFloorDb: -40,
     heightAgl: 20, instrumentedRangeM: 260000,
   },
   'ad-long': {
@@ -51,6 +53,7 @@ export const RADAR_PRESETS = {
     pulseWidthS: 150e-6, compressedBandwidthHz: 1.5e6, prfHz: 500, rpm: 6,
     noiseFigureDb: 2.5, systemLossDb: 5, mtiRejectionDb: 52, mtiNotchMs: 6,
     dopplerSpreadGainDb: 6, rangeSidelobeDb: -42, dynamicRangeDb: 80,
+    azSidelobeFloorDb: -30, elSidelobeFloorDb: -40,
     heightAgl: 25, instrumentedRangeM: 400000,
   },
   'weather-c': {
@@ -61,6 +64,7 @@ export const RADAR_PRESETS = {
     pulseWidthS: 2e-6, compressedBandwidthHz: 0, prfHz: 900, rpm: 3,
     noiseFigureDb: 3.0, systemLossDb: 4, mtiRejectionDb: 50, mtiNotchMs: 1.5,
     dopplerSpreadGainDb: 0, rangeSidelobeDb: -45, dynamicRangeDb: 90,
+    azSidelobeFloorDb: -30, elSidelobeFloorDb: -40,
     heightAgl: 30, instrumentedRangeM: 250000,
   },
   'marine-x': {
@@ -71,6 +75,7 @@ export const RADAR_PRESETS = {
     pulseWidthS: 1e-6, compressedBandwidthHz: 0, prfHz: 1800, rpm: 24,
     noiseFigureDb: 4.5, systemLossDb: 5, mtiRejectionDb: 35, mtiNotchMs: 2,
     dopplerSpreadGainDb: 0, rangeSidelobeDb: -30, dynamicRangeDb: 60,
+    azSidelobeFloorDb: -30, elSidelobeFloorDb: -40,
     heightAgl: 40, instrumentedRangeM: 45000,
   },
   'star-ng': {
@@ -83,6 +88,7 @@ export const RADAR_PRESETS = {
     pulseWidthS: 60e-6, compressedBandwidthHz: 1.2e6, prfHz: 1100, rpm: 12.5,
     noiseFigureDb: 3.5, systemLossDb: 6, mtiRejectionDb: 45, mtiNotchMs: 4,
     dopplerSpreadGainDb: 0, rangeSidelobeDb: -35, dynamicRangeDb: 70,
+    azSidelobeFloorDb: -30, elSidelobeFloorDb: -40,
     heightAgl: 12, instrumentedRangeM: 222240,
   },
 };
@@ -101,6 +107,17 @@ export const RADAR_PRESETS = {
 // datasheet supplies none of those six. It supplies scan rate (1.1 dB) and
 // instrumented range (0.0 dB), which are the bottom of that ranking, and the
 // band, which pins frequency only to somewhere between 2 and 4 GHz.
+//
+// The peak azimuth and elevation sidelobe levels in every preset below are
+// assumptions, and no preset has any better claim to them than any other. The
+// azimuth one is stated at -30 dB and the elevation one at -40 dB because
+// nothing in this repository publishes a measured figure for any of these
+// antennas. The azimuth level was, until this was corrected, not a parameter
+// at all: it was derived inside the analysis from rangeSidelobeDb, a
+// pulse-compression waveform property, through a test that was never false
+// over its own slider range and so always returned -35 dB. It matters: at a
+// farm 2 to 3 km out a 10 dB error in it moves the detection margin by 20 dB.
+// See docs/RADAR-PARAMETERS-TO-ASK-FOR.md for the measured range dependence.
 
 export const DATASHEET_SOURCES = {
   'thales-star-ng-2023': {
@@ -155,7 +172,8 @@ export const RADAR_PRESET_PROVENANCE = {
       'freqHz', 'peakPowerW', 'gainDbi', 'azBeamwidthDeg', 'elBeamwidthDeg',
       'elPeakDeg', 'cscMaxDeg', 'pulseWidthS', 'compressedBandwidthHz', 'prfHz',
       'noiseFigureDb', 'systemLossDb', 'mtiRejectionDb', 'mtiNotchMs',
-      'dopplerSpreadGainDb', 'rangeSidelobeDb', 'dynamicRangeDb', 'heightAgl',
+      'dopplerSpreadGainDb', 'rangeSidelobeDb', 'dynamicRangeDb',
+      'azSidelobeFloorDb', 'elSidelobeFloorDb', 'heightAgl',
     ],
     // the six parameters the sensitivity run showed matter most, and whether
     // the datasheet answers them. It answers none of them.

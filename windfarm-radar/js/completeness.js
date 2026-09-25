@@ -12,6 +12,13 @@
 // docs/RADAR-PARAMETERS-TO-ASK-FOR.md. Sorting by it means the prompt asks for
 // antenna height before it asks for pulse repetition frequency, which is the
 // difference between a useful request and a shopping list.
+//
+// Two entries are marked 'conditional'. Their figure is not the worst across
+// the standard geometries, which would read 0.0 dB and 3.0 dB and hide them,
+// but the worst in the case where they apply at all: a parked rotor for MTI
+// rejection depth, a farm 2 to 3 km out for the azimuth sidelobe level. The
+// 'why' on each says which case that is, so a number quoted out of its
+// condition cannot be mistaken for an unconditional one.
 
 /** Ranked by measured effect on the worst detection margin. */
 export const RADAR_FIELDS = [
@@ -52,6 +59,17 @@ export const RADAR_FIELDS = [
   { key: 'noiseFigureDb', label: 'Noise figure', unit: 'dB', tier: 'useful', movesDb: 2.0 },
   { key: 'rpm', label: 'Scan rate', unit: 'rpm', tier: 'useful', movesDb: 1.1 },
   { key: 'prfHz', label: 'Pulse repetition frequency', unit: 'Hz', tier: 'useful', movesDb: 0.7 },
+  {
+    key: 'azSidelobeFloorDb', label: 'Peak azimuth sidelobe level', unit: 'dB',
+    tier: 'conditional', movesDb: 20.0, error: 'out by 10 dB',
+    why: '3.0 dB for a farm at 5 km and 0.0 dB beyond 9 km, but 20.0 dB at 2 to '
+      + '3 km, where it can decide whether a track survives at all. A turbine only '
+      + 'sits in the sidelobe region once the array subtends more than about 1.7 '
+      + 'beamwidths, so the closer the farm the more this one number decides. Ask '
+      + 'for it when the array is inside about 5 km. It is an antenna property and '
+      + 'not the pulse-compression range sidelobe level, which operators sometimes '
+      + 'send instead.',
+  },
   {
     key: 'mtiRejectionDb', label: 'MTI rejection depth', unit: 'dB',
     tier: 'conditional', movesDb: 20.0,

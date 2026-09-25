@@ -171,6 +171,14 @@ to assert the performance of any aircraft.</p>
   <li><strong>Range sidelobes.</strong> Contamination of neighbouring range cells uses a
       parametric skirt from a peak sidelobe level you set, not a real compression
       waveform.</li>
+  <li><strong>Antenna sidelobes.</strong> Azimuth is a Gaussian main lobe held flat at
+      the peak azimuth sidelobe level you set, so the sidelobe region is an envelope
+      rather than a lobe structure. Checked against a uniform rectangular aperture, it
+      meets the first sidelobe exactly and sits 4.6 to 12.9&nbsp;dB above the next five,
+      so it over-states rather than under-states off-boresight clutter. The level itself
+      is an assumption unless your operator supplied one: at a farm 2 to 3&nbsp;km out a
+      10&nbsp;dB error in it moves the detection margin by 20&nbsp;dB and can change
+      whether a track survives.</li>
   <li><strong>Integration and clutter.</strong> Clutter is compared against the
       detection threshold as if it integrated like noise. Real clutter is correlated,
       so this is optimistic where clutter dominates.</li>

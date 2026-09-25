@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { readCsv, parseRadarSiteRows, parseFarmSiteRows,
+import { readCsv, parseRadarSiteRows, parseFarmSiteRows, negativeDbFrom,
   RADAR_SITE_FIELDS, FARM_SITE_FIELDS } from '../js/importers.js';
 
 const rowsOf = (csv) => readCsv(csv)[0].rows;
@@ -150,4 +150,40 @@ test('the in-app help carries the column tables and no stray markdown', () => {
   for (const bad of ['**', '\\\\*']) {
     assert.ok(!block.includes(bad), `stray markdown in the help panel: ${bad}`);
   }
+});
+
+
+// ------------------------------------------------- antenna sidelobe levels
+
+test('a sidelobe level is read below the main beam however the column signs it', () => {
+  // The same antenna, written four ways a real schedule writes it.
+  for (const written of [-30, 30, '30', '-30']) {
+    assert.equal(negativeDbFrom(written), -30, `"${written}" should read as -30 dB`);
+  }
+  // An empty cell that parses as a number is not a 0 dB sidelobe.
+  for (const empty of [0, '0', '', null, undefined, 'n/a']) {
+    assert.equal(negativeDbFrom(empty), null, `"${empty}" should not become a level`);
+  }
+});
+
+test('a radar schedule can carry sidelobe levels, and range sidelobes cannot land in them', () => {
+  const csv = [
+    'name,latitude,longitude,antenna height m,azimuth sidelobe dB,elevation sidelobe,range sidelobe dB',
+    'Alpha,55.0,-3.0,20,28,35,-42',
+  ].join('\n');
+  const r = parseRadarSiteRows(rowsOf(csv));
+  assert.equal(r.sites.length, 1);
+  assert.equal(r.sites[0].azSidelobeFloorDb, -28, 'azimuth sidelobe not read');
+  assert.equal(r.sites[0].elSidelobeFloorDb, -35, 'elevation sidelobe not read');
+  // The pulse-compression figure is a different quantity. It must not be
+  // claimed by either antenna field, which is the confusion this whole
+  // parameter exists to end.
+  assert.notEqual(r.sites[0].azSidelobeFloorDb, -42);
+  assert.notEqual(r.sites[0].elSidelobeFloorDb, -42);
+});
+
+test('a radar schedule without sidelobe columns leaves them null, not defaulted', () => {
+  const r = parseRadarSiteRows(rowsOf('name,latitude,longitude\nBravo,55.0,-3.0'));
+  assert.equal(r.sites[0].azSidelobeFloorDb, null);
+  assert.equal(r.sites[0].elSidelobeFloorDb, null);
 });

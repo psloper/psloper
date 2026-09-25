@@ -262,6 +262,14 @@ export const RADAR_SITE_FIELDS = {
   beamTilt:    ['beam tilt', 'tilt', 'elevation of peak gain', 'boresight elevation', 'el peak'],
   gain:        ['gain', 'antenna gain', 'gain dbi', 'peak gain'],
   peakPower:   ['peak power', 'transmit power', 'tx power', 'power', 'power kw', 'peak power kw'],
+  // Antenna sidelobe levels. No alias here contains the word 'range', so a
+  // column headed 'range sidelobe' (a pulse-compression figure, a different
+  // quantity) cannot land in either of these: the prefix rule only fires on
+  // 'alias '+space at the START of the heading.
+  azSidelobe:  ['azimuth sidelobe', 'az sidelobe', 'azimuth side lobe', 'peak azimuth sidelobe',
+                'horizontal sidelobe', 'antenna sidelobe', 'peak sidelobe level',
+                'sidelobe level', 'first sidelobe'],
+  elSidelobe:  ['elevation sidelobe', 'el sidelobe', 'elevation side lobe', 'vertical sidelobe'],
 };
 
 // Wind farm SITES, meaning one row per project. This is a different thing from
@@ -503,6 +511,21 @@ export function wattsFrom(raw) {
   return n < 1000 ? n * 1000 : n;
 }
 
+/**
+ * A level that is always below the main beam, however the column writes it.
+ *
+ * Datasheets and schedules write the same sidelobe level as -30, 30 or
+ * "30 dB down". Read literally, the unsigned forms turn the sidelobe region
+ * into a second main beam 30 dB ABOVE boresight, which would make every
+ * turbine in the county a clutter source. Zero is rejected too: a sidelobe
+ * level of 0 dB is not a value anyone means, it is an empty cell that parsed.
+ */
+export function negativeDbFrom(raw) {
+  const n = numberFrom(raw);
+  if (n == null || n === 0 || !Number.isFinite(n)) return null;
+  return -Math.abs(n);
+}
+
 export function parseRadarSiteRows(rows, opts = {}) {
   let defaultedRole = 0;
   let defaultedHeight = 0;
@@ -534,6 +557,11 @@ export function parseRadarSiteRows(rows, opts = {}) {
       elPeakDeg: numberFrom(get('beamTilt')),
       gainDbi: numberFrom(get('gain')),
       peakPowerW: wattsFrom(get('peakPower')),
+      // Sidelobe levels are negative dB. A schedule that writes them
+      // unsigned ('30 dB down') would otherwise be read as +30 and turn the
+      // sidelobes into a second main beam, so the sign is forced negative.
+      azSidelobeFloorDb: negativeDbFrom(get('azSidelobe')),
+      elSidelobeFloorDb: negativeDbFrom(get('elSidelobe')),
       imported: true,
     };
   });

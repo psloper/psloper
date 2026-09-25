@@ -99,7 +99,37 @@ export function albersheimInRange(pd, pfa) {
 // The Gaussian form G_dB = -12*(theta/theta_3dB)^2 is the standard Gaussian
 // beam approximation: it gives exactly -3 dB at theta = theta_3dB/2.
 
-export function azimuthGainDb(offsetDeg, beamwidthDeg, sidelobeFloorDb = -30) {
+// The sidelobe region is a flat envelope at the peak (first) sidelobe level,
+// not a lobe structure. That is deliberate, and it is an upper bound rather
+// than a guess:
+//
+// For an aperture whose sidelobe peaks fall away monotonically, holding the
+// pattern flat at the FIRST sidelobe level is at or above every later peak.
+// Checked against a uniform rectangular aperture, whose pattern we can write
+// down exactly: with the floor set to that aperture's own first sidelobe
+// level, this model equals the first peak and sits 4.6 to 12.9 dB above the
+// next five. The only place it falls below is 0.05 dB inside the main lobe,
+// near the half-power point. test/physics.test.mjs asserts both.
+//
+// The direction matters. For clutter this over-states how much a turbine off
+// boresight leaks into the beam, which flags more sites rather than fewer.
+//
+// UNIFORM_APERTURE_SIDELOBE_DB is derivable, not recalled: the first sidelobe
+// of sin(u)/u sits at the first solution of tan(u) = u above pi, u = 4.493409,
+// giving 20*log10(|sin u / u|) = -13.2615 dB. Any taper puts the real level
+// below it, so it is the shallowest (most clutter) case an aperture can have
+// and the conservative end of the slider.
+export const UNIFORM_APERTURE_SIDELOBE_DB = -13.2615;
+
+// Peak azimuth sidelobe level. An aperture-illumination property of the
+// antenna, and NOT the same thing as a pulse-compression range sidelobe
+// level, which is a waveform property. -30 dB is an assumption, labelled as
+// one; no datasheet in this repository publishes a figure. It is the single
+// most sensitive radar input in the tool, so it is a named parameter the user
+// can set rather than something buried in a default.
+export const DEFAULT_AZ_SIDELOBE_DB = -30;
+
+export function azimuthGainDb(offsetDeg, beamwidthDeg, sidelobeFloorDb = DEFAULT_AZ_SIDELOBE_DB) {
   const bw = Math.max(beamwidthDeg, 0.05);
   const g = -12 * Math.pow(offsetDeg / bw, 2);
   return Math.max(g, sidelobeFloorDb);

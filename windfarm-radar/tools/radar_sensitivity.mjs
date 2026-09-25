@@ -58,6 +58,9 @@ const perturbations = [
   ['compressedBandwidthHz', 'out by 2x (1.2 -> 0.6 MHz)', { compressedBandwidthHz: 0.6e6 }],
   ['rpm', 'out by 5 rpm (15 -> 10)', { rpm: 10 }],
   ['rangeSidelobeDb', 'out by 10 dB (-35 -> -25)', { rangeSidelobeDb: -25 }],
+  ['azSidelobeFloorDb', 'out by 10 dB (-30 -> -20)', { azSidelobeFloorDb: -20 }],
+  ['azSidelobeFloorDb', 'assumed -30, actually -45', { azSidelobeFloorDb: -45 }],
+  ['elSidelobeFloorDb', 'out by 10 dB (-40 -> -30)', { elSidelobeFloorDb: -30 }],
   ['dynamicRangeDb', 'out by 20 dB (70 -> 50)', { dynamicRangeDb: 50 }],
   ['cscMaxDeg', 'out by 10 deg (30 -> 20)', { cscMaxDeg: 20 }],
   ['dopplerSpreadGainDb', 'out by 6 dB (0 -> 6)', { dopplerSpreadGainDb: 6 }],
@@ -109,3 +112,39 @@ console.log('\nA TURNING rotor puts the blade Doppler far outside the notch, so 
 console.log('rejection figure never applies and getting it wrong costs 0.2 dB. A STOPPED');
 console.log('rotor sits in the notch, where the same error costs 20 dB. Ask for the MTI');
 console.log('figures only if parked machines are part of what you are assessing.');
+
+// ---------------------------------------------------------------------------
+// The same caveat applies to the peak azimuth sidelobe level, and it is the
+// reason its 3.0 dB above understates it. The four geometries in this run
+// start at 5 km. A turbine only sits in the sidelobe region once the array
+// subtends more than about 1.7 beamwidths from the radar, so the closer the
+// farm, the more of it is off boresight and the more the sidelobe level
+// decides. Measured here rather than argued.
+// ---------------------------------------------------------------------------
+console.log('\nPeak azimuth sidelobe level, against farm range:\n');
+console.log('farm range   worst clutter cost   margin at -30 dB   at -20 dB    shift');
+for (const range of [2000, 3000, 4000, 5000, 9000, 20000]) {
+  const at = (floor) => {
+    const sc = defaultScenario();
+    sc.farm.centreRangeM = range;
+    sc.radar.azSidelobeFloorDb = floor;
+    const r = analyse(sc, { skipCoverage: true });
+    const pts = r.points || [];
+    return {
+      clutter: Math.max(...pts.map((p) => p.turbineClutterCostDb || 0)),
+      margin: Math.min(...pts.map((p) => p.effectiveMarginDb ?? p.marginDb)),
+      lost: r.summary.lostCount,
+    };
+  };
+  const a = at(-30); const b = at(-20);
+  console.log(`${(range / 1000 + ' km').padStart(9)} `
+    + `${(a.clutter.toFixed(1) + ' dB').padStart(20)}`
+    + `${(a.margin.toFixed(1) + ' dB').padStart(19)}`
+    + `${(b.margin.toFixed(1) + ' dB').padStart(13)}`
+    + `${((a.margin - b.margin).toFixed(1) + ' dB').padStart(9)}`
+    + (b.lost > a.lost ? `   tracks lost: ${a.lost} -> ${b.lost}` : ''));
+}
+console.log('\nThe figure in the table above is the worst across geometries that start');
+console.log('at 5 km, so it reads 3.0 dB. At a farm 2 to 3 km out the same 10 dB error');
+console.log('moves the margin far further and can change whether a track survives.');
+console.log('Ask for the antenna sidelobe level whenever the array is inside about 5 km.');
