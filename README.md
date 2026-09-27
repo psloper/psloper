@@ -1,5 +1,9 @@
 # FPV Drone Pilot Trainer
 
+> Also in this repository: **[Aether SDR Console](sdr/README.md)**, a browser
+> software-defined radio front end with spectrum, waterfall, AM/FM/SSB/CW audio and
+> ADS-B, CW and RTTY decoders. Serve the repository root and open `/sdr/`.
+
 A browser-based FPV (First-Person View) drone flight simulator for practicing
 **acro/rate-mode** stick skills — the same skill acro pilots build on
 simulators like Liftoff or DRL before ever risking a real quad. No install,

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aether SDR Console</title>
+  <meta name="description" content="Browser software-defined radio console: spectrum, waterfall, AM/FM/SSB/CW demodulation and ADS-B, CW and RTTY decoding." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230c0f13'/%3E%3Cpath d='M4 22 L9 22 L12 10 L15 26 L18 14 L21 22 L28 22' fill='none' stroke='%23ffb547' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/sdr.css" />
+</head>
+<body>
+<div class="rack" id="rack">
+
+  <!-- ================================================================ top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 21 L8 21 L11.5 9 L15 25 L18.5 13 L21 21 L29 21"/></svg>
+      <div><strong>AETHER</strong><span>SDR CONSOLE</span></div>
+    </div>
+
+    <div class="src">
+      <button id="power" class="power" aria-pressed="false" title="Power (Space)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
+        <span>POWER</span>
+      </button>
+      <label class="field">
+        <span class="cap">Source</span>
+        <select id="source">
+          <option value="sim">Simulator (no hardware)</option>
+          <option value="rtltcp">rtl_tcp (network SDR)</option>
+          <option value="audio">Audio input (any radio)</option>
+        </select>
+      </label>
+      <label class="field rtl-only">
+        <span class="cap">Bridge</span>
+        <input id="bridgeUrl" type="text" spellcheck="false" value="ws://127.0.0.1:8765" />
+      </label>
+      <label class="field rtl-only">
+        <span class="cap">Rate</span>
+        <select id="rtlRate">
+          <option value="1024000">1.024 MS/s</option>
+          <option value="1400000">1.400 MS/s</option>
+          <option value="1800000">1.800 MS/s</option>
+          <option value="2000000" selected>2.000 MS/s</option>
+          <option value="2048000">2.048 MS/s</option>
+          <option value="2400000">2.400 MS/s</option>
+        </select>
+      </label>
+      <div class="link" id="link" data-state="off">
+        <i class="led"></i><span id="linkText">Off</span>
+      </div>
+    </div>
+
+    <div class="rf">
+      <label class="field gain">
+        <span class="cap">RF gain <output id="gainOut">30.0 dB</output></span>
+        <input id="gain" type="range" min="0" max="49.6" step="0.1" value="30" />
+      </label>
+      <label class="chk rtl-only"><input id="agcAuto" type="checkbox" /> Auto</label>
+      <label class="field rtl-only ppm"><span class="cap">PPM</span><input id="ppm" type="number" value="0" min="-200" max="200" step="1" /></label>
+    </div>
+
+    <div class="telemetry">
+      <div><span class="cap">Fs</span><b id="tFs">--</b></div>
+      <div><span class="cap">DSP</span><b id="tLoad">--</b></div>
+      <div><span class="cap">Audio</span><b id="tAudio">--</b></div>
+      <div><span class="cap">UTC</span><b id="tClock">--:--:--</b></div>
+      <button class="icon-btn" id="helpBtn" title="Keyboard shortcuts (?)" aria-label="Help">?</button>
+    </div>
+  </header>
+
+  <!-- ================================================================ left: tuning -->
+  <aside class="panel tune" aria-label="Tuning">
+    <section class="block vfo-block">
+      <div class="block-head"><h2>VFO</h2><span class="hint" id="bandName">--</span></div>
+      <div class="freq" id="freq" tabindex="0" aria-label="Tuned frequency. Scroll or use arrow keys over a digit."></div>
+      <form class="freq-entry" id="freqForm" autocomplete="off">
+        <input id="freqInput" type="text" placeholder="Type 145.5M, 1090 MHz, 14083.5k" spellcheck="false" aria-label="Enter frequency" />
+        <button type="submit">Go</button>
+      </form>
+      <p class="entry-error" id="freqError" role="alert" hidden></p>
+    </section>
+
+    <section class="block mode-block">
+      <div class="block-head"><h2>Mode</h2><button class="suggest" id="suggestMode" hidden></button></div>
+      <div class="seg modes" id="modes" role="radiogroup" aria-label="Demodulation mode">
+        <button data-mode="AM">AM</button><button data-mode="NFM">NFM</button><button data-mode="WFM">WFM</button>
+        <button data-mode="USB">USB</button><button data-mode="LSB">LSB</button><button data-mode="CW">CW</button>
+      </div>
+      <div class="row2">
+        <label class="field"><span class="cap">Filter <output id="bwOut"></output></span>
+          <input id="bw" type="range" min="0" max="100" step="1" /></label>
+        <label class="field"><span class="cap">Step</span>
+          <select id="step">
+            <option value="100">100 Hz</option><option value="500">500 Hz</option><option value="1000">1 kHz</option>
+            <option value="5000">5 kHz</option><option value="6250">6.25 kHz</option><option value="8333.333">8.33 kHz</option>
+            <option value="9000">9 kHz</option><option value="10000">10 kHz</option><option value="12500">12.5 kHz</option>
+            <option value="25000">25 kHz</option><option value="100000">100 kHz</option>
+          </select></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Signal</h2><span class="hint" id="snrOut">SNR --</span></div>
+      <div class="smeter" id="smeter" aria-label="Signal meter">
+        <div class="smeter-bar"><i id="smeterFill"></i><b id="smeterPeak"></b><s id="smeterSq"></s></div>
+        <div class="smeter-scale"><span>-120</span><span>-100</span><span>-80</span><span>-60</span><span>-40</span><span>-20</span><span>0</span></div>
+      </div>
+      <div class="readouts">
+        <div><span class="cap">Channel</span><b id="chDb">-- dBFS</b></div>
+        <div><span class="cap">Noise</span><b id="nfDb">-- dBFS</b></div>
+        <div><span class="cap">Squelch</span><b id="sqState" data-open="true">OPEN</b></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Audio</h2><button class="mute" id="mute" aria-pressed="false" title="Mute (M)">MUTE</button></div>
+      <label class="field"><span class="cap">Volume <output id="volOut">60%</output></span>
+        <input id="volume" type="range" min="0" max="100" step="1" value="60" /></label>
+      <label class="field"><span class="cap">Squelch <output id="sqOut">Off</output></span>
+        <input id="squelch" type="range" min="-121" max="-20" step="1" value="-121" /></label>
+      <label class="chk audio-only"><input id="monitor" type="checkbox" /> Monitor input on speakers</label>
+    </section>
+
+    <section class="block scope-block">
+      <div class="block-head"><h2>Channel IQ</h2><span class="hint" id="iqHint">constellation</span></div>
+      <canvas id="iqScope" width="240" height="240" aria-label="IQ constellation"></canvas>
+    </section>
+  </aside>
+
+  <!-- ================================================================ centre: spectrum -->
+  <main class="display" aria-label="Spectrum and waterfall">
+    <div class="display-bar">
+      <div class="seg zoom" id="zoom" role="radiogroup" aria-label="Zoom">
+        <button data-zoom="1">1x</button><button data-zoom="2">2x</button><button data-zoom="4">4x</button><button data-zoom="8">8x</button><button data-zoom="16">16x</button>
+      </div>
+      <label class="field inline"><span class="cap">FFT</span>
+        <select id="fftSize"><option>1024</option><option>2048</option><option selected>4096</option><option>8192</option><option>16384</option></select></label>
+      <label class="field inline"><span class="cap">Avg</span>
+        <input id="avg" type="range" min="0" max="0.95" step="0.05" value="0.6" /></label>
+      <label class="field inline"><span class="cap">Range</span>
+        <select id="range"><option value="auto">Auto</option><option value="-20,-120">-20 / -120</option><option value="0,-100">0 / -100</option><option value="-40,-130">-40 / -130</option><option value="-10,-80">-10 / -80</option></select></label>
+      <label class="chk"><input id="peak" type="checkbox" /> Peak hold</label>
+      <span class="cursor-read" id="cursorRead" aria-live="off"></span>
+    </div>
+    <div class="spectrum-wrap" id="specWrap">
+      <canvas id="spectrum"></canvas>
+      <canvas id="waterfall"></canvas>
+      <div class="offline" id="offline">
+        <div class="offline-card">
+          <p class="offline-title">Receiver is off</p>
+          <p>Press <b>POWER</b> to start. The built-in simulator needs no hardware and carries live FM, airband, marine, CW, RTTY, SSB and ADS-B signals.</p>
+          <button class="power big" id="powerBig">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
+            <span>POWER ON</span>
+          </button>
+          <p class="small">Click the spectrum to tune. Drag it to move the band. Scroll to step.</p>
+        </div>
+      </div>
+    </div>
+    <nav class="bands" aria-label="Band presets">
+      <span class="cap">Presets</span>
+      <div class="band-list" id="bands"></div>
+      <span class="cap mem-cap">Memories</span>
+      <div class="band-list" id="memories"></div>
+      <button class="mem-add" id="memAdd" title="Store current frequency and mode (S)">+ Store</button>
+    </nav>
+  </main>
+
+  <!-- ================================================================ right: decoders -->
+  <aside class="panel decode" aria-label="Decoders">
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="adsb" aria-selected="true">ADS-B <em id="acCount">0</em></button>
+      <button role="tab" data-tab="cw">CW</button>
+      <button role="tab" data-tab="rtty">RTTY</button>
+      <button role="tab" data-tab="log">Log <em id="logCount" hidden>!</em></button>
+    </div>
+
+    <section class="tabpane" data-pane="adsb">
+      <div class="dec-status" id="adsbStatus"></div>
+      <div class="radar-wrap">
+        <canvas id="radar" aria-label="Air picture"></canvas>
+        <div class="radar-tools">
+          <div class="seg small" id="radarRange">
+            <button data-range="25">25</button><button data-range="50">50</button><button data-range="100">100</button><button data-range="200">200</button>
+          </div>
+          <span class="cap">NM</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="ac-table">
+          <thead><tr><th>Callsign</th><th>ICAO</th><th class="num">FL</th><th class="num">GS</th><th class="num">TRK</th><th class="num">V/S</th><th class="num">RNG</th><th class="num">Age</th></tr></thead>
+          <tbody id="acBody"></tbody>
+        </table>
+      </div>
+      <div class="dec-foot"><span id="adsbStats">--</span>
+        <label class="chk"><input id="decAdsb" type="checkbox" checked /> Decoder on</label></div>
+    </section>
+
+    <section class="tabpane" data-pane="cw" hidden>
+      <div class="dec-status" id="cwStatus"></div>
+      <div class="dec-meter"><span class="cap">Key</span><div class="keylamp" id="cwKey"></div>
+        <span class="cap">Level</span><div class="bar"><i id="cwLevel"></i></div>
+        <span class="cap">WPM</span><b id="cwWpm">--</b></div>
+      <pre class="console" id="cwText" aria-live="polite"></pre>
+      <div class="dec-foot">
+        <label class="field inline"><span class="cap">Pitch</span>
+          <select id="cwPitch"><option>500</option><option>600</option><option selected>700</option><option>800</option></select></label>
+        <button id="cwClear">Clear</button>
+        <label class="chk"><input id="decCw" type="checkbox" checked /> Decoder on</label></div>
+    </section>
+
+    <section class="tabpane" data-pane="rtty" hidden>
+      <div class="dec-status" id="rttyStatus"></div>
+      <div class="dec-meter"><span class="cap">Mark</span><div class="bar"><i id="rttyMark"></i></div>
+        <span class="cap">Space</span><div class="bar"><i id="rttySpace"></i></div>
+        <span class="cap">Lock</span><div class="keylamp" id="rttyLock"></div></div>
+      <pre class="console" id="rttyText" aria-live="polite"></pre>
+      <div class="dec-foot">
+        <label class="field inline"><span class="cap">Baud</span>
+          <select id="rttyBaud"><option value="45.45" selected>45.45</option><option value="50">50</option><option value="75">75</option></select></label>
+        <label class="field inline"><span class="cap">Shift</span>
+          <select id="rttyShift"><option value="170" selected>170</option><option value="425">425</option><option value="850">850</option></select></label>
+        <label class="chk"><input id="rttyRev" type="checkbox" /> Reverse</label>
+        <button id="rttyClear">Clear</button>
+        <label class="chk"><input id="decRtty" type="checkbox" checked /> On</label></div>
+    </section>
+
+    <section class="tabpane" data-pane="log" hidden>
+      <ol class="log" id="log"></ol>
+    </section>
+  </aside>
+</div>
+
+<dialog id="help" class="help">
+  <h2>Keyboard</h2>
+  <table>
+    <tr><td><kbd>Space</kbd></td><td>Power on / off</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Tune down / up one step</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Tune up / down ten steps</td></tr>
+    <tr><td><kbd>1</kbd>–<kbd>6</kbd></td><td>AM, NFM, WFM, USB, LSB, CW</td></tr>
+    <tr><td><kbd>Z</kbd></td><td>Cycle zoom</td></tr>
+    <tr><td><kbd>M</kbd></td><td>Mute</td></tr>
+    <tr><td><kbd>F</kbd></td><td>Type a frequency</td></tr>
+    <tr><td><kbd>S</kbd></td><td>Store memory</td></tr>
+    <tr><td><kbd>P</kbd></td><td>Peak hold</td></tr>
+  </table>
+  <h2>Mouse</h2>
+  <p>Click the spectrum or waterfall to tune. Drag to move the band. Scroll to step; Shift+scroll to zoom. Scroll over a VFO digit to change that digit.</p>
+  <form method="dialog"><button>Close</button></form>
+</dialog>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
