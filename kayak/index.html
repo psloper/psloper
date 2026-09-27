@@ -70,7 +70,7 @@
         <div>
           <h2>Tides (modelled)</h2>
           <ul id="tides" class="list"></ul>
-          <p class="fine">From the Open-Meteo marine model, not a harbour tide table. Check official tide times before you go.</p>
+          <p class="warn"><strong>Model estimate, not official.</strong> These times come from a global ocean model, not a harbour tide table. They can be tens of minutes out, more in estuaries, sounds and sea lochs. Check the official times on <a href="https://easytide.admiralty.co.uk/" rel="noopener">Admiralty EasyTide</a> before you go.</p>
         </div>
         <div>
           <h2>Best paddling windows</h2>
@@ -93,12 +93,13 @@
 
       <section class="panel">
         <h2>Hour by hour</h2>
+        <p class="fine">* Modelled. Tide is height above or below mean sea level, arrow shows rising or falling.</p>
         <div class="table-wrap">
           <table id="hourly">
             <thead>
               <tr>
                 <th>Time</th><th>Rating</th><th>Wind</th><th>Gust</th><th>Dir</th>
-                <th>Waves</th><th>Swell</th><th>Current</th><th>Air</th><th>Rain</th><th>Sky</th><th>Why</th>
+                <th>Waves</th><th>Swell</th><th>Current*</th><th>Tide m*</th><th>Sea</th><th>Air</th><th>Rain</th><th>Sky</th><th>Why</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -106,6 +107,22 @@
         </div>
       </section>
     </div>
+
+    <section class="panel">
+      <h2>Where the data comes from</h2>
+      <div class="table-wrap plain">
+        <table class="sources">
+          <thead><tr><th>Shown here</th><th>Source</th><th>Official?</th><th>Check against (UK)</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Shown here">Wind, gusts, air temp, rain, visibility</td><td data-label="Source">Open-Meteo forecast (blend of national weather models)</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)"><a href="https://www.metoffice.gov.uk/weather/specialist-forecasts/coast-and-sea/inshore-waters-forecast" rel="noopener">Met Office inshore waters forecast</a></td></tr>
+            <tr><td data-label="Shown here">Waves, swell, sea temperature</td><td data-label="Source">Open-Meteo marine (global wave models)</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)">Met Office inshore waters forecast</td></tr>
+            <tr><td data-label="Shown here">Tide times and heights</td><td data-label="Source">Open-Meteo marine sea level (global ocean model)</td><td data-label="Official?"><strong>No: modelled</strong></td><td data-label="Check against (UK)"><span><a href="https://easytide.admiralty.co.uk/" rel="noopener">Admiralty EasyTide</a> (official UK tide predictions)</span></td></tr>
+            <tr><td data-label="Shown here">Tidal current</td><td data-label="Source">Open-Meteo marine ocean current (global model, coarse grid)</td><td data-label="Official?"><strong>No: modelled</strong></td><td data-label="Check against (UK)">Tidal stream atlas or chart tidal diamonds for your area</td></tr>
+            <tr><td data-label="Shown here">Sunrise and sunset</td><td data-label="Source">Open-Meteo, calculated from position</td><td data-label="Official?">Astronomical calculation</td><td data-label="Check against (UK)">Reliable</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <section class="panel safety">
       <h2>Before you launch</h2>

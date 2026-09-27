@@ -158,6 +158,23 @@ export function findTideTurns(hours) {
   return turns;
 }
 
+// Rising or falling at each hour, from the change to the next hour (the
+// last hour uses the change from the previous one).
+export function tideTrend(hours, i) {
+  const cur = hours[i]?.seaLevelM;
+  const next = hours[i + 1]?.seaLevelM;
+  const prev = hours[i - 1]?.seaLevelM;
+  if (cur == null) return null;
+  const delta = next != null ? next - cur : prev != null ? cur - prev : null;
+  if (delta == null) return null;
+  return delta >= 0 ? 'rising' : 'falling';
+}
+
+// UK places first, keeping the service's own order within each group.
+export function ukFirst(results) {
+  return [...results].sort((a, b) => (b.country_code === 'GB') - (a.country_code === 'GB'));
+}
+
 // ---------- rating ----------
 
 function worse(a, b) {

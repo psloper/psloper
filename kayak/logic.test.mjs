@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RATING, PROFILES, toKnots, angleDiff, compassPoint, beaufort, windRelativeToShore,
-  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly,
+  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, ukFirst,
 } from './logic.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -129,4 +129,22 @@ test('merge aligns marine data by timestamp and converts current', () => {
   assert.equal(rows[0].waveM, null);
   assert.equal(rows[1].waveM, 0.4);
   near(rows[1].currentKn, 1);
+});
+
+test('tide trend rising, falling and missing', () => {
+  const hours = [1, 1.5, 1.2, null].map((seaLevelM) => ({ seaLevelM }));
+  assert.equal(tideTrend(hours, 0), 'rising');
+  assert.equal(tideTrend(hours, 1), 'falling');
+  assert.equal(tideTrend(hours, 2), 'falling'); // next is missing, uses previous
+  assert.equal(tideTrend(hours, 3), null);
+});
+
+test('place search puts UK results first', () => {
+  const r = ukFirst([
+    { name: 'Newport', country_code: 'US' },
+    { name: 'Newport', country_code: 'GB', admin1: 'Wales' },
+    { name: 'Newport', country_code: 'AU' },
+    { name: 'Newport', country_code: 'GB', admin1: 'Isle of Wight' },
+  ]);
+  assert.deepEqual(r.map((x) => x.admin1 || x.country_code), ['Wales', 'Isle of Wight', 'US', 'AU']);
 });

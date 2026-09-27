@@ -156,12 +156,43 @@ and saved in the browser.
 - Model grids are kilometres wide: no tide races, overfalls, headland
   acceleration or surf behaviour.
 
+## Modelled versus official data
+
+Every number on the page is a forecast from computer models. Two are not
+official in the UK sense and are labelled "model" on the page:
+
+| Shown | Status | Official UK source to check against |
+| --- | --- | --- |
+| Tide times and heights | Modelled sea level from a global ocean model | [Admiralty EasyTide](https://easytide.admiralty.co.uk/) |
+| Tidal current | Modelled ocean current, coarse grid | Tidal stream atlas or chart tidal diamonds |
+| Wind, waves, visibility | Model forecast | [Met Office inshore waters forecast](https://www.metoffice.gov.uk/weather/specialist-forecasts/coast-and-sea/inshore-waters-forecast) |
+
+Place search lists UK results first.
+
 ## Structure and tests
 
 ```
-kayak/index.html       Page markup
-kayak/style.css        Styling (light and dark)
-kayak/app.js           Fetching, settings, rendering (chart, table, cards)
-kayak/logic.js         Pure logic: merging, units, tide turns, rating
-kayak/logic.test.mjs   Unit tests: npm test
+kayak/index.html         Page markup
+kayak/style.css          Styling (light and dark, phone friendly)
+kayak/app.js             Fetching, settings, rendering (chart, table, cards)
+kayak/logic.js           Pure logic: merging, units, tides, rating
+kayak/logic.test.mjs     Unit tests:     npm test
+kayak/browser.test.mjs   Browser tests:  npm install && npm run test:browser
 ```
+
+The browser test serves the repo locally, answers every Open-Meteo call with
+fixed fake data, and drives headless Chromium at desktop and phone sizes. It
+needs the `playwright` dev dependency and a Chromium it can find (run
+`npx playwright install chromium` once if you don't already have one).
+
+## Not yet verified
+
+- **Against the live Open-Meteo service.** The build environment could not
+  reach it, so the request field names are from the published API as
+  remembered, not checked. If the page says "Marine data unavailable", a
+  field name is the first suspect.
+- **Current direction convention.** Assumed "flowing towards".
+- **Whether the modelled current includes tidal streams** at a useful
+  resolution for UK coastal paddling. Treat it as a rough guide only.
+- **Tide accuracy for any particular UK site.** Compare a few days against
+  EasyTide for your usual launch before relying on the timings.

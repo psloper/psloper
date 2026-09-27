@@ -2,7 +2,7 @@
 // marine and geocoding data (free, no API key) and renders the report.
 import {
   PROFILES, RATING, mergeHourly, buildDaylight, isDaylight, findTideTurns, rateHour,
-  findWindows, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
+  findWindows, tideTrend, ukFirst, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
 } from './logic.js';
 
 const HOURS_SHOWN = 72;
@@ -96,8 +96,8 @@ async function search(query) {
   list.replaceChildren();
   setStatus('Searching...');
   try {
-    const body = await getJson(`${GEOCODE_URL}?name=${encodeURIComponent(query)}&count=6&language=en&format=json`);
-    const results = body.results || [];
+    const body = await getJson(`${GEOCODE_URL}?name=${encodeURIComponent(query)}&count=10&language=en&format=json`);
+    const results = ukFirst(body.results || []).slice(0, 6);
     if (!results.length) { setStatus(`No places found for "${query}".`, true); return; }
     setStatus('Pick your launch spot:');
     results.forEach((r) => {
@@ -140,7 +140,8 @@ function render() {
   const nowT = localNow(weather.utc_offset_seconds);
   const hourStart = nowT - (nowT % 3600e3);
 
-  const all = mergeHourly(weather, marine).map((h) => ({ ...h, ...rateHour(h, limits, { seaBearing, daylight }) }));
+  const all = mergeHourly(weather, marine)
+    .map((h, i, arr) => ({ ...h, tide: tideTrend(arr, i), ...rateHour(h, limits, { seaBearing, daylight }) }));
   const rows = all.filter((h) => h.t >= hourStart).slice(0, HOURS_SHOWN);
   if (!rows.length) { setStatus('Forecast returned no future hours.', true); return; }
 
@@ -188,7 +189,9 @@ function renderNow(h, seaBearing) {
     card('Gusts', fmt(h.gustKn, 0, ' kn')),
     card('Waves', fmt(h.waveM, 1, ' m'), h.wavePeriodS != null ? `${h.wavePeriodS.toFixed(0)} s period, from ${compassPoint(h.waveDir)}` : 'No marine data'),
     card('Swell', fmt(h.swellM, 1, ' m'), h.swellPeriodS != null ? `${h.swellPeriodS.toFixed(0)} s period` : null),
-    card('Current', fmt(h.currentKn, 1, ' kn'), h.currentDir != null ? `setting towards ${compassPoint(h.currentDir)}` : null),
+    card('Tide (model)', h.seaLevelM == null ? '--' : `${h.seaLevelM >= 0 ? '+' : ''}${h.seaLevelM.toFixed(1)} m`,
+      h.tide ? `${h.tide === 'rising' ? '\u2191 Rising' : '\u2193 Falling'}, relative to mean sea level` : 'No tide data here'),
+    card('Current (model)', fmt(h.currentKn, 1, ' kn'), h.currentDir != null ? `setting towards ${compassPoint(h.currentDir)}` : null),
     card('Sea temp', fmt(h.seaTempC, 0, ' °C'), h.seaTempC != null && h.seaTempC < 15 ? 'Cold water: dress for immersion' : null),
     card('Air', fmt(h.tempC, 0, ' °C'), `Feels like ${fmt(h.feelsC, 0, ' °C')}`),
     card('Sky', weatherText(h.code), h.rainProb != null ? `${h.rainProb}% chance of rain` : null),
@@ -313,7 +316,7 @@ function renderTable(rows, daylight) {
   rows.forEach((h) => {
     const day = formatLocal(h.t, dayFmt);
     if (day !== lastDay) {
-      out.push(el('tr', { class: 'day-break' }, el('td', { colspan: '12' }, day)));
+      out.push(el('tr', { class: 'day-break' }, el('td', { colspan: '14' }, day)));
       lastDay = day;
     }
     out.push(el('tr', { class: isDaylight(h.t, daylight) ? '' : 'night' },
@@ -325,6 +328,8 @@ function renderTable(rows, daylight) {
       el('td', {}, fmt(h.waveM, 1, ' m')),
       el('td', {}, h.swellM == null ? '--' : `${h.swellM.toFixed(1)} m / ${fmt(h.swellPeriodS, 0, 's')}`),
       el('td', {}, fmt(h.currentKn, 1, ' kn')),
+      el('td', {}, h.seaLevelM == null ? '--' : `${h.seaLevelM.toFixed(1)} ${h.tide === 'rising' ? '\u2191' : '\u2193'}`),
+      el('td', {}, fmt(h.seaTempC, 0, '°')),
       el('td', {}, fmt(h.tempC, 0, '°')),
       el('td', {}, h.rainProb == null ? '--' : `${h.rainProb}%`),
       el('td', {}, weatherText(h.code)),
