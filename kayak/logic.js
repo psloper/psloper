@@ -1,0 +1,242 @@
+// Pure logic for the sea kayak conditions app: data merging, unit
+// conversion, tide turning points and per-hour GO / CAUTION / NO-GO rating.
+// No DOM or network access here so it can be unit tested under Node.
+
+export const RATING = { GO: 'go', CAUTION: 'caution', NOGO: 'nogo' };
+
+// Default limits per paddler profile. These are starting points, loosely
+// based on common sea kayak club guidance (sheltered water up to about F3,
+// moderate water about F4, advanced about F5). Every value is editable in
+// the UI because local geography matters more than any generic number.
+export const PROFILES = {
+  beginner: {
+    label: 'Beginner (sheltered water)',
+    maxWindKn: 10, maxGustKn: 15, maxWaveM: 0.5, maxOffshoreKn: 5, maxCurrentKn: 1,
+  },
+  intermediate: {
+    label: 'Intermediate (moderate water)',
+    maxWindKn: 15, maxGustKn: 21, maxWaveM: 1.0, maxOffshoreKn: 8, maxCurrentKn: 2,
+  },
+  advanced: {
+    label: 'Advanced (open coast)',
+    maxWindKn: 21, maxGustKn: 27, maxWaveM: 1.8, maxOffshoreKn: 12, maxCurrentKn: 3.5,
+  },
+};
+
+const CAUTION_FRACTION = 0.8; // within 80% of a limit counts as caution
+const THUNDER_CODES = new Set([95, 96, 99]);
+
+// ---------- units and angles ----------
+
+export function toKnots(value, unit) {
+  if (value == null || Number.isNaN(value)) return null;
+  const u = String(unit || '').toLowerCase();
+  if (u.includes('km/h')) return value / 1.852;
+  if (u.includes('m/s')) return value * 1.943844;
+  if (u.includes('mp/h') || u.includes('mph')) return value * 0.868976;
+  return value; // already knots ("kn")
+}
+
+// Smallest difference between two compass bearings, 0..180 degrees.
+export function angleDiff(a, b) {
+  const d = Math.abs((((a - b) % 360) + 360) % 360);
+  return d > 180 ? 360 - d : d;
+}
+
+const POINTS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+  'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+export function compassPoint(deg) {
+  if (deg == null) return '--';
+  return POINTS[Math.round((((deg % 360) + 360) % 360) / 22.5) % 16];
+}
+
+// Beaufort force from knots (upper bounds of each force, WMO table).
+const BEAUFORT_MAX_KN = [1, 3, 6, 10, 16, 21, 27, 33, 40, 47, 55, 63];
+export function beaufort(kn) {
+  if (kn == null) return null;
+  const idx = BEAUFORT_MAX_KN.findIndex((max) => kn < max + 0.5);
+  return idx === -1 ? 12 : idx;
+}
+
+// Wind relative to the shore. seaBearing = direction you face when standing
+// on the beach looking out to sea. Wind direction is "from" (meteorological).
+export function windRelativeToShore(windFromDeg, seaBearing) {
+  if (windFromDeg == null || seaBearing == null) return null;
+  if (angleDiff(windFromDeg, seaBearing) <= 45) return 'onshore';
+  if (angleDiff((windFromDeg + 180) % 360, seaBearing) <= 45) return 'offshore';
+  return 'cross-shore';
+}
+
+// ---------- time handling ----------
+// Open-Meteo with timezone=auto returns local wall-clock strings with no
+// offset ("2026-09-27T14:00"). Treating them as UTC keeps arithmetic and
+// formatting in the location's local time, whatever the browser's zone.
+
+export function parseLocal(str) {
+  return Date.parse(str.length === 16 ? `${str}:00Z` : `${str}Z`);
+}
+
+export function formatLocal(ms, opts = { hour: '2-digit', minute: '2-digit' }) {
+  return new Date(ms).toLocaleString('en-GB', { ...opts, timeZone: 'UTC' });
+}
+
+// Current wall-clock time at the forecast location, in the same "fake UTC".
+export function localNow(utcOffsetSeconds, nowMs = Date.now()) {
+  return nowMs + utcOffsetSeconds * 1000;
+}
+
+// ---------- merging API responses ----------
+
+export function mergeHourly(weather, marine) {
+  const w = weather.hourly;
+  const m = marine?.hourly || {};
+  const mUnits = marine?.hourly_units || {};
+  const marineIndex = new Map((m.time || []).map((t, i) => [t, i]));
+  const pick = (key, i) => (i == null || !m[key] ? null : m[key][i]);
+
+  return w.time.map((time, i) => {
+    const mi = marineIndex.get(time);
+    return {
+      time,
+      t: parseLocal(time),
+      windKn: w.wind_speed_10m[i],
+      gustKn: w.wind_gusts_10m[i],
+      windDir: w.wind_direction_10m[i],
+      tempC: w.temperature_2m[i],
+      feelsC: w.apparent_temperature[i],
+      rainProb: w.precipitation_probability?.[i] ?? null,
+      rainMm: w.precipitation[i],
+      visibilityM: w.visibility?.[i] ?? null,
+      code: w.weather_code[i],
+      waveM: pick('wave_height', mi),
+      waveDir: pick('wave_direction', mi),
+      wavePeriodS: pick('wave_period', mi),
+      swellM: pick('swell_wave_height', mi),
+      swellPeriodS: pick('swell_wave_period', mi),
+      seaTempC: pick('sea_surface_temperature', mi),
+      seaLevelM: pick('sea_level_height_msl', mi),
+      currentKn: toKnots(pick('ocean_current_velocity', mi), mUnits.ocean_current_velocity),
+      currentDir: pick('ocean_current_direction', mi),
+    };
+  });
+}
+
+export function buildDaylight(daily) {
+  return daily.time.map((day, i) => ({
+    day,
+    sunrise: parseLocal(daily.sunrise[i]),
+    sunset: parseLocal(daily.sunset[i]),
+  }));
+}
+
+export function isDaylight(t, daylight) {
+  return daylight.some((d) => t >= d.sunrise && t < d.sunset);
+}
+
+// ---------- tides ----------
+// Finds high and low water from the modelled sea level series, refining
+// each hourly extreme with a parabola through its neighbours.
+export function findTideTurns(hours) {
+  const turns = [];
+  for (let i = 1; i < hours.length - 1; i++) {
+    const a = hours[i - 1].seaLevelM;
+    const b = hours[i].seaLevelM;
+    const c = hours[i + 1].seaLevelM;
+    if (a == null || b == null || c == null) continue;
+    const isHigh = b > a && b >= c;
+    const isLow = b < a && b <= c;
+    if (!isHigh && !isLow) continue;
+    const denom = a - 2 * b + c;
+    const offset = denom === 0 ? 0 : 0.5 * (a - c) / denom; // hours, -0.5..0.5
+    const height = b - 0.25 * (a - c) * offset;
+    turns.push({
+      type: isHigh ? 'high' : 'low',
+      t: hours[i].t + offset * 3600e3,
+      heightM: height,
+    });
+  }
+  return turns;
+}
+
+// ---------- rating ----------
+
+function worse(a, b) {
+  const order = [RATING.GO, RATING.CAUTION, RATING.NOGO];
+  return order.indexOf(b) > order.indexOf(a) ? b : a;
+}
+
+export function rateHour(h, limits, opts = {}) {
+  const { seaBearing = null, daylight = [] } = opts;
+  let rating = RATING.GO;
+  const reasons = [];
+  const flag = (level, text, tag) => { rating = worse(rating, level); reasons.push({ level, text, tag }); };
+  const check = (value, max, label, unit, digits = 0) => {
+    if (value == null || max == null) return;
+    const v = `${value.toFixed(digits)}${unit}`;
+    if (value > max) flag(RATING.NOGO, `${label} ${v} over your ${max}${unit} limit`, label);
+    else if (value > max * CAUTION_FRACTION) flag(RATING.CAUTION, `${label} ${v} near your ${max}${unit} limit`, label);
+  };
+
+  check(h.windKn, limits.maxWindKn, 'Wind', ' kn');
+  check(h.gustKn, limits.maxGustKn, 'Gusts', ' kn');
+  check(h.waveM, limits.maxWaveM, 'Waves', ' m', 1);
+  check(h.currentKn, limits.maxCurrentKn, 'Current', ' kn', 1);
+
+  const rel = windRelativeToShore(h.windDir, seaBearing);
+  if (rel === 'offshore' && h.windKn != null) {
+    if (h.windKn > limits.maxOffshoreKn) {
+      flag(RATING.NOGO, `Offshore wind ${h.windKn.toFixed(0)} kn: it will push you out to sea`, 'Offshore');
+    } else if (h.windKn >= 5) {
+      flag(RATING.CAUTION, 'Offshore wind: returning to shore will be harder than leaving', 'Offshore');
+    }
+  }
+
+  // Wind against current steepens waves. Wind direction is "from", current
+  // direction is taken as "towards" (oceanographic convention), so the wind
+  // opposes the flow when the wind comes FROM roughly where the water goes TO.
+  if (h.currentKn != null && h.currentKn >= 1 && h.windKn >= 10 && h.currentDir != null && h.windDir != null
+      && angleDiff(h.windDir, h.currentDir) <= 45) {
+    flag(RATING.CAUTION, 'Wind against current: expect short, steep waves', 'Wind v current');
+  }
+
+  if (h.visibilityM != null) {
+    if (h.visibilityM < 1000) flag(RATING.NOGO, `Fog: visibility ${Math.round(h.visibilityM)} m`, 'Fog');
+    else if (h.visibilityM < 4000) flag(RATING.CAUTION, `Poor visibility ${(h.visibilityM / 1000).toFixed(1)} km`, 'Visibility');
+  }
+
+  if (THUNDER_CODES.has(h.code)) flag(RATING.NOGO, 'Thunderstorm risk: get off the water', 'Thunder');
+
+  if (daylight.length && !isDaylight(h.t, daylight)) flag(RATING.CAUTION, 'Outside daylight hours', 'Dark');
+
+  return { rating, reasons };
+}
+
+// Contiguous runs of GO hours in daylight, at least minHours long.
+export function findWindows(rated, minHours = 2) {
+  const windows = [];
+  let start = null;
+  const close = (endIdx) => {
+    if (start != null && endIdx - start >= minHours) {
+      windows.push({ start: rated[start].t, end: rated[endIdx - 1].t + 3600e3, hours: endIdx - start });
+    }
+    start = null;
+  };
+  rated.forEach((h, i) => {
+    if (h.rating === RATING.GO) { if (start == null) start = i; } else close(i);
+  });
+  close(rated.length);
+  return windows;
+}
+
+// WMO weather codes used by Open-Meteo, shortened for display.
+const WMO = {
+  0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast',
+  45: 'Fog', 48: 'Freezing fog', 51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
+  56: 'Freezing drizzle', 57: 'Freezing drizzle', 61: 'Light rain', 63: 'Rain', 65: 'Heavy rain',
+  66: 'Freezing rain', 67: 'Freezing rain', 71: 'Light snow', 73: 'Snow', 75: 'Heavy snow',
+  77: 'Snow grains', 80: 'Light showers', 81: 'Showers', 82: 'Violent showers',
+  85: 'Snow showers', 86: 'Snow showers', 95: 'Thunderstorm', 96: 'Thunderstorm, hail', 99: 'Thunderstorm, hail',
+};
+export function weatherText(code) {
+  return WMO[code] ?? '--';
+}

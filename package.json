@@ -4,7 +4,8 @@
   "description": "Browser-based FPV drone acro-mode flight training simulator.",
   "private": true,
   "scripts": {
-    "start": "python3 -m http.server 8080"
+    "start": "python3 -m http.server 8080",
+    "test": "node --test kayak/logic.test.mjs"
   },
   "license": "MIT"
 }

@@ -107,3 +107,61 @@ across displays with different refresh rates.
 - Additional tracks (freestyle gap course, tight technical track).
 - Ghost/replay of your best lap to race against.
 - Fisheye-style lens distortion shader for a more authentic FPV camera feel.
+
+---
+
+# Sea Kayak Conditions (`kayak/`)
+
+A second, independent app in this repo: a planning tool for sea kayakers
+that pulls wind, waves, swell, currents, modelled tides, water temperature,
+visibility and daylight for a launch spot, then rates every hour of the next
+72 as **GO**, **CAUTION** or **NO-GO** against *your own* limits.
+
+Open `http://localhost:8080/kayak/` after starting the server above.
+
+## Data sources
+
+All from [Open-Meteo](https://open-meteo.com/) (free, no API key, CC BY 4.0),
+called directly from the browser:
+
+| Need | Open-Meteo API | Variables |
+| --- | --- | --- |
+| Wind, gusts, air temp, rain, sky, visibility | Forecast | `wind_speed_10m`, `wind_gusts_10m`, `wind_direction_10m`, `temperature_2m`, `visibility`, ... |
+| Waves, swell, sea temp, currents, tide | Marine | `wave_height`, `swell_wave_height`, `sea_surface_temperature`, `ocean_current_velocity`, `sea_level_height_msl` |
+| Sunrise / sunset | Forecast (daily) | `sunrise`, `sunset` |
+| Place search | Geocoding | `name` search |
+
+## How an hour is rated
+
+| Check | NO-GO when | CAUTION when |
+| --- | --- | --- |
+| Wind, gusts, waves, current | above your limit | above 80% of your limit |
+| Offshore wind (needs beach bearing) | above your offshore limit | 5 kn or more |
+| Wind against current (current 1 kn+, wind 10 kn+) | | wind within 45 degrees of opposing the flow |
+| Visibility | under 1 km | under 4 km |
+| Thunderstorm (weather codes 95, 96, 99) | always | |
+| Darkness | | outside sunrise to sunset |
+
+The worst single check sets the hour's rating. Profiles (beginner,
+intermediate, advanced) only preload default limits; every limit is editable
+and saved in the browser.
+
+## Limitations (read these)
+
+- Tide times come from a global ocean model's sea level, not a harbour tide
+  table. Timing and height can be off, especially in estuaries, sounds and
+  sheltered inlets. Always confirm with an official tide source.
+- Current direction is assumed to be "flowing towards" (oceanographic
+  convention); wind direction is "blowing from".
+- Model grids are kilometres wide: no tide races, overfalls, headland
+  acceleration or surf behaviour.
+
+## Structure and tests
+
+```
+kayak/index.html       Page markup
+kayak/style.css        Styling (light and dark)
+kayak/app.js           Fetching, settings, rendering (chart, table, cards)
+kayak/logic.js         Pure logic: merging, units, tide turns, rating
+kayak/logic.test.mjs   Unit tests: npm test
+```

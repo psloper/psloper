@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sea Kayak Conditions</title>
+  <meta name="description" content="Wind, waves, tides, currents and daylight for sea kayakers, with a go / caution / no-go rating per hour." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b3a53'/%3E%3Cpath d='M4 18c4-3 8-3 12 0s8 3 12 0' stroke='%237fd4ff' stroke-width='2.5' fill='none'/%3E%3Cpath d='M7 12l18 6' stroke='%23ffb347' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <h1>Sea Kayak Conditions</h1>
+    <p class="sub">Wind, waves, tides and daylight, rated against your own limits.</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="loc-h">
+      <h2 id="loc-h">1. Where are you launching?</h2>
+      <form id="search-form" class="row">
+        <input id="search" type="search" placeholder="Beach, harbour or town (e.g. Oban)" autocomplete="off" aria-label="Search for a place" />
+        <button type="submit">Search</button>
+        <button type="button" id="geo-btn" class="secondary">Use my location</button>
+      </form>
+      <ul id="search-results" class="results" hidden></ul>
+      <details class="manual">
+        <summary>Enter coordinates instead</summary>
+        <form id="coord-form" class="row">
+          <label>Latitude <input id="lat" type="number" step="any" min="-90" max="90" required /></label>
+          <label>Longitude <input id="lon" type="number" step="any" min="-180" max="180" required /></label>
+          <button type="submit">Go</button>
+        </form>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="set-h">
+      <h2 id="set-h">2. Your limits</h2>
+      <div class="grid-settings">
+        <label>Paddler profile
+          <select id="profile"></select>
+        </label>
+        <label>Beach faces (looking out to sea)
+          <select id="sea-bearing">
+            <option value="">Not set (no offshore check)</option>
+            <option value="0">North</option><option value="45">North-east</option>
+            <option value="90">East</option><option value="135">South-east</option>
+            <option value="180">South</option><option value="225">South-west</option>
+            <option value="270">West</option><option value="315">North-west</option>
+          </select>
+        </label>
+        <label>Max wind (kn) <input id="maxWindKn" type="number" min="0" step="1" /></label>
+        <label>Max gust (kn) <input id="maxGustKn" type="number" min="0" step="1" /></label>
+        <label>Max wave height (m) <input id="maxWaveM" type="number" min="0" step="0.1" /></label>
+        <label>Max offshore wind (kn) <input id="maxOffshoreKn" type="number" min="0" step="1" /></label>
+        <label>Max current (kn) <input id="maxCurrentKn" type="number" min="0" step="0.1" /></label>
+      </div>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <div id="report" hidden>
+      <section id="verdict" class="verdict" aria-live="polite"></section>
+
+      <section class="panel">
+        <h2>Right now</h2>
+        <div id="now-cards" class="cards"></div>
+      </section>
+
+      <section class="panel two-col">
+        <div>
+          <h2>Tides (modelled)</h2>
+          <ul id="tides" class="list"></ul>
+          <p class="fine">From the Open-Meteo marine model, not a harbour tide table. Check official tide times before you go.</p>
+        </div>
+        <div>
+          <h2>Best paddling windows</h2>
+          <ul id="windows" class="list"></ul>
+          <h2 class="mt">Daylight</h2>
+          <ul id="daylight" class="list"></ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Next 72 hours</h2>
+        <div class="legend">
+          <span><i class="sw wind"></i>Wind (kn)</span>
+          <span><i class="sw gust"></i>Gusts (kn)</span>
+          <span><i class="sw wave"></i>Waves (m)</span>
+          <span><i class="sw tide"></i>Sea level (m)</span>
+        </div>
+        <div id="chart" class="chart"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Hour by hour</h2>
+        <div class="table-wrap">
+          <table id="hourly">
+            <thead>
+              <tr>
+                <th>Time</th><th>Rating</th><th>Wind</th><th>Gust</th><th>Dir</th>
+                <th>Waves</th><th>Swell</th><th>Current</th><th>Air</th><th>Rain</th><th>Sky</th><th>Why</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel safety">
+      <h2>Before you launch</h2>
+      <ul>
+        <li>This is a planning aid built on computer forecast models. It cannot see local effects like tide races, overfalls, headland acceleration or surf dumping on a steep beach.</li>
+        <li>Check the official marine forecast and tide times for your area (in the UK: Met Office inshore waters forecast and Admiralty EasyTide).</li>
+        <li>Dress for immersion in the water temperature, not the air temperature.</li>
+        <li>Tell someone your plan and expected return time. Carry a way to call for help (VHF radio or phone in a waterproof case).</li>
+      </ul>
+      <p class="fine">Weather and marine data: <a href="https://open-meteo.com/" rel="noopener">Open-Meteo.com</a> (CC BY 4.0).</p>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
