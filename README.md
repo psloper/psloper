@@ -158,8 +158,11 @@ and saved in the browser.
 
 ## Modelled versus official data
 
-Every number on the page is a forecast from computer models. Two are not
-official in the UK sense and are labelled "model" on the page:
+Every number on the page is a forecast from computer models. Tide times,
+tide heights and tidal current are **not official** and are labelled
+"model" on the page. The page also says which sea model point the wave, tide
+and current data come from, and warns when it is more than 5 km from your
+launch or has no sea data (inland).
 
 | Shown | Status | Official UK source to check against |
 | --- | --- | --- |
@@ -167,7 +170,24 @@ official in the UK sense and are labelled "model" on the page:
 | Tidal current | Modelled ocean current, coarse grid | Tidal stream atlas or chart tidal diamonds |
 | Wind, waves, visibility | Model forecast | [Met Office inshore waters forecast](https://www.metoffice.gov.uk/weather/specialist-forecasts/coast-and-sea/inshore-waters-forecast) |
 
-Place search lists UK results first.
+### How far out the modelled tides were (one-off check, 27 September 2026)
+
+Live Open-Meteo sea level for six UK spots, turned into high and low water
+times with the app's own method, compared with Admiralty EasyTide for about
+four days (roughly 15 turns per spot):
+
+| Spot | Official station | Model timing vs official | Tidal range, official vs model |
+| --- | --- | --- | --- |
+| Oban | Oban | 17 to 36 min early | 3.3 m vs 3.6 m |
+| Rhoscolyn | Trearddur Bay | 14 to 36 min early | 4.5 m vs 4.4 m |
+| Portland Bill | Portland | high water about 50 min early, low water within 15 min | 1.9 m vs 3.4 m |
+| Hamble | Warsash | 80 to 133 min early | 3.7 m vs 1.8 m |
+| Itchen | Southampton | 80 to 122 min early | 4.0 m vs 1.8 m |
+| Poole | Poole Harbour | 109 to 163 min early | 1.9 m vs 1.7 m |
+
+Hamble and Itchen get the *same* sea model point, in the Solent 8 to 13 km
+away: the model does not reach Southampton Water. This is one check over a
+few days, not a long-term accuracy study.
 
 ## Structure and tests
 
@@ -175,24 +195,31 @@ Place search lists UK results first.
 kayak/index.html         Page markup
 kayak/style.css          Styling (light and dark, phone friendly)
 kayak/app.js             Fetching, settings, rendering (chart, table, cards)
-kayak/logic.js           Pure logic: merging, units, tides, rating
-kayak/logic.test.mjs     Unit tests:     npm test
-kayak/browser.test.mjs   Browser tests:  npm install && npm run test:browser
+kayak/logic.js           Pure logic: merging, units, tides, rating, place ranking
+kayak/logic.test.mjs     Unit tests:        npm test
+kayak/browser.test.mjs   Browser tests:     npm install && npm run test:browser
+kayak/mutants.mjs        Proof tests fail:  npm run test:mutants
 ```
 
-The browser test serves the repo locally, answers every Open-Meteo call with
-fixed fake data, and drives headless Chromium at desktop and phone sizes. It
-needs the `playwright` dev dependency and a Chromium it can find (run
-`npx playwright install chromium` once if you don't already have one).
+The browser tests serve the repo locally, answer every Open-Meteo call with
+fixed data, and drive headless Chromium. There is one test per UK spot
+(Oban, Rhoscolyn, Portland Bill, Hamble, Itchen, Poole) using the real
+search result order and real sea model point from the live check; the
+weather and tide values in them are synthetic. They need the `playwright`
+dev dependency and a Chromium it can find (`npx playwright install chromium`).
+
+`npm run test:mutants` breaks one feature at a time in a scratch copy
+(30 deliberate breaks), checks the named tests fail, and checks every test
+failed for at least one break. It exits non-zero if any break goes unnoticed.
 
 ## Not yet verified
 
-- **Against the live Open-Meteo service.** The build environment could not
-  reach it, so the request field names are from the published API as
-  remembered, not checked. If the page says "Marine data unavailable", a
-  field name is the first suspect.
-- **Current direction convention.** Assumed "flowing towards".
-- **Whether the modelled current includes tidal streams** at a useful
-  resolution for UK coastal paddling. Treat it as a rough guide only.
-- **Tide accuracy for any particular UK site.** Compare a few days against
-  EasyTide for your usual launch before relying on the timings.
+- **Live runs from this repo's own test setup.** The build environment
+  blocks Open-Meteo, so the live check above was done once, outside it.
+  The tests use copies of what it returned, not live calls.
+- **Current direction convention.** Assumed "flowing towards". The model
+  currents do reverse roughly every six hours, so they include tidal
+  streams, but the direction convention was not confirmed.
+- **Current strength in races.** Around Portland the model peaked at about
+  3.5 kn. Tide races there run much faster; the model cannot show them.
+- **Tide accuracy beyond the six spots and four days checked.**

@@ -82,6 +82,9 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .status { color: var(--muted); min-height: 1.5em; margin: 12px 0 0; }
 .status.error { color: var(--nogo); }
 
+.sea-point { margin: 16px 0 0; padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; border: 1px solid var(--line); background: var(--panel); }
+.sea-point.far { border-color: var(--caution); background: var(--caution-bg); }
+.sea-point.bad { border-color: var(--nogo); background: var(--nogo-bg); font-weight: 600; }
 .verdict { margin-top: 16px; border-radius: 12px; padding: 16px; border: 2px solid; }
 .verdict h2 { font-size: 1.4rem; margin-bottom: 4px; }
 .verdict p { margin: 4px 0 0; }

@@ -170,9 +170,45 @@ export function tideTrend(hours, i) {
   return delta >= 0 ? 'rising' : 'falling';
 }
 
-// UK places first, keeping the service's own order within each group.
-export function ukFirst(results) {
-  return [...results].sort((a, b) => (b.country_code === 'GB') - (a.country_code === 'GB'));
+// Orders place search results for UK paddlers: UK first, then by how well
+// the name matches. A whole-word match ("Hamble-le-Rice" for "Hamble") beats
+// a partial one ("Hambleton"). Otherwise keeps the service's own order.
+export function rankPlaces(results, query) {
+  const q = String(query).trim().toLowerCase();
+  const matchRank = (name) => {
+    const n = String(name).toLowerCase();
+    if (n === q) return 0;
+    if (n.startsWith(q) && !/[a-z]/.test(n.charAt(q.length))) return 1;
+    if (n.startsWith(q)) return 2;
+    return 3;
+  };
+  return results
+    .map((r, i) => ({ r, i, uk: r.country_code === 'GB' ? 0 : 1, m: matchRank(r.name) }))
+    .sort((a, b) => a.uk - b.uk || a.m - b.m || a.i - b.i)
+    .map((x) => x.r);
+}
+
+// Great-circle distance in km (haversine).
+export function distanceKm(lat1, lon1, lat2, lon2) {
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLon = (lon2 - lon1) * rad;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(a));
+}
+
+// Sea data beyond this distance from the launch may not represent it.
+export const FAR_SEA_POINT_KM = 5;
+
+// How well the marine model covers the launch. The marine API returns the
+// nearest grid point, and for inland points every sea value is null.
+export function seaCoverage(marine, launchLat, launchLon) {
+  if (!marine?.hourly) return { status: 'none', distanceKm: null };
+  const keys = ['wave_height', 'sea_level_height_msl'];
+  const hasData = keys.some((k) => (marine.hourly[k] || []).some((v) => v != null));
+  const km = distanceKm(launchLat, launchLon, marine.latitude, marine.longitude);
+  if (!hasData) return { status: 'none', distanceKm: km };
+  return { status: km > FAR_SEA_POINT_KM ? 'far' : 'near', distanceKm: km, lat: marine.latitude, lon: marine.longitude };
 }
 
 // ---------- rating ----------
@@ -219,6 +255,10 @@ export function rateHour(h, limits, opts = {}) {
   if (h.visibilityM != null) {
     if (h.visibilityM < 1000) flag(RATING.NOGO, `Fog: visibility ${Math.round(h.visibilityM)} m`, 'Fog');
     else if (h.visibilityM < 4000) flag(RATING.CAUTION, `Poor visibility ${(h.visibilityM / 1000).toFixed(1)} km`, 'Visibility');
+  }
+
+  if (h.waveM == null) {
+    flag(RATING.CAUTION, 'No sea data: waves, tide and current not checked', 'No sea data');
   }
 
   if (THUNDER_CODES.has(h.code)) flag(RATING.NOGO, 'Thunderstorm risk: get off the water', 'Thunder');

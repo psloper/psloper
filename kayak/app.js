@@ -2,7 +2,7 @@
 // marine and geocoding data (free, no API key) and renders the report.
 import {
   PROFILES, RATING, mergeHourly, buildDaylight, isDaylight, findTideTurns, rateHour,
-  findWindows, tideTrend, ukFirst, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
+  findWindows, tideTrend, rankPlaces, seaCoverage, FAR_SEA_POINT_KM, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
 } from './logic.js';
 
 const HOURS_SHOWN = 72;
@@ -41,11 +41,20 @@ function readSeaBearing() {
 }
 
 // ---------- fetching ----------
-async function getJson(url) {
+const RETRY_DELAY_MS = 1500;
+
+// Open-Meteo occasionally answers "The service is overloaded" (seen in
+// testing); one retry after a short pause usually succeeds.
+async function getJson(url, retries = 1) {
   const res = await fetch(url);
   const body = await res.json().catch(() => ({}));
-  if (!res.ok || body.error) throw new Error(body.reason || `HTTP ${res.status}`);
-  return body;
+  if (res.ok && !body.error) return body;
+  const transient = res.status >= 500 || res.status === 429 || /overload/i.test(body.reason || '');
+  if (transient && retries > 0) {
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    return getJson(url, retries - 1);
+  }
+  throw new Error(body.reason || `HTTP ${res.status}`);
 }
 
 async function fetchConditions(lat, lon) {
@@ -96,8 +105,8 @@ async function search(query) {
   list.replaceChildren();
   setStatus('Searching...');
   try {
-    const body = await getJson(`${GEOCODE_URL}?name=${encodeURIComponent(query)}&count=10&language=en&format=json`);
-    const results = ukFirst(body.results || []).slice(0, 6);
+    const body = await getJson(`${GEOCODE_URL}?name=${encodeURIComponent(query)}&count=20&language=en&format=json`);
+    const results = rankPlaces(body.results || [], query).slice(0, 8);
     if (!results.length) { setStatus(`No places found for "${query}".`, true); return; }
     setStatus('Pick your launch spot:');
     results.forEach((r) => {
@@ -146,6 +155,7 @@ function render() {
   if (!rows.length) { setStatus('Forecast returned no future hours.', true); return; }
 
   $('report').hidden = false;
+  renderSeaPoint(seaCoverage(marine, state.place.lat, state.place.lon));
   renderVerdict(rows[0], seaBearing);
   renderNow(rows[0], seaBearing);
   renderTides(all, hourStart);
@@ -155,12 +165,29 @@ function render() {
   renderTable(rows, daylight);
 }
 
+function renderSeaPoint(cov) {
+  const box = $('sea-point');
+  if (cov.status === 'none') {
+    box.className = 'sea-point bad';
+    box.textContent = state.data.marine
+      ? 'No sea data for this spot: it looks inland. Check you picked the right place, or enter the coordinates of your launch beach.'
+      : `Sea data could not be loaded (${state.data.marineError}). Waves, tide and current are not being checked.`;
+    return;
+  }
+  const where = `${Math.abs(cov.lat).toFixed(2)}\u00b0${cov.lat >= 0 ? 'N' : 'S'} ${Math.abs(cov.lon).toFixed(2)}\u00b0${cov.lon >= 0 ? 'E' : 'W'}`;
+  box.className = `sea-point ${cov.status}`;
+  box.textContent = `Waves, tide and current are for the nearest sea model point (${where}), ${cov.distanceKm.toFixed(1)} km from your launch.`
+    + (cov.status === 'far'
+      ? ` That is more than ${FAR_SEA_POINT_KM} km away, so it may be open water rather than your bay, harbour or river.`
+      : '');
+}
+
 function renderVerdict(h, seaBearing) {
   const box = $('verdict');
   box.className = `verdict ${h.rating}`;
   const text = {
     go: 'Conditions are inside your limits right now.',
-    caution: 'Possible, but something is close to your limits. Read the reasons below.',
+    caution: 'Possible with care, but check each reason below before you decide.',
     nogo: 'Conditions are outside your limits right now.',
   }[h.rating];
   const reasons = h.reasons.map((r) => el('li', {}, r.text));

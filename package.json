@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "Browser-based FPV drone acro-mode flight training simulator.",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "python3 -m http.server 8080",
     "test": "node --test kayak/logic.test.mjs",
-    "test:browser": "node --test kayak/browser.test.mjs"
+    "test:browser": "node --test kayak/browser.test.mjs",
+    "test:mutants": "node kayak/mutants.mjs"
   },
   "license": "MIT",
   "devDependencies": {

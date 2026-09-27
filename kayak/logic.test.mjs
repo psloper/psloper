@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RATING, PROFILES, toKnots, angleDiff, compassPoint, beaufort, windRelativeToShore,
-  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, ukFirst,
+  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage,
 } from './logic.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -59,7 +59,9 @@ test('tide turns found and interpolated between hours', () => {
 });
 
 test('tide turns skip missing data', () => {
-  assert.deepEqual(findTideTurns([{ t: 0, seaLevelM: null }, { t: 1, seaLevelM: null }, { t: 2, seaLevelM: null }]), []);
+  // Without the null check, null compares as 0 and fakes a high and a low.
+  const hours = [1, 2, null, 0, 1].map((seaLevelM, i) => ({ t: i * 3600e3, seaLevelM }));
+  assert.deepEqual(findTideTurns(hours), []);
 });
 
 const calm = { t: 0, windKn: 5, gustKn: 8, windDir: 180, waveM: 0.2, currentKn: 0.3, currentDir: 0, visibilityM: 20000, code: 1 };
@@ -139,12 +141,58 @@ test('tide trend rising, falling and missing', () => {
   assert.equal(tideTrend(hours, 3), null);
 });
 
-test('place search puts UK results first', () => {
-  const r = ukFirst([
-    { name: 'Newport', country_code: 'US' },
-    { name: 'Newport', country_code: 'GB', admin1: 'Wales' },
-    { name: 'Newport', country_code: 'AU' },
-    { name: 'Newport', country_code: 'GB', admin1: 'Isle of Wight' },
-  ]);
-  assert.deepEqual(r.map((x) => x.admin1 || x.country_code), ['Wales', 'Isle of Wight', 'US', 'AU']);
+// Result order and names below are as returned by the live Open-Meteo
+// geocoding service on 27 Sept 2026 (count=20), trimmed to the fields used.
+test('search for "Hamble" puts Hamble-le-Rice first, not Hambleton', () => {
+  const live = [
+    ['Hamble', 'US'], ['Hambleton', 'US'], ['Hambleton', 'GB'], ['Hambledon', 'GB'], ['Hambledon', 'AU'],
+    ['Upper Hambleton', 'GB'], ['Hambleton', 'GB'], ['Hambledon', 'GB'], ['Hambleden', 'GB'], ['Hambleton', 'US'],
+    ['Hamble-le-Rice', 'GB'],
+  ].map(([name, country_code]) => ({ name, country_code }));
+  const r = rankPlaces(live, 'Hamble');
+  assert.equal(r[0].name, 'Hamble-le-Rice');
+  assert.equal(r[1].name, 'Hambleton'); // then partial UK matches, in service order
+  assert.equal(r.at(-1).country_code, 'US');
+});
+
+test('search for "Oban" puts Oban, Scotland before Assaria, Kansas', () => {
+  const live = [
+    { name: 'Assaria', country_code: 'US' }, { name: 'Oban', country_code: 'GB', admin1: 'Scotland' },
+    { name: 'Oban', country_code: 'NZ' },
+  ];
+  assert.equal(rankPlaces(live, 'Oban')[0].admin1, 'Scotland');
+});
+
+// Launch points from the live geocoder, sea points from the live marine API.
+const SPOTS = {
+  oban: { launch: [56.41535, -5.47184], sea: [56.291664, -5.4583282], km: 13.8 },
+  rhoscolyn: { launch: [53.25014, -4.59793], sea: [53.291664, -4.6249847], km: 5.0 },
+  'portland bill': { launch: [50.51733, -2.45566], sea: [50.541664, -2.4583282], km: 2.7 },
+  hamble: { launch: [50.85966, -1.32432], sea: [50.791664, -1.3749847], km: 8.4 },
+  itchen: { launch: [50.90451, -1.36936], sea: [50.791664, -1.3749847], km: 12.6 },
+  poole: { launch: [50.71429, -1.98458], sea: [50.625008, -1.9583282], km: 10.1 },
+};
+
+test('distance from launch to sea model point matches the live check', () => {
+  for (const [name, s] of Object.entries(SPOTS)) {
+    const km = distanceKm(...s.launch, ...s.sea);
+    assert.ok(Math.abs(km - s.km) < 0.1, `${name}: ${km.toFixed(2)} km, expected ${s.km}`);
+  }
+});
+
+test('sea coverage: near, far and inland', () => {
+  const marine = (lat, lon, value) => ({ latitude: lat, longitude: lon, hourly: { wave_height: [value], sea_level_height_msl: [value] } });
+  const pb = SPOTS['portland bill'];
+  assert.equal(seaCoverage(marine(...pb.sea, 0.5), ...pb.launch).status, 'near');
+  const h = SPOTS.hamble;
+  assert.equal(seaCoverage(marine(...h.sea, 0.5), ...h.launch).status, 'far');
+  // Hambleton, North Yorkshire: the live marine API returned all nulls.
+  assert.equal(seaCoverage(marine(53.791664, -1.2083282, null), 53.76667, -1.16667).status, 'none');
+  assert.equal(seaCoverage(null, 50, -1).status, 'none');
+});
+
+test('missing sea data is never rated GO', () => {
+  const r = rateHour({ ...calm, waveM: null }, PROFILES.advanced);
+  assert.equal(r.rating, RATING.CAUTION);
+  assert.ok(r.reasons.some((x) => x.tag === 'No sea data'));
 });
