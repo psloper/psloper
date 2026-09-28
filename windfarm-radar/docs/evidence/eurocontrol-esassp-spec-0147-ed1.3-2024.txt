@@ -1,0 +1,209 @@
+EUROCONTROL Specification for ATM Surveillance System Performance (ESASSP)
+EUROCONTROL-SPEC-0147, Edition 1.3, 21/03/2024, Released Issue
+
+Extract: the document identity, how this document relates to the 1997 Radar
+Surveillance Standard, the Annex B reference entry for it, and Annex D, the
+non-cooperative (primary radar) performance requirements. Plus the Volume 2
+abstract, which carries the EU regulation link.
+
+Taken from the published PDFs supplied by the user. The prose is extracted
+with pdftotext -layout; the Annex D tables are extracted in reading order
+(plain pdftotext) instead, because a column layout splits a cell such as
+"Less than or equal to 8 seconds" across lines and interleaves it with the
+next column. This file exists so the quotes in js/esassp.js can be checked
+against the document by test/esassp.test.mjs.
+
+--- Volume 1, document identity ---
+EUROCONTROL Specification for ATM
+Surveillance System Performance
+(Volume 1)
+Edition: 1.3
+Edition date: 21/03/2024
+Reference nr: EUROCONTROL-SPEC-147
+ISBN: 978-2-87497-022-1
+EUROCONTROL Specification for
+   ATM Surveillance System
+   Performance (Volume 1)
+    DOCUMENT IDENTIFIER: EUROCONTROL-SPEC-0147
+               Edition Number   :                       1.3
+               Edition Date     :               21/03/2024
+               Status           :           Released Issue
+
+--- Volume 1, section 2: document development context (layout) ---
+2 DOCUMENT DEVELOPMENT APPROACH
+  AND ROLE
+     Document development context
+This document takes into account the lessons learnt from the application of the
+EUROCONTROL Standard Document for Radar Surveillance in En-route Airspace and Major
+Terminal Areas [RD 2], which are:
+      • Difficulties in practically assessing some specified requirements.
+      • Avoid technology specific requirements, for example only applicable to SSR and
+          PSR whereas new surveillance technologies are now available (Mode S, WAM,
+          ADS-B) and difficulties to transpose requirements to other technologies (e.g.
+          MSPSR).
+      • Avoid design requirements, for example not imposing high level sensor-based
+          implementation choices (2 SSR for en-route and one PSR + 2 SSR for major TMA)
+          which were difficult to transpose into requirements for other architectures.
+      • Lack of traceability between supported air traffic services or functions (i.e. users
+          needs) and technical requirements.
+Incorporating experience from EUROCONTROL surveillance deployment programmes and
+surveillance performance appraisal activity.
+This edition also takes into account feedback stemming from practical implementation of
+previous ESASSP editions. In particular, the feedback on implementation of the compliance
+
+--- Volume 1, Annex B - 1.1, referenced EUROCONTROL documents (layout) ---
+
+B - 1.1         EUROCONTROL documents
+[RD 1] EUROCONTROL Specification for ATM Surveillance System Performance (Volume 2
+         Appendices) SPEC-0147 Edition 1.3 Dated 12/05/2023.
+[RD 2] EUROCONTROL Standard Document for Radar Surveillance in En-Route Airspace
+         and Major Terminal Areas SUR.ET1.ST01.1000-STD-01-01 Ed. 1.0 March 1997
+[RD 3] European Mode S Station Functional Specification SUR/MODES/EMS/SPE-01
+         version 4.0 dated 14 December 2021
+[RD 4] SESAR Safety Reference Material D4.0.060 Ed 00.04.01 dated 14 December 2018
+[RD 5] EUROCONTROL standard document for surveillance data exchange. Part 9: Category
+         062 SDPS track messages Ref. EUROCONTROL-SPEC-0149 Edition 1.18 Dated 13
+         August 2018
+
+--- Volume 1, Annex D - 3 and the tables (reading order) ---
+• Coasted/not coasted;
+• Time of applicability (for compliance assessment).
+These data items are further described in Annex C - 1.
+
+D - 3 Introduction to performance requirements
+The performance requirements defined in this annex are provided to support legacy noncooperative surveillance system and are derived from PSR sensor requirements provided in
+[RD 2].
+The performance requirements are listed in Table 9 (5 NM separation) and Table 10 (3 NM
+separation).
+
+6 Although excluded for supporting separation application, analogue or digitised video can be presented to ATCO as mitigation
+and/or as a confidence re-enforcement.
+
+Edition: 1.3
+
+Released Issue
+
+Page 97
+
+EUROCONTROL Specification for ATM Surveillance System Performance (Volume 1)
+
+The 1st column provides a unique requirement reference.
+The 2nd column provides a quality of service performance indicator, which is further refined in
+the associated compliance assessment method.
+The 3rd column provides mandatory (in bold font).
+The 4th column of the tables provides the reference to the relevant sub-section of section 4 that
+describes the associated compliance assessment method.
+
+D - 4 Mandatory
+and
+recommended
+performance
+requirements for 5 NM horizontal separation provided by
+ATCO using non-cooperative surveillance system
+Req. #
+
+Quality of service
+
+Mandatory performance
+
+Assessment
+
+5N_N-R1
+
+Measurement interval for probability of update
+assessment (R2)
+
+Less than or equal to 8
+seconds
+
+4.2.1
+
+5N_N-R2
+
+Probability of update of horizontal position in
+accordance with selected measurement interval
+
+Greater than 90 % global
+
+4.2.2.1
+
+5N_N-R3
+
+Horizontal position RMS error
+
+Less than or equal to 500 m
+global
+
+0
+
+Table 9: Non-cooperative surveillance system requirements for supporting 5 NM horizontal
+separation (5N_N)
+
+D - 5 Mandatory
+and
+recommended
+performance
+requirements for 3 NM horizontal separation provided by
+ATCO using non-cooperative surveillance system
+Req. #
+
+Quality of service
+
+Mandatory performance
+
+Assessment
+
+3N_N-R1
+
+Measurement interval for probability of update
+assessment (R2)
+
+Less than or equal to 5
+seconds
+
+4.2.1
+
+3N_N-R2
+
+Probability of update of horizontal position in
+accordance with selected measurement interval
+
+Greater than 90 % global
+
+4.2.2.1
+
+3N_N-R3
+
+Horizontal position RMS error
+
+Less than or equal to 300 m
+global
+
+0
+
+Table 10: Non-cooperative surveillance system requirements for supporting 3 NM horizontal
+separation (3N_N)
+
+Page 98
+
+Released Issue
+
+
+--- Volume 2, abstract ---
+                                                        ISBN Number: 978-2-87497-022-1
+             Document Identifier                       Edition Number: 1.3
+          EUROCONTROL-SPEC-0147                           Edition Date: 21/03/2024
+                                            Abstract
+ This document provides performance requirements for ATM surveillance system when
+ supporting horizontal separation applications for:
+     • 3 and 5 NM
+     • 2.5 NM between succeeding aircraft established on the same final approach track
+ This specification has been developed by an international group of experts from air
+ navigation service providers, system manufacturers and national supervisory authorities.
+ This document can be used by air navigation service providers to define, as required by
+ Commission Implementing Regulation (EU) No 1207/2011 of 22 November 2011, the
+ minimum performance that their surveillance system must meet. This specification also
+ defines how the associated conformity assessment must be performed.
+                                            Keywords
+ Surveillance            ATM                      Specification            Performance
+ Horizontal separation   Quality of service       Data item                SES

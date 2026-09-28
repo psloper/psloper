@@ -1,0 +1,17 @@
+
+NOTICE OF SUPPLY
+
+UK Wind Energy Locations (July 2024) is a free open data product compiled and supplied by Datadaptive.
+
+Please see the documentation in the Docs folder and contact info@datadaptive.com if you have any questions.
+
+This data product contains data from the UK Government's Department for Energy Security and Net Zero (DESNZ). Re-use of the data is subject to the terms of the Open Government Licence including attribution of the copyright holder.
+
+Contains public sector information licensed under the Open Government Licence v3.0.
+
+Information about the Open Government Licence is available on the UK National Archives website.
+https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/open-government-licence/
+
+Datadaptive claims no additional copyright or database rights arising from compilation of the UK Wind Energy Locations (July 2024) data product. If any such rights attach to Datadaptive from production of the data product then Datadaptive waives those rights worldwide to the full extent allowed by law.
+
+Version 1.0, August 2024

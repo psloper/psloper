@@ -1,0 +1,25 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Area map</title>
+<script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
+<style>body{margin:0;background:#eef1f5}canvas{display:block}</style></head><body>
+<canvas id="c" width="1100" height="820"></canvas>
+<script type="module">
+import { areaBox, sitesInBox, drawAreaMap, KM_PER_MILE } from '../js/areamap.js';
+import { UK_WIND_FARMS, UK_RADAR_SITES, farmRecord, radarRecord } from '../js/uksites.js';
+const q = new URL(location).searchParams;
+const lat = Number(q.get('lat') || 55.5);
+const lon = Number(q.get('lon') || -4.0);
+const miles = Number(q.get('miles') || 100);
+const farms = UK_WIND_FARMS.map((_, i) => farmRecord(i))
+  .filter((f) => ['Operational', 'Under Construction', 'Awaiting Construction'].includes(f.status));
+const radars = UK_RADAR_SITES.map((_, i) => radarRecord(i));
+const box = areaBox(lat, lon, miles * KM_PER_MILE);
+const data = sitesInBox(box, farms, radars);
+const c = document.getElementById('c');
+drawAreaMap(c.getContext('2d'), box, data, {
+  width: c.width, height: c.height, dark: false,
+  title: `${miles} mile square centred on ${lat.toFixed(2)}, ${lon.toFixed(2)}`,
+});
+window.__stats = { farms: data.farms.length, radars: data.radars.length,
+  turbines: data.farms.reduce((n, f) => n + (f.turbines || 0), 0) };
+window.__drawn = true;
+</script></body></html>

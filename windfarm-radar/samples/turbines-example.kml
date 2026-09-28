@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document>
+<name>Greenhill spot heights</name>
+  <Placemark><name>T01</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.200000,55.940000,60</coordinates></Point></Placemark>
+  <Placemark><name>T02</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.190000,55.940000,67</coordinates></Point></Placemark>
+  <Placemark><name>T03</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.180000,55.940000,74</coordinates></Point></Placemark>
+  <Placemark><name>T04</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.170000,55.940000,81</coordinates></Point></Placemark>
+  <Placemark><name>T05</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.200000,55.948000,88</coordinates></Point></Placemark>
+  <Placemark><name>T06</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.190000,55.948000,95</coordinates></Point></Placemark>
+  <Placemark><name>T07</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.180000,55.948000,102</coordinates></Point></Placemark>
+  <Placemark><name>T08</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.170000,55.948000,109</coordinates></Point></Placemark>
+  <Placemark><name>T09</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.200000,55.956000,116</coordinates></Point></Placemark>
+  <Placemark><name>T10</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.190000,55.956000,123</coordinates></Point></Placemark>
+  <Placemark><name>T11</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.180000,55.956000,130</coordinates></Point></Placemark>
+  <Placemark><name>T12</name>
+    <Point><altitudeMode>absolute</altitudeMode>
+      <coordinates>-3.170000,55.956000,137</coordinates></Point></Placemark>
+</Document></kml>

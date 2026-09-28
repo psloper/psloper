@@ -1,0 +1,30 @@
+CAP 670 Air Traffic Services Safety Requirements
+Third Issue, Amendment 1/2019, 1 June 2019, effective 1 August 2019
+
+Extract: Part B Section 4, SW 01, purpose and scope (SW01.1 to SW01.13).
+
+Taken from the .docx supplied by the user, text layer only. This file exists
+so the SW 01 quotes in js/defencestandards.js can be checked against the
+document by test/defencestandards.test.mjs.
+
+SW01.1 For the CAA to approve an ATS system (people, procedures and equipment) to 
+enter service, arguments and evidence must be available to provide assurance that the system will perform all of its safety related behaviour within the system’s defined integrity targets. 
+SW01.2 Where equipment is used to provide safety related functions there are three sources from which arguments and assurance evidence can be provided: the system lifecycle, the hardware lifecycle and the software lifecycle. This document defines the assurances to be made available, for the purposes of an approval, from the behaviour of the software and certain aspects of the way in which it has been developed. 
+SW01.3 EU Regulation (EC) No. 482/2008 on Software Safety Assurance Systems is linked to EU Regulation (EU) No. 1035/2011 which requires ANSPs to implement an SMS including risk assessment and mitigation with regard to all changes. EU Regulation (EC) No. 482/2008 specifically addresses how ATS, ASM, ATFM and CNS service providers should define and implement Software Safety Assurance within the framework of its SMS, and as part of its risk assessment and mitigation activities with regard to changes, to deal specifically with software related aspects of a change. 
+SW01.4 The text of the Regulation is available from the European Union website at the following address: 
+eur-lex.europa.eu/LexUriServ/LexUriServ.do?uri=OJ:L:2008:141:0005:0010:EN:PDF 
+ 
+SW01.5 Satisfying the objectives of Part 2 of SW 01 will satisfy the objectives of Article 3 of EU Regulation (EC) No. 482/2008. Part 3 of SW 01 gives additional guidance on how the objectives may be met. 
+SW01.6 Deleted.  
+SW01.7 Compliance with Article 4 of EU Regulation (EC) No. 482/2008 and its 
+associated annexes can be achieved by integrating processes that satisfy CAP 
+670 SW 01 into an organisation’s overall risk assessment and mitigation process. However, to achieve full compliance with EU Regulation (EC) No. 482/2008 through the use of SW 01, it is also necessary to introduce processes that mandate the guidance in Part 3 and Appendix A of SW 01. This is required to address specific activities and criteria mandated by the Regulation. 
+Scope 
+SW01.8 This document applies to any ATS system where the Software is needed to fulfil a system safety requirement. 
+SW01.9 The objectives in this document only apply to those software requirements that have an impact on safety. These are called software safety requirements in this document. 
+SW01.10 This document does not apply to electronic items such as application specific integrated circuits, programmable gate arrays, solid-state logic controllers or software requirements that can be demonstrated not to affect safety. 
+SW01.11 The guidance in Part 3 of this document (CAP 670 Part B SW 01) primarily 
+applies to software outside of the scope of Article 5 of Regulation (EC) No. 482/2008, i.e. bespoke software. However, it can also be used for additional guidance in circumstances where published guidance does not fully address the needs of software within the scope of Article 5 of Regulation (EC) No. 482/2008, e.g. COTS software and changes to legacy software. Means of compliance for software identified in Article 5 of Regulation (EC) No. 482/2008 is available at: http://publicapps.caa.co.uk/docs/33/SW01COTSGuidanceIssue03.pdf. 
+SW01.12 This document assumes that software safety requirements have been derived from a full risk and safety analysis of the system. This will have established the overall safety requirements that have been refined and allocated in the design to software. This is a commonplace system safety process and is described in standards and guidelines such as IEC 61508 Part 1 and ARP4754. 
+SW01.13 This document does not prescribe how the assurance evidence is to be produced or its adequacy argued. International software assurance standards and guidelines, such as IEC 61508 Part 3 and RTCA DO178-B/EUROCAE ED12-B, when used in conjunction with this document may provide an effective way to produce timely and technically valid evidence that can then be used to argue that the SW 01 assurance objectives are satisfied. 
+Part 2 Requirements 

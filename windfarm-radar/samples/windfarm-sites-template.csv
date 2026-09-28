@@ -1,0 +1,6 @@
+name,latitude,longitude,capacity mw,status,offshore,reference,turbines,tip height
+Example Onshore Farm,55.20500,-3.91200,42.5,Operational,no,REPD-0001,12,126
+Example Consented Scheme,55.90250,-2.30639,28.7,Awaiting Construction,no,REPD-0002,9,110
+Example Submitted Scheme,55.22000,-3.60000,208.0,Application Submitted,no,REPD-0003,26,200
+Example Offshore Array,53.68150,1.42070,1218.0,Operational,yes,REPD-0004,174,190
+Example Refused Scheme,54.10000,-2.20000,15.0,Application Refused,no,REPD-0005,5,100

@@ -1,0 +1,150 @@
+CAA Policy and Guidelines on Wind Turbines, CAP 764
+SEVENTH EDITION, DRAFT FOR CONSULTATION (red-underline version)
+"Published by the Civil Aviation Authority, YYYY" / "Seventh Edition
+[publication date to be inserted]" - this is a CONSULTATION DRAFT, not
+published policy. The Sixth Edition, January 2016, is the published one and
+has NOT been read.
+
+Extract: the consultation distances (3.4), the CAA position on radar modelling
+tools and standard turbine RCS (2.17), how mitigation is characterised (2.21,
+2.22 and the chapter opening), the obstacle lighting duty and its source (4.4
+to 4.6), the ADLS provisions (4.16 to 4.20), and the ADLS surveillance
+performance requirements including the 1 m2 target (4.28 to 4.30).
+
+Taken from the .docx conversion supplied by the user, text layer only. Tables
+and figures are not reproduced. This file exists so the quotes in
+js/cap764.js can be checked against the document by test/cap764.test.mjs.
+
+--- 2.16 to 2.19: modelling tools and standard RCS ---
+developing and will offer some guidance as to the likelihood of wind turbines presenting a radar return; although the nature of wind turbine operations vary due to the unpredictability of different turbine types, variable turbine rotation speed and the times of operation of individual turbines. Therefore, the degree of certainty as to whether a turbine, or group of turbines, will be displayed or not in marginal ‘radar/radio LOS’ cases cannot be guaranteed. In such cases, and where aviation safety is a potential issue, safety considerations must remain the priority. 
+	2.17 	The CAA does not endorse any one specific radar modelling tool. Nor, given the 
+multitude of factors affecting RCS, can a ‘standard’ RCS be identified for micro, medium and large wind turbines. It is strongly suggested that developers engage with the appropriate ANSP prior to commissioning a propagation assessment in order to ensure that the proposed model is suitable. 
+2.18 	If the radar station likely to be affected by a proposed wind turbine development belongs to NATS, useful self-assessment guidance is available at: http://www.nats.aero/services/information/wind-farms/self-assessment-maps/. 
+2.19 	If the wind turbine development is likely to affect a MOD radar station; it is recommended that the MOD should be contacted at the earliest opportunity.  Further guidance can be found on the MOD Windfarms Safeguarding web site7 
+Mitigation 
+
+--- 2.20 to 2.22: mitigation ---
+          
+2.20 	The following paragraphs give a summary of some of the mitigation methods that are available to help counter the effects of wind turbines, primarily on PSR and SSR related issues. More detailed explanations and analysis of mitigation techniques are contained within the CAA CAP 670 SUR 13. Not all the mitigation methods will be suitable in all circumstances and more than one method may be required to mitigate risks to an acceptable level. The definition of ‘acceptable’ will have to be made on a case-by-case basis. As a minimum, all relevant hazards and resultant safety risks must be mitigated to an As Low As Reasonably Practicable (ALARP) level. 
+2.21 	It is the responsibility of the developer to consult with the aviation stakeholder to discuss whether mitigation is possible and, if so, how it would best be implemented. It must also be noted that most mitigation methods would be subject to a standard safety assessment process by the ANSP who, in turn, would need to demonstrate that the system is safe in order to gain CAA approval (where applicable). Accordingly, where a wind turbine development is likely to impact upon the provision of an ATS, then the developer and ANSP should cooperate to mitigate such impacts wherever possible.  
+
+            
+              
+                
+                  
+                  
+                
+              
+            
+           
+7 https://www.gov.uk/government/publications/wind-farms-ministry-of-defence-safeguarding  
+Summary of mitigation techniques 
+
+            
+              
+                
+                  
+                  
+                
+              
+            
+          
+2.22 	Mitigation techniques can be categorised into several key types. This section provides a summary of each category.  More detailed explanation is available in the CAP 670. 
+Work-rounds 
+2.23 	Work-rounds are measures which would enable an ANSP to continue providing an ATS using surveillance radar, such as sector blanking, re-routing traffic, or using SSR only. 
+In-fill radars 
+2.24 	In this situation, the infill radar supplements the main radar to remove / reduce the impact of radar line of sight of the wind farm to the overall processed radar output. 
+3-Dimensional radars 
+
+--- 3.4: consultation distances ---
+          
+3.4 	Aerodromes. Whilst not definitive, it should be anticipated that any wind turbine development within the following criteria24 might have an impact upon civil aerodrome25 - related operations:. 
+Unless otherwise specified by the aerodrome or indicated on the aerodrome’s published wind turbine consultation map, within 30 km of an aerodrome with a surveillance radar facility. The distance can be far greater than 30 km depending upon a number of factors including the type and coverage of the radar and the particular operation at the aerodrome; 
+Within airspace coincidental with any published Instrument Flight Procedure 
+(IFP) to take into account the aerodrome’s requirement to protect its IFPs; 
+Within 17 km of a non-radar equipped licensed26 aerodrome with a runway of 
+1100 m or more; 
+Within 5 km of a non-radar equipped licensed aerodrome with a runway of less than 1100 m; 
+Within 4 km of a non-radar equipped unlicensed aerodrome with a runway of more than 800 m; 
+Within 3 km of a non-radar equipped unlicensed aerodrome with a runway of less than 800 m. 
+The figures above are for initial guidance purposes only and do not represent definitive ranges beyond which all wind turbine developments will be approved or 
+
+            
+              
+                
+                  
+
+--- 4.4 to 4.6: obstacle lighting duty and turbine specifics ---
+              
+            
+          
+4.4 	The treatment of land-based obstacles to air navigation is covered by existing legislation. Obstacles located close to licensed aerodromes are covered under Section 47 of the Civil Aviation Act 1982. Government aerodromes are similarly covered. Article 222 of the ANO (2016) as amended details the requirement for the lighting of land-based tall structures located outside of the safeguarded areas of licensed and government aerodromes. Such lighting must be displayed at night and be visible from all directions. Night is defined in the ANO (2016) in Schedule 1 (Interpretation) as the time 30 minutes after sunset until 30 minutes before sunrise (both times inclusive), sunset and sunrise being determined at surface level. 
+4.5 	Article 222 of the ANO (2016) as amended, regarding onshore obstacle lighting requirements, states that for structures away from the immediate vicinity of an aerodrome, which have a height of 150 m (492 ft) or more AGL are fitted with medium intensity steady red lights positioned as close as possible to the top of the obstacle, and also equally spaced at intermediate levels, so far as practicable, between the top lights and ground level with an interval not exceeding 52 m. 
+4.6 	In accordance with Article 222(6) of the ANO (2016) as amended and considering ICAO Annex 14 Volume 1 Chapter 6, the CAA has determined the following specific lighting requirements apply to wind turbines: 
+The requirement to fit lights is based on the maximum height from the ground to the tip of the blades, but the requirement for the positioning of lights is based on the fixed structure (nacelle and tower). 
+One medium intensity (2000 candela) red light must be placed on the nacelle of the turbine; a second 2000 candela red light serving as an alternate should be provided in case of failure of the operating light. 
+At least three (to provide 360 degree coverage) low-intensity Type B lights (32 candela) lights must be provided at an intermediate level of half the nacelle height ± 10 m. 
+The lights required by sub-paragraphs 5.6(b) and 5.6(c) above must be so fitted to show when displayed in all directions without interruption. 
+For a group of two or more wind turbines, obstacle lighting must be fitted and operated when required to identify the corners and perimeter of the wind farm. 
+Additionally, if the height of other turbine nacelle(s) in the wind farm exceed the height of a plane extending at an elevation of 10 degrees above the horizontal from the nacelle of a turbine that is required to be lit, then obstacle lighting must be fitted and operated in accordance with sub-paragraphs 5.6(b) and 5.6(c) on these wind turbines. 
+Obstacle lighting may be omitted on the perimeter of the wind farm if it can be demonstrated that the maximum distance between lit turbines does not exceed 900 metres, the corners of the wind farm are lit and that any change of direction of the perimeter of the wind farm can be recognised. 
+
+            
+              
+                
+                  
+                  
+                
+              
+            
+           
+Note: An intermediate wind turbine can be considered to lie along the perimeter if it is at a distance equal to or less than 200 m of a perpendicular line extending from a line connecting the two outer wind turbines, protruding outwards from the wind farm, as per the following diagram: 
+ 
+
+            
+              
+                
+
+--- 5.2: offshore helicopter installations ---
+5.2 	Wind turbine developments (including anemometer masts) within a 9 NM radius of an offshore helicopter installation could introduce obstructions that would have an impact on the ability to safely conduct essential instrument flight procedures to such facilities in low visibility conditions. Consequently, any such restrictions have the potential to affect not only normal helicopter operations but could also threaten the integrity of offshore installation safety cases where emergency procedures are predicated on the use of helicopters to evacuate the installation. 
+Maritime and Coastguard Agency (MCA) 
+
+--- 4.16 to 4.20: ADLS ---
+Aviation Detection and Obstacle Lighting System (ADLS) 
+
+            
+              
+                
+                  
+                  
+                
+              
+            
+          
+4.16 	ADLS may be considered as a system that only switches on aviation obstacle lights when an aircraft is detected within a certain volume around a wind farm). Depending on where the wind farm is located, this may result in the obstacle lights only being illuminated for a small percentage of the time that they might otherwise be lit to comply with the Air Navigation Order obstacle lighting requirements. 
+4.17 	Implementation of ADLS is not a mandatory requirement and its deployment may act as a mitigation to the visual impact of aviation obstacle lighting operating on wind turbines at night in light sensitive areas but continue to comply with the law and reduce the risk of the obstacles to aircraft operations. 
+4.18 	ADLS for wind turbine obstruction lighting will not be permitted within the obstacle limitation surfaces of a licensed aerodrome due to issues concerning the potential late detection of aircraft. 
+4.19 	In operation, the default position for an ADLS is to have the obstacle lights switched on, with the ADLS switching off the lights when aircraft are not within the pre-defined detection volume of airspace. Consequently, failure of the ADLS would result in the obstacle lights remaining switched on. 
+4.20 	There are two key types of ADLS; one using ‘active’ sensors to determine whether an aircraft is within the pre-defined detection volume of airspace, the other using ‘passive’ sensors to receive information sent from the aircraft. Irrespective of the type, such systems will typically comprise of a central 
+processor, power supply, alarms, and communication signals to individual turbines to activate or deactivate lights, and communication links from the sensors to the central processor for processing returned signals to determine whether deactivation of lights may occur. 
+	4.21 	In some parts of UK airspace, there are no legal requirements for aircraft to carry 
+and operate radios and/or devices that broadcast an aircraft’s location in space and in most cases its altitude (e.g. transponders or ADS-B). Therefore, the use of passive sensors for ADLS in these areas may require additional mitigation. An example might be the use of a Transponder Mandatory Zone (TMZ), although this would be subject to the CAA’s Airspace Change Process (further information available in CAA publication 1616). 
+	4.22 	An example of an active sensor to detect aircraft might be a surveillance system 
+e.g. radar. Coverage area of the surveillance system and available radio spectrum frequencies will need careful consideration. In some circumstances, it may not be possible to meet the full volume area specified below, because the terrain may mask the detection signal from acquiring an aircraft target before penetrating to the defined boundaries of the airspace volume around and on top of the wind turbines. The type of solution to implement, and if full coverage is not achievable, the areas that cannot be illuminated by radar based on-demand lighting activation system must be recognised. 
+
+--- 4.28 to 4.30: ADLS surveillance performance ---
+	4.28 	Vertical coverage 
+The vertical coverage should extend up to at least 600m AGL measured above the highest part of the turbine or group of turbines. 
+Note: Paragraph 4.35 describes the volume in which the lights are required to be activated. 
+	4.29 	Probability of Detection 
+The system shall successfully detect targets entering the zone between 4-3 NM away from the perimeter of the wind turbines with 99% Pd of detecting the target when entering or within this zone. 
+Where targets are continuously tracked by the radar-based On-Demand Lighting Activation System, the targets shall be tracked until leaving the 4NM horizontal distance away from the perimeter of the wind farm and the vertical boundary with a 90% Pd. 
+The required Pd shall be achieved for a target with a radar cross section of 1m2. 
+	4.30 	Parameters to be determined 
+The surveillance system used for the on-demand activation of wind turbine lighting shall be able to determine the following parameters: 
+Probability of detection 
+Horizontal position of the target 
+Target height above ground level 
+Speed 
+It is recommended that where possible, the descent rate for descending flights and heading be also determined as these provide useful early indication of the likelihood of the aircraft penetrating to the 3NM/1000ft volume where lights must be activated. 
+	4.31 	General requirements 

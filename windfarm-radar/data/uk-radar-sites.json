@@ -1,0 +1,637 @@
+[
+{
+"name": "Allanshill",
+"role": "en-route",
+"lat": 57.64306,
+"lon": -2.16528,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Bovingdon",
+"role": "en-route",
+"lat": 51.709,
+"lon": -0.54108,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Burrington",
+"role": "en-route",
+"lat": 50.93423,
+"lon": -3.98527,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "BURRINGTON",
+"alt_lat": 50.93392,
+"alt_lon": -3.93953,
+"source_disagreement_m": 3206,
+"territory": "England"
+},
+{
+"name": "Claxby",
+"role": "en-route",
+"lat": 53.45008,
+"lon": -0.30825,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "CLAXBY",
+"alt_lat": 53.45011,
+"alt_lon": -0.30824,
+"source_disagreement_m": 3,
+"territory": "England"
+},
+{
+"name": "Clee Hill",
+"role": "en-route",
+"lat": 52.39827,
+"lon": -2.59748,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "CLEE HILL",
+"alt_lat": 52.37456,
+"alt_lon": -2.60034,
+"source_disagreement_m": 2643,
+"territory": "England"
+},
+{
+"name": "Cromer",
+"role": "en-route",
+"lat": 52.91056,
+"lon": 1.34972,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "CROMER",
+"alt_lat": 52.92862,
+"alt_lon": 1.29864,
+"source_disagreement_m": 3970,
+"territory": "England"
+},
+{
+"name": "Cumbernauld",
+"role": "en-route",
+"lat": 55.93917,
+"lon": -4.05722,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Debden",
+"role": "en-route",
+"lat": 51.99018,
+"lon": 0.26382,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "DEBDEN",
+"alt_lat": 51.97749,
+"alt_lon": 0.2632,
+"source_disagreement_m": 1412,
+"territory": "England"
+},
+{
+"name": "Fitful Head",
+"role": "en-route",
+"lat": 59.90575,
+"lon": -1.38252,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Great Dun Fell",
+"role": "en-route",
+"lat": 54.68412,
+"lon": -2.45092,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "GREAT DUN FELL",
+"alt_lat": 54.68398,
+"alt_lon": -2.44824,
+"source_disagreement_m": 173,
+"territory": "England"
+},
+{
+"name": "Kincardine",
+"role": "en-route",
+"lat": 56.07222,
+"lon": -3.72917,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Lowther Hill",
+"role": "en-route",
+"lat": 55.37772,
+"lon": -3.75303,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "LOWTHER HILL",
+"alt_lat": 55.3849,
+"alt_lon": -3.7441,
+"source_disagreement_m": 978,
+"territory": "Scotland"
+},
+{
+"name": "Pease Pottage",
+"role": "en-route",
+"lat": 51.0834,
+"lon": -0.21443,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "PEASE POTTAGE",
+"alt_lat": 51.0834,
+"alt_lon": -0.20246,
+"source_disagreement_m": 836,
+"territory": "England"
+},
+{
+"name": "Perwinnes Hill",
+"role": "en-route",
+"lat": 57.21227,
+"lon": -2.1309,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Sandwick",
+"role": "en-route",
+"lat": 58.21032,
+"lon": -6.35792,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "STORNOWAY",
+"alt_lat": 58.21028,
+"alt_lon": -6.35647,
+"source_disagreement_m": 85,
+"territory": "Scotland"
+},
+{
+"name": "St Annes",
+"role": "en-route",
+"lat": 53.76833,
+"lon": -2.99083,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "ST ANNES",
+"alt_lat": 53.77272,
+"alt_lon": -3.03543,
+"source_disagreement_m": 2971,
+"territory": "England"
+},
+{
+"name": "Tiree",
+"role": "en-route",
+"lat": 56.45545,
+"lon": -6.92312,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "TIREE",
+"alt_lat": 56.50006,
+"alt_lon": -6.87138,
+"source_disagreement_m": 5891,
+"territory": "Scotland"
+},
+{
+"name": "Belfast City",
+"role": "aerodrome",
+"lat": 54.61556,
+"lon": -5.88194,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Northern Ireland"
+},
+{
+"name": "Belfast International",
+"role": "aerodrome",
+"lat": 54.65583,
+"lon": -6.20611,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "BELFAST",
+"alt_lat": 54.65404,
+"alt_lon": -6.2255,
+"source_disagreement_m": 1263,
+"territory": "Northern Ireland"
+},
+{
+"name": "Birmingham",
+"role": "aerodrome",
+"lat": 52.45472,
+"lon": -1.75639,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Bournemouth",
+"role": "aerodrome",
+"lat": 50.78306,
+"lon": -1.84306,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Bristol",
+"role": "aerodrome",
+"lat": 51.37972,
+"lon": -2.7175,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Cambridge",
+"role": "aerodrome",
+"lat": 52.20619,
+"lon": 0.16674,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Cardiff",
+"role": "aerodrome",
+"lat": 51.39417,
+"lon": -3.3525,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Wales"
+},
+{
+"name": "East Midlands",
+"role": "aerodrome",
+"lat": 52.83333,
+"lon": -1.33111,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Edinburgh",
+"role": "aerodrome",
+"lat": 55.95139,
+"lon": -3.37917,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Exeter",
+"role": "aerodrome",
+"lat": 50.73028,
+"lon": -3.41722,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Farnborough",
+"role": "aerodrome",
+"lat": 51.28111,
+"lon": -0.77389,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Gatwick",
+"role": "aerodrome",
+"lat": 51.14611,
+"lon": -0.17722,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "GATWICK",
+"alt_lat": 51.16088,
+"alt_lon": -0.17709,
+"source_disagreement_m": 1642,
+"territory": "England"
+},
+{
+"name": "Glasgow",
+"role": "aerodrome",
+"lat": 55.87472,
+"lon": -4.43556,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "GLASGOW",
+"alt_lat": 55.87105,
+"alt_lon": -4.43385,
+"source_disagreement_m": 422,
+"territory": "Scotland"
+},
+{
+"name": "Guernsey",
+"role": "aerodrome",
+"lat": 49.43761,
+"lon": -2.59859,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Channel Islands"
+},
+{
+"name": "Hawarden",
+"role": "aerodrome",
+"lat": 53.17639,
+"lon": -2.98583,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Wales"
+},
+{
+"name": "Heathrow",
+"role": "aerodrome",
+"lat": 51.46056,
+"lon": -0.43944,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "HEATHROW",
+"alt_lat": 51.47077,
+"alt_lon": -0.45313,
+"source_disagreement_m": 1479,
+"territory": "England"
+},
+{
+"name": "Humberside",
+"role": "aerodrome",
+"lat": 53.58028,
+"lon": -0.34139,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Inverness",
+"role": "aerodrome",
+"lat": 57.54667,
+"lon": -4.04722,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Jersey",
+"role": "aerodrome",
+"lat": 49.20391,
+"lon": -2.20243,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Channel Islands"
+},
+{
+"name": "Leeds",
+"role": "aerodrome",
+"lat": 53.86444,
+"lon": -1.65278,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Liverpool",
+"role": "aerodrome",
+"lat": 53.33111,
+"lon": -2.85889,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Manchester",
+"role": "aerodrome",
+"lat": 53.34056,
+"lon": -2.28278,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Newcastle",
+"role": "aerodrome",
+"lat": 55.04083,
+"lon": -1.69083,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Newquay",
+"role": "aerodrome",
+"lat": 50.4425,
+"lon": -5.00972,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Norwich",
+"role": "aerodrome",
+"lat": 52.67167,
+"lon": 1.28111,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Oxford",
+"role": "aerodrome",
+"lat": 51.8375,
+"lon": -1.3275,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Prestwick",
+"role": "aerodrome",
+"lat": 55.50111,
+"lon": -4.58333,
+"sources": [
+"vatsim-uk"
+],
+"territory": "Scotland"
+},
+{
+"name": "Southampton",
+"role": "aerodrome",
+"lat": 50.95,
+"lon": -1.35278,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Southend",
+"role": "aerodrome",
+"lat": 51.56889,
+"lon": 0.70056,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Stansted",
+"role": "aerodrome",
+"lat": 51.88694,
+"lon": 0.23028,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "STANSTED",
+"alt_lat": 51.88535,
+"alt_lon": 0.25465,
+"source_disagreement_m": 1682,
+"territory": "England"
+},
+{
+"name": "Sumburgh",
+"role": "aerodrome",
+"lat": 59.86778,
+"lon": -1.27306,
+"sources": [
+"vatsim-uk",
+"atc-radar"
+],
+"alt_name": "SUMBURGH",
+"alt_lat": 59.87781,
+"alt_lon": -1.28869,
+"source_disagreement_m": 1416,
+"territory": "Scotland"
+},
+{
+"name": "Teesside",
+"role": "aerodrome",
+"lat": 54.51167,
+"lon": -1.41167,
+"sources": [
+"vatsim-uk"
+],
+"territory": "England"
+},
+{
+"name": "Alanshill",
+"role": "unclassified",
+"lat": 57.69198,
+"lon": -2.02231,
+"sources": [
+"atc-radar"
+],
+"territory": "Scotland"
+},
+{
+"name": "Boulogne-Vaudrigheim",
+"role": "unclassified",
+"lat": 50.7181,
+"lon": 1.61145,
+"sources": [
+"atc-radar"
+],
+"territory": null
+},
+{
+"name": "Dooncarton",
+"role": "unclassified",
+"lat": 54.27318,
+"lon": -9.82652,
+"sources": [
+"atc-radar"
+],
+"territory": "Ireland"
+},
+{
+"name": "Dublin",
+"role": "unclassified",
+"lat": 53.4282,
+"lon": -6.24481,
+"sources": [
+"atc-radar"
+],
+"territory": "Ireland"
+},
+{
+"name": "Mount Gabriel",
+"role": "unclassified",
+"lat": 51.56057,
+"lon": -9.54272,
+"sources": [
+"atc-radar"
+],
+"territory": "Ireland"
+},
+{
+"name": "Shannon",
+"role": "unclassified",
+"lat": 52.70097,
+"lon": -8.92033,
+"sources": [
+"atc-radar"
+],
+"territory": "Ireland"
+}
+]

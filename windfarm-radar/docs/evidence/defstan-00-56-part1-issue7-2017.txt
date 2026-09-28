@@ -1,0 +1,27 @@
+Defence Standard 00-056 Part 1 Issue 7, 28 February 2017
+Safety Management Requirements for Defence Systems, Part 1: Requirements
+UK Ministry of Defence (DStan)
+
+Extract: the purpose statement, Section 1 Scope and Applicability, the
+Section 2 Warning, and the note stating the Standard cannot bind the MOD.
+
+Obtained as a published PDF, decrypted with qpdf using an empty password
+(the file carried permissions encryption, not a password), and the text
+pulled from its content streams. Line breaks are not preserved; the text
+is reflowed to single spaces. This file exists so the quotes in
+js/defencestandards.js can be checked by test/defencestandards.test.mjs.
+
+--- purpose (0.1) ---
+The purpose of this Standard is to support acquisition organisations delivery of ESL&S by setting Safety Requirements on Contractors that enable procurement of Products, Services and/or Systems (PSS) that are compliant with safety legislation and regulations and with MOD safety and acquisition policy. The intent is that compliance with these requirements will place MOD in a position to discharge its obligations with regard to the management of Risk to Life associated with the in-service use of PSS. Note. Abbreviations used in this Standard, eg PSS, are to be considered as singular or plural in context with their use in the text. 0.1.1 PSS is used to describe all the articles or artefacts tha
+
+--- 1 Scope and Applicability ---
+1 Scope and Applicability 1.1 This Standard specifies the requirements for achieving, assuring and managing the safety of PSS defined by the scope of contract. 1.1.1 This Standard provides the Contractor with guidance for compliance with the requirements, thereby supporting the MOD in meeting their obligations with regard to the management of Risk to Life associated with the operation of military systems. 1.1.2 This Standard considers that a product can be an engineering artefact, whether physical, Data or software, from the small scale, such as a pump or a digital map, to the large scale, such as a ship or a geographically distributed logistics application. 1.1.3 This Standard considers that a system is a combination of elements, with defined boundaries, which are used together in a defined operating environment to perform a given task or achieve a specific purpose. These elements may include personnel, procedures, materials, tools, products, facilities, services and/or Data as appropriate. 1.1.4 This Standard considers a Service to be any activity using a System, eg providing air-to-air refuelling, running a naval dockyard, or calculating the safe flight envelope for an aircraft, which are provided by the Contractor. 1.2 The Contractor, together with the MOD, has responsibility for safety of all deliverable PSS. This Standard is intended to cover the full range of possibilities including: a) Where the Contractor has visibility and understanding of in-service Risk to Life, a
+
+--- 2 Warning ---
+2 Warning The Ministry of Defence (MOD), like its contractors, is subject to both United Kingdom and European laws regarding Health and Safety at Work. Many Defence Standards set out processes and procedures that could be injurious to health if adequate precautions are not taken. Adherence to those processes and procedures in no way absolves users from complying with legal requirements relating to Health and Safety at Work. DEF STAN 00-056 Part 1 Issue 7 1 Safety Management Requirements for Defence Systems Part 1: Requirements Section 1 - General 1 Scope and Applicability 1.1 This Standard spe
+
+--- cannot bind the MOD ---
+This Standard cannot place requirements on the MOD. Any Contractor requirements for data must be agreed in the scope of contract and captured in the scope of analysis. If health monitoring and reporting system is employed then supply of data will be agreed at scope of contract. 15.2 Monitoring and Reporting The Contrac
+
+--- foreword, contracting clauses ---
+REVISION NOTE This Defence Standard (Def Stan) Part 1 has been raised to Issue 7 to update its content. To reduce the impact of numerical and editorial changes to the requirements and its resulting impact on contract conditions, it has been agreed to retaining the contracting Clauses and Notes in Part 1 and move the guidance into Part 2. Acquisition staff should be aware that the changes to Def Stan numbering and this up-issues may have consequences on contracts referencing earlier issues. ISSUE 7 Update There are a number of editorial changes in Part 1 that are grammatical or modified notes that will have no significant impact on current contracts. Domain Tailoring and Compliance Matrices detailed Part 2 of this Standard are mandated by the relevant Regulator. Changes to Part 2, Domain Tailoring and Compliance Matrices may contain significant amendments that may impact new contracts. Is

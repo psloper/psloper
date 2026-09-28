@@ -1,0 +1,128 @@
+Thales STAR NG / RSM NG - Military Air Traffic Management datasheet
+===================================================================
+Source     : saved copy of the Thales digital-seller (Showpad) viewer page,
+             supplied by the user as an HTML file on 2026-09-19.
+Document   : "Military Air Traffic Management / STAR NG - RSM NG", 2 pages,
+             (c) Thales 2023, dated 15 June 2023, THALES LAS France,
+             Voie Pierre-Gilles de Gennes, Hameau de Roussigny,
+             91470 Limours Cedex, France.
+Extraction : the PDF.js text layer embedded in the saved page, read verbatim.
+             No figure below was typed from memory or from a search summary.
+Caveat     : the text layer preserves the words but not the page layout, so
+             bullet markers and line breaks sit where the viewer put them.
+
+What follows is the extracted text, unedited.
+-------------------------------------------------------------------
+
+1 file
+thalesgroup.com
+Military Air Traffic Management
+STAR NG – RSM NG
+Latest Primary Surveillance Radar with Full Digital Architecture
+Co-Mounted with Brand New Meta Sensor
+Military features
+CyberSecure by Design
+Dual use for military and civilian approach control
+Reduced life cycle costs
+A Full Airspace Control
+STAR NG - RSM NG
+© Thales 2023. All rights reserved. Thales, the Thales logo, are trademarks and service marks of Thales and are registered in certain countries. 15 June 2023.
+Compliant with Latest
+International Regulations
+EUROCONTROL
+specifications
+ICAO
+standard recommendations
+CyberSecurity based on
+NIST
+framework
+Key Features
+Extended capacity
+•
+Scan rate from
+10
+to
+15 RPM
+•
+Range up to
+120 NM
+with PSR in S Band
+•
+Range up to
+256 NM
+with MSSR
+•
+Military Mode 1, 2, 3 / Civil Mode A/C, S
+•
+ADS-B extended squitter detection over 360°
+•
+2000 tracks
+per scan
+Military Features
+•
+3D
+detection
+•
+ECCM
+(Freq Agility, LJF, strobe)
+High data integrity and availability
+•
+Full
+redundant
+design
+•
+MTBCF
+66000 h
+Optimized maintenance
+•
+24/7 unmanned operation
+•
+Limited numbers of LRU
+•
+Availability > 99.999 %
+•
+Permanent recordings
+of major mechanical
+data enabling
+PHM
+Military Features
+STAR NG has been designed to fit specific military Air Traffic
+Control concerns:
+3D for non cooperative targets
+Detection and tracking of hovering helicopters
+Highly maneuverable targets
+Frequency agility and Least Jammed Frequency
+Jamming strobe detection
+CyberSecurity Onboard
+Based on international standards the STAR NG / RSM NG is
+CyberSecure by design and provides a unique interface for
+the control of CyberSecurity functions, whilst always preserving
+radar operational behavior thanks to a CyberSecurity Virtual
+Machine.
+Military & Civil Cooperation
+STAR NG co-mounted with RSM NG is the only radar able to
+combine the needs for ATC of both environments so that it can
+provide the performances of a military system with the reliability
+and cost of a civilian system.
+Ready for T
+oday and Future
+Environmental Constraints
+STAR NG can be operated under adverse conditions thanks to
+frequency agility, 4G/5G filter or interference map.
+STAR NG has a dedicated, and field proven, processing to
+mitigate windfarm impact.
+Ease of Daily Operation
+STAR NG /RSM NG has been reengineered in order to limit life-
+cycle costs thanks to a very compact design, fail soft capability,
+hot switch replacement and an increased reliability, reducing
+preventive maintenance to less than a 8 hours per year.
+Thales, a World Leader in Radar
+Air Traffic Management
+With more than 50 years of experience in cooperative radars,
+Thales is continuously investing to be the leader of ATM systems
+with more than 1000 radars installed all around the world.
+THALES LAS France –
+Voie Pierre-Gilles de Gennes – Hameau de Roussigny – 91470 Limours Cedex – France
+> www.thalesgroup.com <
+By checking this box and clicking “Accept Privacy Policy”, I accept that my personal data will be processed in accordance with this notice and the Privacy Policy.
+Accept Privacy Policy

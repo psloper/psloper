@@ -1,0 +1,154 @@
+CAP 670 Air Traffic Services Safety Requirements
+Third Issue, Amendment 1/2019, 1 June 2019, effective 1 August 2019
+
+Extract: Part C Section 3, SUR 02 (surveillance system performance) and
+SUR 12 (verification of surveillance system performance).
+
+Taken from the .docx supplied by the user, text layer only. Tables and
+figures are not reproduced. This file exists so the quotes in js/cap670.js
+can be checked against the document by test/cap670.test.mjs.
+
+--- SUR 02 ---
+SUR02.30 The ANSP shall ensure that the system latency is such that the accuracy of the required data items have not degraded to be unsuitable to use at the time the surveillance data items are used for the intended application. 
+System Integrity [e.g. undetected incorrect altitude code, undetected incorrect aircraft identification] 
+SUR02.31 The system shall be capable of achieving the operationally required level of integrity. 
+SUR02.32 Techniques such as Failure Modes and Effects Analysis (FMEA) shall identify the possible system integrity failures and their effects on the system performance. 
+Data Integrity [e.g. Navigation Integrity Category (NIC), number of incorrect aircraft identifications] 
+SUR02.33 The equipment shall contain error detection processes to ensure appropriate data integrity during operation. 
+SUR02.34 Where processes are employed in the ground system to determine corruption of data these shall be identified and the tolerable rate of undetected errors shall be assessed. 
+Coverage [e.g. probability of detection, the percentage of actual detections compared to expected detections] 
+SUR02.35 The required coverage volume in which the selected application will be provided shall be defined (i.e. both horizontal and vertical limits). 
+SUR02.36 For the intended application, the acceptable number of aircraft of the total number of aircraft in the coverage volume required to be detected and displayed at any update during the operation shall be defined and justified depending on the aircraft equipage and the type of surveillance techniques used in the operational context. 
+SUR02.37 Probability of detection shall be defined for the intended application. The probability of detection shall meet the operational requirement throughout the required coverage volume, i.e. up to the maximum range and at all operational altitudes. 
+SUR02.38 If areas with lower than required probability of detection are identified, the ANSP shall clearly identify such areas, and measures for safe operation of aircraft within such areas shall be justified. 
+SUR02.39 Where services are provided in airspace where carriage of a transponder is mandatory for all aircraft, the co-operative surveillance system shall be capable of exceeding 97% probability of detection. 
+SUR02.40 Recommendation: Probability of detection should be at least 90% for conventional radars and exceed 97% for Monopulse and Mode S radars and other co-operative techniques. 
+False targets [e.g. density of false targets, rate of false targets, number of false tracks per hour] 
+SUR02.41 The presence of false targets and targets exceeding the maximum allowable horizontal position error displayed at any update shall be assessed and the maximum criteria shall be defined and justified for the intended operation. 
+ 	Note: The criteria shall include the false targets including reflections, detection via side lobes of a radar, targets erroneously declared as aircraft targets by plot extractor systems, and erroneous targets exceeding maximum allowable positional error affected on all co operative and non-co-operative techniques being used. 
+SUR02.42 Deleted. 
+Application Specific Guidance on Performance Requirements 
+Separation 
+SUR02.43 Co-operative surveillance systems supporting the separation application shall provide horizontal position, pressure altitude and the identity (aircraft identification or Mode A code) as a minimum. 
+SUR02.44 The pressure altitude reported to the surveillance data user shall be the most recent pressure altitude received from the aircraft. 
+SUR02.45 Maximum horizontal position error shall be less than half of the chosen separation minimum minus a specified safety buffer. 
+ 	Note: This is the maximum error. Other horizontal position accuracy requirements are applicable depending on the actual separation used. See below. 
+SUR02.46 Recommendation: Surveillance systems supporting separation applications should provide ground speed and track information of the aircraft. 
+Performance Requirements for 3 NM/5 NM Separation Application 
+SUR02.47 Surveillance Performance criteria have been developed by EUROCONTROL for 3 NM and 5 NM applications for both cooperative and non-co-operative surveillance techniques. 
+SUR02.48 The values in the following specification may be used as guidance by ANSPs. This document will be updated as new standards are developed by ICAO or European bodies such as EASA or Eurocontrol. 
+SUR02.49 The ATM Surveillance System Performance Specification is available at: 
+ www.eurocontrol.int/documents/eurocontrol-specification-atmsurveillancesystem-performance 
+Radio Frequency Characteristics 
+Interference 
+SUR02.50 Existing services have operating priority. The existing electromagnetic environment in which the equipment is to operate shall be assessed to ensure that the proposed equipment will comply with all requirements (360). 
+ 	Note: If, after installation, a new service experiences/creates interference from/to an existing service, modification of the new service must normally take place. The only exceptions are if the other service voluntarily agrees to change, or is in itself deficient and was installed after EMC Directive 89/336 (now replaced by 2014/30/EU) or the Radio and Telecommunication Terminal Equipment (R&TTE) Directive 1999/5/EC came into force. 
+SUR02.51 Ground-based transmitters shall be subject to spectrum protection requirements stated in Article 5 of the SPI IR (referred in SUR 02 paragraph SUR02.12) and compliant with the Radio Equipment Directive.  
+SUR02.52 Where ANSPs have reasonable evidence to believe that their air traffic surveillance systems are subject to interference effects, the ANSP shall inform the relevant CAA RO.  
+ 	Note: In addition, any interference effects affecting co-operative systems must 
+also be reported to the National Identification Friend or Foe / SSR Committee 
+(NISC) for investigation as required by Section 3 of CAP 761, Operation of IFF/SSR Interrogators in the UK: Planning Principles and Procedures (www.caa.co.uk/cap761). 
+SUR02.53 ANSPs operating 1030 MHz interrogators (e.g. SSR or MLAT) shall ensure that any 1030 MHz transmitter they operate transmits in accordance with NISC requirements published in CAP 761 and the conditions of the NISC Certificate issued for the relevant interrogator. 
+ 	Note: National aircraft equipage requirements are published in AIP GEN 1.5 Aircraft Instruments, Equipment and Flight Documents. 
+Frequency Stability of Transmitters, Receivers and Transceivers 
+SUR02.54 The surveillance system frequency stability shall be sufficient and within tolerance over the expected temperature range and variation in voltage. 
+Transmitter Output Power 
+SUR02.55 Transmitter Output Power shall be tested and verified during commissioning of the system. 
+SUR02.56 The transmitter output power budget shall be sufficient to achieve the required probability of detection throughout the required area of coverage. 
+Transmitter Unwanted Emissions 
+SUR02.57 Unwanted transmitter emissions shall be minimised and be within applicable statutory limits. 
+ 	Note: Transmitter unwanted emissions include out-of band emissions, spurious emissions, and harmonics. 
+Reducing Spurious Returns 
+SUR02.58 All spurious return reduction techniques shall be defined and justified (363). 
+ 	Note: Spurious returns include clutter, garble, spurious reflections etc. 
+Bandwidth 
+SUR02.59 The bandwidth required shall be justified (356). 
+ 	Note: A theoretical or practical evaluation of the frequency components of the output pulse could take the form of a Fourier transform of the theoretical output waveforms or a practical trial based on a spectrum analysis. In either case the evaluation should include the effects of tolerances on pulse spacing and duration and system non-linearity. 
+
+--- SUR 12 ---
+SUR12.20 Suitability of the performance assessment methodology for assessing the performance of the parameters of interest shall be justified. 
+SUR12.21 Where results are assessed by manual observation, assessment shall be performed by competent personnel (e.g. ATCOs or Air Traffic Engineers), and the results shall be logged with time of applicability.  
+ 	Note: Time of applicability may be the time the data item was displayed or a time duration, where the relevant performance parameter being assessed is measured with respect to time, e.g. probability of update or Pd, or delay etc. 
+Test Environment 
+SUR12.22 Where ToP or Flight Trials are used for assessing performance of a surveillance system, the performance shall be assessed within the coverage volume where the service is provided using the data from the surveillance system. 
+SUR12.23 In uncontrolled airspace where services are provided only for the participating aircraft and it is necessary to assess performance parameters involving more than one aircraft, the results shall be verified between aircraft to which the service is provided. 
+SUR12.24 Performance parameters likely to be affected by the following shall be identified with respect to following in an ANSP specific operational environment: 
+Aircraft behaviours (e.g. special manoeuvres, velocity, direction etc) 
+Weather Effects (e.g. rain, snow, wind etc) 
+External Interference sources (e.g. phone masts, other radar like transmitters) 
+Terrain Effects (e.g. mountains, sea) 
+Other noise, clutter or interference sources likely to affect performance (e.g. wind turbines) 
+ 	Note: The impact these may cause may depend on the specific surveillance 
+equipment used by an ANSP to provide services. Although an ANSP may not have identified all current or future sources that may exist in its environment that affect the performance of their surveillance equipment, any prominent features listed in categories above should be accurately identified. When establishing performance of a surveillance system, it is important to know the exact conditions in which the surveillance system delivered the measured performance. 
+Tests for Confirming Performance using Performance Prediction Models 
+SUR12.25 Where simulated tests are used to assess performance, ANSPs shall ensure the input parameters and assumptions used in the simulated model are valid for the test and the operational context. 
+SUR12.26 Simulated tests shall be as close an approximation to the real environment as possible in terms of target model, target behaviour, surveillance system, ANSP operational context, weather, terrain etc. 
+SUR12.27 ANSPs shall identify which specific practical scenarios are used for verifying the prediction model, along with all the parameter settings. 
+ 	Note: ANSPs may conduct tests for chosen scenarios, to confirm performance predicted based on a prediction model, where testing all such scenarios become impractical or cannot be tested within a practical duration. 
+Performance Assessment Duration 
+SUR12.28 The test periodicity or duration shall be justified as adequate to test the parameters subject to assessment. 
+Positional Accuracy Assessment 
+SUR12.29 Where accuracy is assessed in comparison to a second surveillance system with a known accuracy, the accuracy of the system used for comparative assessment shall be justified. 
+SUR12.30 Where accuracy is assessed independently of another surveillance system, the position of the test target shall be recorded by independent and suitable means. 
+SUR12.31 Positional accuracy assessment shall assess the accuracy of the system in the areas of operational significance. 
+Coverage Analysis 
+SUR12.32 Tests shall be conducted to prove the required level of detection within the coverage volume defined by the operational requirement. 
+SUR12.33 As the system provides a large coverage volume and it might be impractical to conduct practical tests throughout the coverage volume, tests shall at least cover detailed analysis into operationally significant areas. 
+ 	Note: Such significant areas will include, as appropriate: 
+Handover areas. 
+Holding areas. 
+Typical airway routes. 
+Areas with clutter or reflection problems. 
+Upper and lower boundaries of operational cover. 
+The approach 
+For Mode S systems requiring a discrete IC code operation, the validity of the assigned coverage map 
+SUR12.34 Tests shall contain scenarios to demonstrate: 
+lower vertical boundaries 
+upper vertical boundaries 
+maximum range 
+establish cone of silence area (where applicable) or boundaries of areas of non detection 
+SUR12.35 Detection at the edge of coverage shall be confirmed with a target of 1 m2 RCS. 
+SUR12.36 Coverage analysis shall contain an appropriate series of vertical levels to demonstrate that the surveillance sensors provide adequate coverage in the required coverage volume both in horizontal and vertical dimensions. 
+SUR12.37 Recommendation: The test should include slices at 1,000, 2,000, 4,000, 6,000, 10,000, and 20,000 ft above the aerodrome reference point and as appropriate to the OR (811). 
+SUR12.38 Test scenarios shall include target motion in inwards (centripetal) and outwards (centrifugal) directions from any system based on detection by a single sensor (e.g. radar/ADS-B) and scenarios including tangential motion. 
+SUR12.39 In addition test scenarios shall also include at least one climb and/or descend scenarios ideally from the bottom of coverage through to the top of coverage volume. 
+SUR12.40 A suitable horizontal test profile covering 360° horizontal coverage of the sensor or the sensor network shall be performed at a level equivalent to the base of the required coverage, the top of the required coverage and at a suitable medium level in between. 
+SUR12.41 Standard manoeuvres, manoeuvres to test the boundaries of flight path defined by operational procedures, and any special manoeuvres of aircraft operating in the airspace shall be included in the accuracy analysis. 
+Resolution Check 
+SUR12.42 The performance assessment shall include tests to check the resolution capability of the system in terms of the minimum separation standards or deconfliction minima as required in the OR (831). 
+SUR12.43 The resolution capability of the system shall be evaluated in both ‘standard’ areas and areas of clutter and reflections (832). 
+False Targets and False Tracks 
+SUR12.44 The overall system performance assessment calculations shall exclude false targets as much as practically achievable. 
+ 	Note: False target report is defined as a target report that does not correspond 
+to the actual position of a real aircraft target at the time it was presented to the user, which contains as the minimum the 2D positional data and the time of applicability of 2D positional data. 
+SUR12.45 The method of identifying false target for manual or automated calculation processes shall be justifiable (e.g. well known clutter areas, reflections etc). 
+Latency Checks 
+SUR12.46 The latency introduced by the ground based surveillance system shall be verified during performance assessment tests. 
+Testing Down-linked Aircraft Parameters 
+SUR12.47 Performance assessment shall consist of tests to demonstrate successful receipt and decoding of Down-linked Aircraft parameters. 
+SUR12.48 Any loss, or corruption introduced by the ground system shall be verified through a practical test. 
+Recording Test Results 
+SUR12.49 Where the results are not assessed in real time the surveillance data resulted from testing shall be recorded by suitable recording equipment. 
+SUR12.50 The recording equipment shall meet the recording equipment requirements stated in Part C, Section 3, SUR 10. 
+SUR12.51 The errors in the collection and recording of data shall be calculated and justified. 
+ 	Note: This may include: 
+The resolution error in any recording devices. 
+The error in the equipment used to determine the aircraft position. 
+SUR12.52 Recommendation: Target returns registered in each block of airspace should be recorded and analysed in order to identify areas of anomalous replies (813). 
+Tracking Performance 
+SUR12.53 The performance assessment shall determine the following: 
+Missed detections (individual updates) 
+Duration and number of consecutive missed detections 
+Track discontinuities 
+Track seduction 
+Track initiation 
+Track deviations 
+False tracks 
+SUR12.54 The number of consecutive missed detections that can be tolerated shall be justified. 
+SUR12.55 The maximum error of the deviated tracks shall not exceed the maximum horizontal position error defined in the required performance criteria. 
+SUR12.56 Any track initiation problems, track seduction or discontinuities shall be further investigated and shall be justified as acceptable for safe operation. 
+SUR12.57 For non-plot extracted systems, any track fading effects must be assessed. 
+Surveillance System Test Configuration 
+SUR12.58 Where service will be provided with one surveillance technique alone, performance of each surveillance technique operating alone shall be performance assessed for the operational service provided.  
+ 	Note: For example in normal operation WAM and PSR may be used as the main sources of surveillance data. However PSR alone may be used in WAM failure. 
+SUR12.59 Where the service is provided by simultaneously using multiple surveillance sources operating as combined or in parallel the simultaneous configuration shall be performance assessed. 

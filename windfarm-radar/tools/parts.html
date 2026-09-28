@@ -1,0 +1,47 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<script type="importmap">{ "imports": { "three": "../../js/vendor/three.module.js" } }</script>
+<style>body{margin:0;background:#101418}canvas{display:block}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+// Every part of one aircraft in its own colour, from three angles: side, top
+// and three-quarter. The measuring harness says whether the span and length
+// are right; this says whether the SHAPE is, and it is what found the fault
+// that a bounding box cannot see. The fuselage used to be a capsule with a
+// separate nose cone, and a capsule end cap closes to a point, so the body
+// pinched to nothing and the cone flared back out to full width. In grey it
+// read as a vaguely wrong blob. In colour the join was obvious.
+//
+//   tools/parts.html?k=widebody&g=1     k = preset key, g = girth
+import * as THREE from 'three';
+import { aircraftGeometry } from '../js/scene.js';
+import { TARGET_PRESETS } from '../js/model.js';
+const key = new URLSearchParams(location.search).get('k') || 'widebody';
+const girth = Number(new URLSearchParams(location.search).get('g') || 1);
+const p = TARGET_PRESETS[key];
+const COL = { fuselage:0x5588cc, nose:0x33ddaa, wing:0xffcc33, tailplane:0xff6699,
+  fin:0xaa66ff, engine:0xff3322, propeller:0xffffff, rotor:0x66ffff, boom:0x999999, 'tail-rotor':0xffffff };
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setSize(1500,520); renderer.setClearColor(0x101418,1);
+const scene=new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0x8fa6bb,0x202820,1.6));
+const sun=new THREE.DirectionalLight(0xffffff,1.3); sun.position.set(1,2,1.4); scene.add(sun);
+const views=[[0,0.001,1],[0,1,0.02],[1,0.15,0.35]];  // side, top, three-quarter
+const parts=new Set();
+views.forEach((v,i)=>{
+  const g=aircraftGeometry(p.spanM,p.lengthM,{planform:p.planform,wing:p.wing,girth,engines:p.engines,enginesOn:p.enginesOn});
+  g.traverse(m=>{ if(m.isMesh){ parts.add(m.userData.part);
+    m.material=new THREE.MeshStandardMaterial({color:COL[m.userData.part]??0xffffff,roughness:.5}); }});
+  const k=26/Math.max(p.lengthM,p.spanM); g.scale.setScalar(k);
+  g.position.set((i-1)*34,0,0); scene.add(g);
+});
+const cam=new THREE.PerspectiveCamera(35,1500/520,0.1,2000);
+// one camera, three copies rotated instead
+scene.children.filter(o=>o.type==='Group').forEach((g,i)=>{
+  if(i===1) g.rotation.x=-Math.PI/2;      // top view
+  if(i===2) g.rotation.y=-Math.PI*0.72;   // three-quarter
+});
+cam.position.set(0,6,64); cam.lookAt(0,0,0);
+renderer.render(scene,cam);
+window.__parts=[...parts]; window.__drawn=true;
+</script></body></html>

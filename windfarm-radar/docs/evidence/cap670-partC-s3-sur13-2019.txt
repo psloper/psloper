@@ -1,0 +1,736 @@
+CAP 670 Part C, Section 3: SUR 13 and Appendix A to SUR 13
+UK Civil Aviation Authority
+=================================================================
+Edition    : Third Issue, Amendment 1/2019, 1 June 2019, effective 1 August 2019.
+Source and extraction: as for the GEN 01 / GEN 02 extract alongside this file.
+Caveat     : figures and schematics are images and are NOT in this extract.
+
+SUR 13 is the RADAR requirement: "Requirements for Implementation of Wind
+Turbine Interference Mitigation Techniques".
+-----------------------------------------------------------------
+
+SUR 13: Requirements for Implementation of Wind Turbine Interference Mitigation Techniques
+Part 1 Preliminary Material
+Introduction
+SUR13.1 Interference caused by Wind turbines is becoming an increasing issue in the UK and in the rest of the world for Air Traffic PSR and potentially on other types of surveillance systems.
+Scope
+SUR13.2 The requirements and policy statements stated in this document are limited to
+the impact of wind farm interference on Air Traffic Surveillance Systems. The requirements and policy statements in this document address various mitigation techniques and issues associated with the implementation and integration of such techniques. A discussion and further details on the issues of concern are detailed in Appendix A to SUR 13.
+Part 2 Requirements
+General
+SUR13.3 ANSPs are reminded that as per the existing SES Regulation, Commission Regulation (EU) No. 1035/2011 and its amendments, providers of air traffic services, in accordance with their SMS, must ensure that hazard identification as well as risk assessment and mitigation are systematically conducted for any changes to the ATM functional systems and supporting arrangements. All planned safety related changes must be notified to the National Supervisory Authority (CAA).
+SUR13.4 Any wind turbine effects that are known to be affecting the surveillance services provided by an ANSP, shall be informed to the relevant CAA Regional Inspector.
+SUR13.5 Where an ANSP has reasonable doubt that wind turbine interference is likely to affect their radars from existing or planned wind farm installations, a Line Of Sight Analysis shall be conducted.
+NOTE: The CAA have the authority to review the ANO approvals granted to previous mitigation solutions in circumstances where subsequent wind turbine installations are known to have a safety related impact on the ANSP’s surveillance services.
+SUR13.6 A local safety assessment shall justify the mitigation methods applied.
+Compliance with Regulatory Provisions
+Statutory Requirements
+SUR13.7 The equipment used for the provision of ATS in the UK must comply with the relevant statutory requirements and EU Directives as stated in SUR01.6.
+Single European Sky Regulations
+SUR13.8 Generic requirements/legislation applicable to the regulation of all CNS/ATM systems are described in Part B of CAP 670.
+SUR13.9 In addition, all ground based surveillance sensors must comply with the relevant provisions of the SPI IR.
+SUR13.10 If relevant, SSR sensors shall also comply with relevant provisions of the SES IRs that are listed in SUR01.5 in CAP 670.
+SUR13.11 ANSPs implementing new ground based equipment are required to submit the relevant Interoperability files including a Declaration of Verification (DOV) and Technical Files.
+NOTE: The new equipment may include surveillance sensors, processing systems, plot assigner combiner systems, multi sensor tracking systems etc.
+SUR13.12 The manufacturers of such equipment are required to issue Interoperability declarations including Declaration of Conformity (DC) or Declaration of Suitability for Use (DSU).
+ICAO Requirements
+SUR13.13 Any SSR systems used by the ANSP as mitigation to wind turbine interference effects shall comply with the relevant ICAO SARPS provisions listed in SUR01.7 of CAP 670.
+CAP 670
+SUR13.14 Any PSR systems used as in-fill sensors shall comply with the frequency assignments and transmitter characteristics requirements identified in CAP 670 SUR 04.
+SUR13.15 Any in-fill radar implementation shall comply with the appropriate frequency assignments and conditions attached to the frequency assignments issued by the CAA and the WTA Act Licence certificate as a minimum.
+SUR13.16 Any co-operative surveillance sensors including SSR Mode S, MLAT, and ADS-B systems shall comply with the relevant SUR sections in CAP 670 and shall comply with conditions attached to the NISC Interrogator Approval.
+SUR13.17 For solutions involving software, compliance with SW 01 in CAP 670 is also required.
+SUR13.18 In addition, compliance to the above provisions shall be declared in the DSU to be issued by manufacturers of surveillance equipment under the
+Interoperability regulation of SES, as well as in the relevant technical files and Declaration of Verifications to be issued by the relevant ANSPs.
+Performance of Solutions Involving Additional Equipment
+SUR13.19 The overall ground based surveillance system shall meet the required
+performance necessary for all applications for which the system is intended.
+NOTE: Detailed discussion on performance of mitigation techniques can be found in Part 6 of Annex A to SUR 13.
+Operational Mitigations
+Tolerating Clutter
+SUR13.20 Where wind turbine effects are tolerated, a local safety assessment shall justify the ability to provide the service in a safe manner without the need to apply special procedures or mitigation techniques.
+SUR13.21 The human factors considerations shall be given due consideration.
+SUR13.22 The following shall be taken into account in the assessment:
+The nature and the extent of the effects
+The operational significance of the area affected
+Controllers’ ability to provide service in an area of known clutter/false targets
+The changing nature of the effects
+The degree of confidence on the completeness of the identified effects
+Consequences of the delay to accurately recognise targets.
+Controlled Airspace
+SUR13.23 In controlled airspace, the need for a procedural mitigation shall be assessed based on:
+Level of transponder carriage
+The likelihood of aircraft suffering from radio contact failure
+Controller workload
+The risk of infringers coming into conflict with controlled traffic
+Military aircraft activity
+SUR13.24 Any procedures to be applied shall be defined and documented in the unit MATS Part 2.
+Uncontrolled Airspace
+SUR13.25 Where re-routing around the clutter or the wind farm area is applied, a minimum separation distance of traffic from the clutter shall be specified and justified.
+SUR13.26 Any limitations applied to the surveillance service shall be clearly stated and the appropriate procedures shall be mentioned in the unit MATS Part 2 (e.g. informing pilot of the aircraft receiving the service, that the service is being degraded due to clutter, making the pilot aware of the possibility that late or indeed no notification of conflicting traffic may be given).
+Transponder Mandatory Zones and Surveillance by Co-operative
+Ground Sensor
+SUR13.27 Where surveillance by a co-operative sensor is selected as a mitigation mechanism, the ANSP shall:
+Only provide a service provided that the airspace concerned is a
+Transponder Mandatory Zone or where aircraft within the affected area are transponder equipped
+Assess the likelihood of faulty transponders causing non-detection of some targets
+Assess wind turbine effects on the chosen co-operative surveillance display
+(e.g. false targets caused by wind turbine reflections on SSR)
+Where the co-operative sensor is used in combination with a PSR, the clutter level from the PSR shall not affect in a manner that data from the cooperative sensor is not clearly visible on the display.
+Adjusting Radar Antenna Elevation
+SUR13.28 Where antenna beam tilt is adjusted in order to mitigate wind turbine effects, flight trials or targets of opportunity traffic analysis shall confirm the performance of the radar meets the operational requirement.
+SUR13.29 Low level coverage loss shall be assessed and suitable measures shall be in place to detect and manage traffic over the area of coverage loss resulting from antenna beam tilt (e.g. all aircraft are SSR equipped and coverage from an SSR sensor exists).
+Plan the Location of the Radar to Make use of Terrain Shielding
+SUR13.30 The effects on the surveillance service shall be assessed, taking into account the geographical locations of the radar, the wind turbine/s and the terrain shielding effects.
+SUR13.31 The assessment period shall be agreed with the relevant CAA Regional Inspector.
+SUR13.32 The evidence of the assessment shall justify the mitigation measure, by indicating the effects are not experienced or meet the minimum operational requirement following implementation of such charges.
+Changing the Wind Farm Location or its Characteristics
+SUR13.33 Where changes are made to the wind farm to minimise the wind farm effects on radars, the effects on the surveillance service shall be reassessed following implementation of such changes.
+SUR13.34 The assessment period shall be agreed with the relevant CAA Regional Inspector.
+SUR13.35 The evidence of the assessment shall justify the mitigation measure, by indicating the effects are no longer persistent or meet the minimum operational requirement.
+Physical or Terrain Masking/Clutter Suppression Fence
+SUR13.36 The use of a clutter suppression fence or other objects to mask the radar from seeing the wind farm shall be justified and only used where low-level coverage masked from detection does not compromise the operationally required converge.
+SUR13.37 Where a clutter suppression fence is used, the size, angle and location of the fence shall be carefully designed not to cause adverse effects to the radar receiver, radiation pattern, reflections and masking of undesired areas.
+SUR13.38 The effects of the clutter suppression fence shall be justified by a performance assessment following implementation.
+SUR13.39 The effects of such a clutter suppression fence on an SSR co-mounted with a PSR shall be considered.
+PSR Sector Blanking or Range-Azimuth Gating (RAG)
+SUR13.40 PSR sector blanking for the purposes of mitigating wind turbine effects on a
+controller’s display shall only be permitted where the ANSP provides a robust safety argument that total loss of all surveillance data on the blanked areas would cause no safety related impact.
+SUR13.41 Where air traffic services are provided in the areas masked on the controller’s display, the strategy for managing traffic shall be specified and justified.
+SSR only or Co-operative only Operation
+SUR13.42 Any co-operative only surveillance provision shall be provided in accordance with the national coverage requirements published in CAP 670 SUR 01 and shall be liaised with the appropriate CAA Regional Inspector.
+Use of Amplitude Thresholds
+SUR13.43 Where amplitude thresholds are applied, for mitigating wind turbine effects, the chosen amplitude threshold shall not cause non-detection of the smallest targets in the ANSP’s airspace that were previously detectable with the Primary Radar.
+SUR13.44 The threshold set shall take in to account the RCS of the largest wind turbine in the area affected, the largest fixed clutter (other than turbine), and a 1m2 target likely to fly within the area of interest.
+SUR13.45 The chosen threshold shall be justified and shall meet the Pd operationally required in the airspace concerned or the Pd that was previously achieved with the PSR system.
+SUR13.46 The likelihood of loss of target detection shall be assessed by a comparison of targets detected prior to and after the threshold implementation.
+SUR13.47 The probability of detection and false target rate and any effects on processing shall be assessed by a suitable performance assessment method (e.g. targets of opportunity study, flight trial).
+SUR13.48 The assessment period shall be agreed with the relevant CAA Regional Inspector.
+SUR13.49 The results of the assessment shall justify the use of threshold, by indicating the effects are no longer persistent and meet the minimum operational requirements.
+Constant False Alarm Rating Thresholds/Temporal Threshold
+Processing
+SUR13.50 The same requirements identified for amplitude thresholds shall apply.
+Use of Clutter Maps
+SUR13.51 The use of clutter map technique shall be justified with respect to the characteristics of the radar system involved. Any limitations to clutter map processing shall be clearly identified.
+SUR13.52 Where the clutter map technique is the only mitigation applied to overcome wind farm clutter on a surveillance display, the clutter map shall remain accurate and valid throughout the changing nature of wind turbine clutter characteristics such as not to conceal a true target.
+SUR13.53 The probability of detection and false target rate shall be assessed by a suitable performance assessment method (e.g. targets of opportunity study).
+SUR13.54 The assessment period shall be agreed with the relevant CAA Regional Inspector and shall cover all areas of the display where the clutter mapping technique is applied.
+SUR13.55 The results of the assessment shall justify the use of clutter maps, by indicating the Pd and the false target rate meets the minimum operational requirements.
+SUR13.56 Any clutter mapping technique applied shall not conceal the smallest aircraft targets i.e. 1m2 in the ANSP’s airspace affected.
+Application of Automated Tracking Techniques
+Tracking criteria
+SUR13.57 Where a specific criteria is designed and applied for the automated tracking process in order to address wind turbine interference, the criteria applied shall be clearly defined and justified (e.g. if the criteria is based on a speed, level or a track angle).
+SUR13.58 The applied criteria shall not cause discontinuation of already initiated tracks outside the wind farm area, or non-detection of true tracks, within the wind farm area.
+Display of Predicted Target Reports/Updates
+SUR13.59 In tracking radars, where temporary loss of detections are experienced, and if predicted target positions are displayed for track maintenance, such predicted position reports shall be clearly distinguishable from the non-predicted targets on the controller’s screen by means of a different symbol or a colour.
+SUR13.60 The maximum number of predicted positions chosen to display shall be specified and justified.
+Track Termination
+SUR13.61 Track termination criteria (e.g. number of consecutive missed detections) shall be specified and justified.
+SUR13.62 The maximum number of consecutive missed detections before the track is terminated shall be operationally acceptable and be justified.
+Special Aircraft Manoeuvres over the Wind Farm Area
+SUR13.63 The ANSP shall identify the potential aircraft manoeuvres including special manoeuvres over the wind farm region.
+SUR13.64 The effect of the identified manoeuvres over the wind farm region, on position prediction method applied by the tracking radar shall be assessed.
+SUR13.65 Special tracking and prediction capabilities of the radar to detect such manoeuvres shall be identified e.g. Use of a Kalman Filter.
+Track Initiation
+SUR13.66 In tracking radar, track initiation criteria shall be specified.
+SUR13.67 Suppression of track initiation shall only be accepted following an assessment of the:
+Likelihood of an aircraft first appearing in the range azimuth cells of wind turbine area where suppression will be applied,
+Where there is a strong likelihood of new tracks being generated caused by reflections from wind turbines (e.g. split or duplicate tracks generated in wrong azimuth)
+The likelihood of non-transponding, low RCS targets such as light aircraft or helicopters flying in the area
+Use of Adaptive Moving Target Indication (MTI) Techniques
+SUR13.68 The likelihood of loss of detection of small targets and slow moving targets shall be assessed using adaptive MTI techniques.
+SUR13.69 The probability of detection and false target rate and effects on processing shall be assessed by a suitable performance assessment method (e.g targets of opportunity study, flight trial).
+SUR13.70 The assessment period shall be agreed with the relevant CAA Regional Inspector.
+SUR13.71 The results of the assessment shall justify the use of adaptive MTI by indicating the effects are no longer persistent or meet the minimum operational requirements.
+Integration of In-fill Radar Target Positions to the Main Primary Radar Display
+Slant Range Error
+SUR13.72 The slant range errors in the co-ordinate conversion process shall be corrected and the methodology used for the slant range error correction shall be specified.
+SUR13.73 The accuracy of the slant range error correction process shall be justified.
+SUR13.74 Where a default altitude setting is used for the slant range correction process, the accuracy of this process shall be demonstrated and justified.
+Coverage
+SUR13.75 The coverage of the in-fill radar shall be adequate to provide coverage over the full volume of operational airspace above the wind farm region.
+SUR13.76 Recommendation: the in-fill radar should have coverage extending to the precise area of the wind farm. The extended coverage should not result in target positions being duplicated, but rather lead to a smooth integration process across the boundary.
+SUR13.77 The range and azimuth cells covering the wind farm region, removed from being displayed in the main radar display shall not include areas over the wind farm not detected by the in-fill radar.
+SUR13.78 The removal of the wind farm region from the main PSR display shall not result in duplicate target positions or lost target detections on the display.
+Locating the In-fill Sensors
+SUR13.79 When locating an in-fill radar the following factors shall be taken into account:  the need for slant range correction
+the maximum range performance of the in-fill radar
+the size of the wind farm region
+in-fill radar’s susceptibility to nearby interference sources and potential for the in-fill radar to suffer from interference effects from nearby electromagnetic sources
+the need to have extra range coverage for smoother integration
+terrain effects
+safeguarding considerations
+Performance Monitoring of the In-fill Radar
+SUR13.80 All primary in-fill radars shall have methods of alignment checking.
+SUR13.81 There shall be methods of on-going performance monitoring of the in‑fill radar system.
+SUR13.82 All methods of on-going performance verification of in-fill sensors shall be specified.
+Timeliness of In-Fill Data
+SUR13.83 Where absolute time stamping is used by the main radar and the infill radar, using a common time source is recommended.
+SUR13.84 As reference for time stamping a standard time source should be used.
+Plot or Track Correlation across the Boundary of In-fill Area
+SUR13.85 Where both main radar and in-fill radar are PSR sensors and outputs tracks, the track correlation method across the boundary of the in-fill region shall be specified.
+SUR13.86 Where the in-fill primary data is not provided by the in-fill sensor as track data but as plot data, and the main PSR is a tracking radar, the track continuation/data fusion algorithm or architecture shall be specified.
+SUR13.87 The tracking function shall not cause a noticeable track jump of the positions of target tracks when transitioning to and from in-fill regions to non in-fill regions.
+Accuracy
+SUR13.88 The accuracy of the positional information following the implementation of the in-fill data shall be demonstrated and justified as suitable to the operational requirement.
+Differences in Update Rates/Scan Rates
+SUR13.89 The update rate of the in-fill radar shall be at least as same as the main PSR.
+SUR13.90 The update rates of each surveillance sensor shall be specified and the accuracy of the output position be justified.
+SUR13.91 The required data update rate shall be met throughout the coverage volume by the main PSR as well as the in-fill radar/s.
+NOTE: If the update rates of the in-fill radar/s is slower than the main primary radar being used for the provision of services, it may still be possible to integrate the in-fill radar data into the main radar picture. However depending on the operational significance of the area subject to wind turbine interference, the required update rate must be met and therefore a slower update rate may not be acceptable.
+Processing Capacity
+SUR13.92 An ANSP shall:
+1. Consider the additional processing capacity required for in-fill radar data integration or advanced tracking processes.
+30. Consider the likelihood of requiring more in-fill radars in future, in order to mitigate wind turbine clutter and the ability of the system to process the various feeds simultaneously.
+SUR13.93 The maximum number of target reports that can be processed simultaneously by the processing equipment shall be specified and tested.
+Processing Delay/Latency (in-fills/filter software/work‑rounds)
+SUR13.94 The processing delay shall not be significant enough to impact the validity/timeliness of the data being presented to a controller at any time.
+SUR13.95 The processing delay shall be tested as part of the site acceptance testing of any wind farm mitigation solution that requires additional processing.
+Data Formats of an In-fill Radar and the Required Processing System Capability
+SUR13.96 The radar data output formats output by the main PSR and the in-fill sensors and/or track processors shall be specified and be compatible.
+SUR13.97 The processing system shall also be able to accept and process the in-fill radar data into the same format used by the main airfield PSR.
+Display Aspects
+SUR13.98 The need to make in-fill areas/wind farm regions visible on the controller’s display shall be considered based on whether:
+The controllers feel it is necessary or useful in performing their tasks to know the boundaries of the in-fill areas
+It is necessary to mark such areas for the controllers to be able to notice the area affected by a failure of an in-fill source
+It is helpful to make the in-fill areas visible on the controller’s display to apply contingency measures in the failure of an in-fill (e.g. apply a work round or procedural control over the affected area or to switch to a secondary only remote feed to cover the in-fill area etc.)
+SUR13.99 Where the outcome of this assessment indicates that it is necessary to mark the boundaries between in-fill areas and the main PSR areas on the controller’s display, a human factors assessment shall be carried out to ensure the colour schemes used are appropriate and the changes are up to the controllers’ satisfaction.
+Mitigations against Failures of Mitigation Techniques Including In-Fill Radars
+SUR13.100 The strategy to mitigate the wind turbine effects in the event of a failure of an in-fill source or the mitigation technique shall be identified.
+SUR13.101 Fall back procedures or contingency measures to be applied in the unavailability of the in-fill data shall be specified and shall be included in the unit MATS Part 2 as a documented process.
+SUR13.102 Where advance tracking systems or processing techniques are used, methods shall be in place to indicate processor overload situation.
+SUR13.103 Where mitigation techniques involve integrating additional equipment to the ground based surveillance system, all failure modes of such systems shall be identified by a failure mode analysis.
+Indication of Failure of Wind Turbine Mitigation Technique
+SUR13.104 Methods shall exist to indicate to the controller the failure of the infill radar or other automatic mitigation technique in a timely manner.
+SUR13.105 The alarms and indications used shall be justified considering:
+Colour schemes used
+Duration of any audible alarms
+Level of potential distraction to the controller
+Frequency of the alarms
+Impact of Using Automatic Mitigation Techniques on Safety Nets
+SUR13.106 The impact of loss of in-fill radar data or the failure of the mitigation techniques on the safety nets functionality shall be identified.
+SUR13.107 Where the contribution of safety nets is required in order to achieve an acceptable level of safety, the risks from the loss of safety net functionality over the wind farm affected area shall be mitigated by suitable means.
+Support and Maintenance of Mitigation Equipment
+SUR13.108 Where an in-fill radar is not owned by the ANSP providing the air traffic service, and is owned or maintained by a third party, appropriate contractual agreements shall be in place.
+SUR13.109 Such agreements shall indicate the:
+Availability of spare equipment supplied to the ANSP
+Time to repair the equipment
+Contact points
+Any remote accessibility by the ANSP to configure the system
+Physical accessibility to the equipment
+Maximum outage periods tolerated by the ANSP
+Appendix A to SUR 13: Guidance on Wind Farm Mitigation Techniques
+Introduction
+SUR13A.1 The purpose of this document is to provide supplementary guidance regarding the implementation of wind-turbine mitigation solutions affecting the performance of the Air Traffic Surveillance Radars or surveillance systems.
+SUR13A.2 The effects discussed in this document are limited to effects that impact Air Traffic Surveillance Systems. This document addresses the regulatory guidance on producing a safety argument for a safety related change driven by wind warm interference, description of wind turbine effects, an overview of mitigation techniques and technical issues associated with implementation and integration of such techniques.
+Background
+SUR13A.3 Interference caused by wind turbines is becoming an increasing issue in the UK and in the rest of the world for Air Traffic PSR.
+SUR13A.4 It is thought that wind turbines also have the potential to cause interference to other CNS systems such as VORs, radio communications, and ILSs, however the most obvious issue encountered on civil air traffic systems to date is the presence of false targets on primary radar systems.
+SUR13A.5 ANSPs are responsible for assessing the safety impact of wind turbines on all aspects of ATM operations to ensure the validity of their overall safety argument. This paper focuses on the known effects of wind turbines on surveillance services and provides guidance on the typical issues to be considered when conducting such safety assessments.
+SUR13A.6 Whilst co-operative surveillance systems such as SSR, multilateration and ADS-B are either less susceptible or unsusceptible to wind farm interference, the wind farm issues on PSR remain a significant issue in the UK due to the high usage of PSR technology in the UK air traffic environment. Whilst there are several initiatives to explore other possibilities such as utilising Multistatic primary radars and to review the UK surveillance strategy, the role of PSR as an essential element of air traffic surveillance infrastructure is unlikely to change before 2020. The problem of wind turbines interfering with ATC PSR has been identified in the rest of Europe, although there appears to be a reduced impact compared to the UK due to the greater reliance on SSR.
+SUR13A.7 As manufacturers around the world are trying to develop various wind farm mitigation solutions, and as UK ANSPs start implementing these various solutions, the CAA must provide safety oversight to ensure that the mitigation solution is acceptable.
+SUR13A.8 This document aims to:
+Gather information and form a discussion paper as regards the various guidance material published to date.
+Raise awareness and share knowledge regarding the Wind Farm mitigation techniques the CAA are so far aware of.
+Discuss each type of technique and understand the advantages and disadvantages of each type.
+Identify areas of concern with regards to each implementation which must be considered when producing a robust safety argument.
+To provide safety assessment guidance with regards to effects from wind turbines.
+Part 1: Safety Oversight of Wind-farm Mitigation Techniques Implemented by ANSPs
+This section contains regulatory guidance regarding the production of a credible safety argument for the safety related changes made to achieve an acceptable level of safety, following implementation of mitigation techniques to address wind turbine interference effects.
+Safety Argument – General Discussion
+SUR13A.9 Wind Turbine interference is an external effect that has the potential to cause a safety related impact on CNS systems. Wind turbines can also cause physical barriers to operations if situated close to an airfield. Such external interferences can directly or indirectly contribute to an accident or an undesired consequence.
+SUR13A.10 	As per the Single European Sky regulation, “Risk” means the “combination of the overall probability, or frequency of occurrence of a harmful effect induced by a hazard and the severity of that effect”.
+SUR13A.11 	Therefore, hazards caused by wind turbine interference may increase the overall risk in two ways:
+By increasing the frequency of occurrence of the harmful effects that could be caused as a direct or indirect result of the hazards caused by wind turbine interference, or
+By increasing the severity of an effect that could have resulted as an effect of lesser severity in the absence of the wind turbine effects.
+SUR13A.12 	Wind turbines can introduce new hazards that were not identified previously in the absence of wind turbines near an airfield. These new lower level hazards (assessed at an equipment level, or controllers display level) may contribute to and result in an increased frequency of occurrence of hazards identified at a higher level. Hazards can be identified at any level which can be defined. For example the hazards of the overall ground based surveillance system may have been identified at the display level. One such hazard may be loss of target data. One could define hazards caused by the wind turbines at an equipment level. For example, one of the wind turbine interference effects is the loss of receiver sensitivity. Loss of receiver sensitivity could be identified as a hazard at equipment level. This hazard has a direct link to the hazard “loss of data” identified for the overall surveillance system at a display level. Therefore the rate of occurrences of degradation of receiver sensitivity will impact the rate of occurrence of the loss of targets.
+SUR13A.13 	Clearly if the effects caused due to the presence of wind turbines near an airfield introduce hazards or contribute to the existing hazards to the surveillance services provided by an airfield, this will result in an overall increase in the risk.
+The exact increase in risk directly attributable to the wind turbines may be theoretically estimated. This is only possible provided that the ANSP is aware of the level of risk in the absence of wind turbines, the wind turbine hazards have been accurately identified on all areas and the assumptions/predictions about the frequency of occurrence of these hazards are realistic.
+SUR13A.14 	However following the risk assessment, it may be evident that the effects (i.e. those effects that cannot be regarded as negligible) caused by the wind turbines result in a difference in a performance attribute that can be tangible and measurable using either statistical measurements or by the judgement of human intellect. For example, the only effect that might occur as a result of presence of wind turbines near an airfield might be an increased level of false targets (clutter) on a surveillance display. Number of false targets is part of the performance criteria that must be met by the ground based surveillance system to meet the operational requirement. If this outcome is certain to be the only effect, since the number of false targets is a measurable effect, the ANSP could argue that the risks caused by this effect is mitigated if the level of false targets prior to the presence of wind turbines were achieved following the implementation of a mitigation technique. Another example is the appearance of a ‘twinkling’ effect on the display that would cause discomfort to controller’s sight as a result of wind turbine interference. Although there is no directly measurable defined performance criteria to this effect, it is a tangible effect to the human eye, hence if the twinkling effect was controlled to the level such that the controllers were comfortable looking at the screen, the hazards caused by this effect could be addressed. In such circumstances, the increased level of risk due to wind turbine interference can be addressed by addressing the effects that were caused by such interference without having the need to numerically quantify the overall increase in the risk.
+SUR13A.15 	Most effects caused by wind turbines are measureable, or verifiable, therefore without calculating their exact contribution to the overall hazards and the increase in probabilities of the hazards attributable to wind turbines (i.e. total increase in risk due to wind turbine effects) acceptable levels of safety can be achieved by mitigating such effects and their rates of occurrences back to the original level. The acceptable level of safety is therefore the currently existing level of safety without the presence of wind turbines.
+SUR13A.16 	This can only be achieved provided that all such effects and the likelihood of their occurrence are accurately identified, valid and complete. Although the common effects of wind turbines on ATC primary radars have been broadly identified, the exact effects affecting a particular ANSP site depends on numerous factors that affect the wind turbine, radar and target relationship.
+SUR13A.17 	In most implementations it has been evident that the vast majority of wind turbines affect ATC primary radars although a considerable level of impact may
+also be possible on Navigation aids such as VORs, DMEs or communications equipment.
+SUR13A.18 	The mitigation of risk by addressing the effects back to the normal level without the need to numerically quantify the total increase in risk due to the presence of wind turbines can only be achieved if the methods of mitigating such effects do not have any impact to the elements of the system being considered within its defined system boundary. Such an argument could only be true if the ANSP manages to mitigate all effects caused by wind turbine interference without affecting or changing any element of the ground based surveillance system. In such a scenario, there will be no introduction of new risks by the mitigation technique, or there is no possibility for the mitigation technique to change the existing hazards or their rates of occurrences.
+SUR13A.19 	Eliminating the wind turbine effects or mitigating such effects to an acceptable level may not often be achieved without making a modification to the ground based surveillance system or affecting its hazard rates. Where such modifications are necessary, such modifications should be considered for their overall impact on the safety of the ground based surveillance system. This requires the ANSP to identify the impact to the overall risk budget allocated or that should be achieved and maintained by the system.
+SUR13A.20 	It is highly important to note that an introduction of a mitigation mechanism may bring new hazards, and as such may also contribute to increasing the overall level of risk. In most circumstances the solution may involve installation of new equipment (e.g. in-fill radar) or modifying the existing equipment (e.g. wind farm filter solution). The affects of this change on existing people, equipment (e.g. radio interference of an in-fill radar to an existing surveillance or comms equipment) and procedures also need to be assessed for any safety related impact.
+SUR13A.21 	Therefore, introduction of mitigation techniques, whilst helping to mitigate the effects on a surveillance display to meet the required performance criteria will also have an impact on the overall surveillance system integrity performance. Since the level of risk is the risk of the overall ground based surveillance system, merely demonstrating that the effects have been controlled to meet the required performance criteria is not sufficient to demonstrate that the system maintains an acceptable level of safety.
+SUR13A.22 	The strategy for demonstrating an “acceptable level of risk” therefore depends on whether the wind turbine effects were addressed with or without making a change to the existing system. Where such effects are mitigated without making a change to the surveillance system, one could argue that provided no other systems are affected by the wind turbines, the effects on the surveillance system are mitigated by controlling the effects to meet the required performance criteria (e.g. % of false targets).
+SUR13A.23 	However, where a modification has been made to the ground based
+surveillance system, the acceptable level of safety must not only meet the required performance criteria, but also the overall level of risk must be acceptable. For an existing system this could be the level of safety that is currently achieved by the system or a lower risk than the current level, if achievable.
+SUR13A.24 	A single mitigation solution may not address all identified effects. The ANSP may decide the best mitigation techniques that are capable of mitigating the effects. Mitigation techniques should therefore be carefully considered such that all effects can be appropriately addressed.
+SUR13A.25 	In addition to the ability to meet an acceptable level of safety and the required performance criteria, ANSPs may have other reasons in favour of the mitigation solution chosen such as:
+The mitigation uses minimum bandwidth
+Requires low power
+Flexibility to expand if necessary in future
+Easy to maintain
+Extremely high reliability
+Favourable to RF environment
+which would make a stronger argument as to why the chosen solution is best for an ANSP’s circumstances.
+Safety Argument – Validity of the Assessment of Impact caused by
+Wind Turbines
+SUR13A.26 	The ANSP must first establish if the wind turbines cause, or are likely to cause, any safety related impact to the operations of an airfield or to the services (CNS) provided.
+NOTE: Methods of such impact assessment are out of scope of this document.
+SUR13A.27 	For surveillance systems, ANSPs must identify all effects (e.g. display effects/processing system effects etc) caused by wind turbines within the line of sight of the radar.
+NOTE: Discussion and guidance on assessment of impacts caused by wind turbines on radars from existing wind turbines and planned wind turbine installations can be found in CAP 764 Appendix 2 “Radar Assessment Methodology”.
+SUR13A.28 	All existing and potential wind turbine effects on CNS systems must be correctly identified that would contribute to existing hazards or that would cause new hazards. This must include identifying the probability of occurrence of such hazards.
+SUR13A.29 	The assessment of hazards introduced by the wind turbine interference on all CNS equipment must be complete and valid.
+SUR13A.30 	The related consequences must be identified. The consequences must be traceable to the hazards. The impact assessment on the consequences must focus on the severity as well as the likely increase in rates of occurrence of the consequences.
+SUR13A.31 	Impact to the required performance criteria for the services provided using the CNS equipment must be assessed (e.g. increase false target rate and decreased Pd on radars).
+SUR13A.32 	The scope or the boundaries of the individual systems affected by wind turbine interference must be clearly defined. Where there are other systems reliant upon the system/s directly affected by wind turbine effects, they should also be identified and their boundaries must be defined (e.g. ORRD feeds supplying data for other parties).
+NOTE: These dependant systems may not necessarily be used to provide the same service.
+SUR13A.33 Where safety related impact to the service is identified, claims made in the safety argument must indicate that;
+The safety impact has been assessed in a satisfactory manner
+The ANSP is satisfied with the outcome of this assessment
+No other effects have been identified on the system and to the ANSP’s knowledge this list is complete and valid.
+SUR13A.34 The evidence must indicate the process used to identify such effects and the competency of those who conducted the assessment.
+Safety Argument – Validity of the Selected Risk Mitigation Strategy
+SUR13A.35 	Depending on the outcome of the safety assessment, the ANSP must identify the increased level of risk that should be mitigated, and the performance parameters that are affected which must be met by the operational requirement in order to provide the service using the systems affected.
+THE REQUIRED PERFORMANCE CRITERIA FOR THE SERVICE PROVIDED SHALL BE MET BY THE SYSTEM IN ORDER TO PROVIDE THE SERVICE FOR WHICH THE SYSTEM IS USED.
+NOTE: The ANSP may adopt various risk mitigation strategies. It may be that the ANSP wishes to provide a limited service or a different service (e.g. such as procedural mitigation or increasing the separation minima). Whichever means are used, as long as the surveillance equipment are used to provide the service, the required performance for the chosen service must be achieved by the system.
+SUR13A.36 	Once such effects are correctly identified, the risk mitigation strategy must be clearly defined.
+SUR13A.37 	The mitigation technique or techniques chosen shall be clearly identified. The suitability of the mitigation technique/s must be justified.
+SUR13A.38 	The mitigation technique or techniques chosen shall be capable of
+mitigating the level of risk increased as a result of wind turbine interference.
+NOTE: The mitigation technique may or may not involve making a modification internal to the system being considered (e.g. ground based surveillance system). The mitigation may only involve making a modification external to the system (e.g. a clutter fence). Although no internal modification is made to the CNS system, the mitigation technique itself may impact other systems that are not necessarily part of the system that was affected by wind turbine interference, for example, having a clutter fence might affect a SSR that is co‑mounted with the affected PSR.
+SUR13A.39 	Where no other systems are affected (outside the defined system boundary) and the mitigation technique does not require a modification internal to the system being considered (e.g surveillance system), it must be demonstrated that:
+The mitigation technique has mitigated the increased level of risk to a tolerable level and required performance criteria is met by the overall system
+The mitigation technique has not had a safety related impact on any other services or airfield operations or,
+If the mitigation technique has had an impact on other services outside the system, evidence must also demonstrate that any risks caused by the mitigation technique on airfield operations or other services (i.e outside the boundary of the system being mitigated) have been addressed by suitable mitigation methods.
+SUR13A.41 	Where other systems are known to be affected in addition to the system being considered and the mitigation technique requires an internal modification to the system being considered (e.g.PSR) it must be demonstrated that:
+The mitigation technique/s has mitigated the increased level of risk to a tolerable level and required performance criteria are met by the individual systems affected
+The modification’s (mitigation technique) impact to the overall safety budget of the system being considered showing the acceptable level of safety is achieved
+Modification’s impact to the safety budget of the other systems which are reliant on the system affected
+If modifications have been made to the other systems, the interdependencies between the systems affected, dependencies by other systems on the affected systems, and the impact of the mitigation technique to such systems SUR13A.43 	The service, or any alterations to the service provided by the ANSP, shall be clearly defined along with any change to the required performance criteria.
+SUR13A.44 	The argument must be made that the required performance criteria is met by the ground based system following the implementation and integration of the wind turbine mitigation solution/s.
+SUR13A.45 	Evidence must consist of performance assessment data demonstrating the performance of the ground based surveillance system, which must meet the required performance for the service being provided.
+SUR13A.46 	Claims must indicate that the impact of the mitigation technique on other services and airfield operations (including people, equipment and procedures) have been assessed and any hazards identified.
+SUR13A.47 	The safety argument for the implementation of the mitigation mechanism must also indicate the mitigation solution introduces no new risks or increases the existing level of risk.
+SUR13A.48 	If such risks have been identified, the argument must extend to cover that those risks have also been addressed by various mitigation measures implemented, reduced to an acceptable level and for the suitability of these mitigation measures.
+SUR13A.49 	Such mitigation techniques may affect the failure rates, reliability, availability and continuity of the ground based surveillance system, hence when demonstrating that an acceptable level of safety is maintained or achieved the impact on the performance of the overhaul system must be essentially considered.
+Discussion on an Example Scenario
+SUR13A.50 	The following figure illustrates an example scenario, where the wind farm is situated close to an airfield and where the wind turbines may cause effects such as flicker on the controller’s display etc. It is not representative of all possible effects that could be induced by wind turbines in a given context. The range of effects that has to be considered depends on a number of factors identified in a later part of this document.
+SUR13A.51 	Arrow 1 represents the total reduction of risk achieved by the ATM system. Arrows 2, 3, 4, and 5 represent the increase in risk caused by wind turbine interference effects on surveillance, communications and to airfield operations. Arrows 6 and 7 represent the reduction in risk achieved by the mitigations to the effects caused to communications and airfield operations by the wind turbines. These are work-around methods which have not required an internal modification to these areas. Arrow 8 is however a mitigation technique applied to address the effect of flicker on the display system. This involves a modification to
+the display system. As can be seen by the small arrow (arrow 9), this modification has introduced some risks, which has driven the risk up again by a level represented by arrow 9. Furthermore this modification has not fully mitigated the level of risk increased to the safety budget of this system, hence further mitigation mechanisms are necessary to reduce the risk further down to achieve at least the level of safety that is deemed as acceptable.
+SUR13A.52 	No mitigations have been applied to address the increased risk levels
+caused by wind turbines on surveillance systems in the illustrated scenario. However various risk mitigation techniques can be applied to reduce this risk and there would be both up and down arrows representing the amount of risk reduced by such techniques and any additional risks introduced by such techniques.
+Part 2: Wind Turbine Effects on Surveillance Systems
+Introduction
+SUR13A.53 	The following section describes the various effects that wind turbines have caused on ATC primary radars during the trials conducted as part of many research projects around the UK and the rest of the world.
+SUR13A.54 	ANSPs must therefore consider the possibility that their ATC radars be affected by each of these phenomena as a result of wind turbines within the coverage range of their surveillance systems.
+Twinkling Appearance/Blade Flash Effect
+SUR13A.55 	Rotating wind turbine blades can impart a Doppler shift to any radar energy reflecting off the blades. The radar’s MTI processor may – depending on the thresholds set in the processor – detect this as a non-static target and therefore display it as a return on the radar screen. Variation in the wind direction at the turbine, the precise position of the blade in its rotation as the radar beam illuminates it, the pitch of the blade and other factors may cause the amplitude and size of the return to fluctuate from one antenna rotation to another. At sites with single turbines, any radar return from the rotating turbine blades will stay in one location on the screen. However at sites with more than one turbine, the radar may illuminate a blade or blades from one turbine on one antenna sweep, then illuminate the blades of a different turbine on the next sweep. This can create the appearance on the radar screen of returns moving about within the area of the wind farm over time, sometimes described as a “twinkling” appearance or blade flash effect.
+SUR13A.56 	The extent to which this will happen will depend on, amongst other factors, the radar’s range and azimuth resolution – the minimum distance between objects which the radar can detect.
+Masking of True Targets by Increased Clutter on Display
+SUR13A.57 	Wind turbines can cause a significant increase in the level of clutter on the primary radar displays which are unwanted primary radar returns. The reflected signal from the tower can be removed by stationary clutter filter in radars. However the Doppler Effect from the turbine blades are not filtered by stationary clutter filters and cause unwanted detections that would appear in different forms on both plot extracted systems and non-plot extracted radar systems.
+Non-plot extracted systems
+SUR13A.58 	The presence of clutter can mask the actual target detections from display. On a non-plot extracted system showing unprocessed data, wind turbine clutter can appear as large blips on the screen and when aircraft flying directly
+overhead the wind farms are detected, the blips indicating the target detection can be completely masked by the larger cluttered area on the display.
+Plot extracted systems
+SUR13A.59 	On plot extracted radar systems, clutter can appear as a sporadic distribution of individual primary radar target reports over the wind farm area. These can mask any actual detections and can also lead to tracking problems which are discussed in a separate section.
+Increase in False Targets or False Aircraft Tracks
+SUR13A.60 	The blade movement of the wind turbines cause a Doppler shift, thereby defeating the moving target processing of the primary radars. The tips of rotating blades can move at similar speeds to aircraft such that the wind turbines may appear as targets on the display similar to an aircraft.
+SUR13A.61 	It has been observed that within the confines of the wind turbine clutter that primary returns can appear to move around and can often appear very similar to those that would be produced by a light aircraft.
+SUR13A.62 	For example, temporal threshold processing works by gradually increasing the clutter threshold for each temporal cell until the moving target within that cell is deleted. The wind farm rotors however move in the azimuth plane every two or three minutes to face the strongest wind source, in which case the temporal threshold processor will reset to zero and start again. This then gives the effect of showing a moving target which moves about within a small area. Wind farms therefore tend to appear and/or disappear as the temporal threshold processing realises that they are not moving, and then reappear as the turbine moves in the azimuth plane as it searches for the strongest wind. A separate processing board can be installed that can modify the temporal cells to extremes, which would effectively give the option of displaying wind farms constantly or deleting the wind farms from the display entirely. Both options are flawed as the former creates more clutter and the latter creates a hole in radar cover.
+SUR13A.63 	Appearance of multiple false targets can generate false aircraft tracks. False tracks can appear on both plot extracted and non-plot extracted systems where multiple and consecutive false primary returns occur due to wind turbines blade movement.
+Receiver Saturation
+SUR13A.64 	Radar receivers require a large dynamic range in order to detect the reflected energy from both large and small aircraft. However, if an obstacle such as a wind turbine reflects a significant amount of power, the receiver can be pushed beyond its dynamic range and can become saturated. This effect is not limited to wind turbines and can be caused by any large obstacle; however, it is dependent upon the size and range of the obstacle from the receiver. It is
+acknowledged that the likelihood of wind turbine generated receiver saturation is low; however, any possibility of receiver saturation should be taken into consideration.
+Receiver De-sensitisation causing Loss of Targets with Small RCS
+SUR13A.65 	Trials have shown that the large RCS of wind turbines and the blade flash effect have lead to a decrease in radar sensitivity. Reduced receiver sensitivity increases the minimum detectable signal by a radar receiver, therefore loss of small targets and the maximum range at which the smallest targets can be detected can be reduced as a result. Radar’s clutter suppression circuitry uses noise thresholds which increases as the average noise levels increase leading to lack of receiver sensitivity.
+SUR13A.66 	Since wind turbines can have relatively high RCS they can obscure other
+targets in the same resolution cell, and so when an aircraft flies over a densely packed wind farm, the turbines’ RCS will tend to be higher than that of the aircraft as it passes through the same resolution cell seen by the radar and so the aircraft is obscured.
+Loss of Targets due to Adaptive Moving Target Indication (AMTI)
+Techniques
+SUR13A.67 	The AMTI processing assesses the background Doppler returns being received in each of its range cells and sets a velocity for which returns are ‘notched out’. As the tip speed of the turbines can reach speeds similar to aircraft, it is possible that aircraft detected in the same AMTI range cell as a rotating turbine may fall into the AMTI Doppler notch and be discarded. It is, therefore, possible for some aircraft returns to be lost due to the presence of an AMTI Doppler notch in radars having such capability.
+Shadowing behind the Turbines caused by Physical Obstruction
+SUR13A.68 	Trials have indicated that wind turbines also create a shadow beyond the wind farm so that low flying aircraft flying within this shadow go undetected. The magnified shadows of the turbine blades and the moving rotors are visible on the radar screens of weather and ATC radars [Reference 3]. However recent trial measurements have indicated that the shadow region behind the wind turbines would last only a few hundred meters and would hide only very small objects.
+SUR13A.69 	The wind turbine’s tower and nacelle components present a large physical
+obstruction in the radar coverage areas in the same way as any other structure, such as a large building. The presence of a physical obstruction with a large RCS in the path of the radar beam creates a region behind the turbine farm within which aircraft would not be detected. The shadow region behind a wind turbine farm within which primary radar contact is lost by interference with the propagation of the radar beam is believed to be defined by a straightforward geometric relationship between the radar and the wind turbine farm. The shadow region is a result of diffraction of electromagnetic waves. Diffraction is phenomena that occurs when radio waves encounter obstacles. Diffraction occurs with all propagating waves, including sound waves, waves on water, waves in materials and electromagnetic waves. On encountering an obstacle during propagation in a homogeneous medium, a radio wave changes in amplitude and phase and penetrates the shadow zone, deviating from a straight path. The effect of the diffraction penetration of a radio wave into a shadow zone depends on the ratio between the dimensions of the obstacle and the wavelength.
+Degradation of Tracking Capabilities
+SUR13A.70 	When the bulk of the wind turbine structure reflects sufficient energy to swamp any reflected energy of an aircraft in the same area, it causes the receivers to be de-sensitised and the false alarm thresholds to be raised, causing loss of ability to detect aircraft below the threshold level. It was also stated that Doppler Notch in Adaptive MTI radars can also lead to loss of targets.
+SUR13A.71 	Also, if the wind turbines are within radar line of sight, then the Doppler shift in reflected energy from the blades may defeat any moving target processing and display the blades as targets or tracks that could be mistaken for aircraft.
+SUR13A.72 	These may result in tracking anomalies in the radar:
+False targets and False tracks
+Long gaps (lost consecutive plots) in a track
+Track Jitter or Track jumps
+Tracks deviating between true and false targets can cause potential track jumps.
+Tracks over the wind farm area to be false, deviated or discontinued
+Presence of clutter and false targets can cause radars’ tacking algorithms to be confused and the track to be discontinued. The exact nature of the effects depends on the tracking algorithms used by particular radar.
+Track Seduction
+Track seduction is when a plot other than that produced by the source of the track is selected as the update and has the effect of steering the track away from the actual path of the source. If on subsequent scans further ‘alternative’ plots are available to sustain the deviated path then the track is said to have been seduced. Track seduction is another effect on ATC displays that can be caused due to wind turbine effects. This effect can also lead to split tracks, where an additional (false) track is initiated and seduced away from the true track, leading to confusion as to which the true target is.
+SUR13A.73 	The tracking algorithms in a radar associates the plots confirmed as targets, in to individual tracks it believes to be from the same target. The false declarations of targets caused by wind turbines can confuse the tracking algorithms and the plot association function in a plot extracted radar, causing the effects described above.
+Degradation of Target Processing Capability
+SUR13A.74 	Most modern ATC primary radars are fitted with a plot extractor. The plot extractor takes the output of the signal processor, i.e. the hits generated across the beam width, and declares a plot position which may also include course and radial speed information. Plot extraction ranges from a simple position declaration to advanced hit processing, which takes the output of an MTI filter bank and generates plots taking account of amplitude information and Doppler information. There is normally a maximum number of targets the radars processing systems can handle at any one time. Therefore, if a radar experiences a large number of clutter and false plots returned by wind turbines, its processing capacity may be reached and the processing capability can be affected as a result. This may lead to errors and processing delays.
+Effects on SSR
+Physical blanking and diffraction effects
+SUR13A.75 	Wind turbine effects on SSR can be caused due to the physical blanking and diffracting effects of the turbine towers depending on the size of the turbines and the wind farm. These effects are only a consideration when the turbines are located very close to the SSR, i.e less than 10 km.
+Reflections causing false targets
+SUR13A.76 	SSR energy may be reflected off the structures in both the uplink and downlink directions. This can result in aircraft, which are in a different direction to the way the radar is looking, replying through the reflector and tricking the radar into outputting a false target in the direction where the radar is pointing, or at the obstruction.
+Introducing range and azimuth errors
+SUR13A.77 	Monopulse secondary radar performance is also affected by the presence of wind turbines (Theil & van Ewijk, 2007). The azimuth estimate obtained with the monopulse principle can be biased when the interrogated target emits its response when partially obscured by an large obstacle such as a wind turbine.
+Part 3: Impact of Wind Turbine Interference Effects on Surveillance Performance Parameters
+Display Effects/HMI Performance
+SUR13A.78 	The twinkling effect caused by wind turbines is related to effects on the display and associated human factors considerations as to what this effect might cause to the controller.
+SUR13A.79 	Increased clutter levels on the HMI can also make the controller’s task difficult and cause an increase in controller workload.
+False Target Rate or Probability of Alarms
+SUR13A.80 	Increased level of false plots on both plot extracted and non-plot extracted systems could exceed the operationally acceptable false alarm rates for which the radar was originally designed to achieve.
+Probability of Detection
+SUR13A.81 	Effects such as masking true detected targets from the display due to increase clutter levels, reduction in receiver sensitivity, creation of a shadow region and receiver saturation could all contribute to an overall reduction in the probability of detection of wanted targets.
+Surveillance System Integrity
+SUR13A.82 	The existence of false tracks or false position information or loss of detections means that the data integrity and the system integrity is compromised. If the radar receiver completely saturates due to interference, effects from wind turbines this means targets will no longer be detected by the radar under saturated conditions effecting system continuity.
+Position Accuracy of Targets
+SUR13A.83 	Existence of false targets mean that tracks can be deviated from their actual path and also position information could be related to targets that are nonexistent. In SSR, reflections can also cause actual targets to appear in a skewed position with either range or azimuth errors. This affects performance parameters such as RMS value of position accuracy, maximum horizontal position accuracy, track accuracy etc.
+Latency
+SUR13A.84 	As stated previously, a large number of clutter and false plots could confuse the tracking algorithms used in radars using tracking algorithms to display processed target information. The processing capability of the radars may be affected, introducing additional processing delays.
+Low Level Coverage
+SUR13A.85 	Existence of a shadow region means the radar’s ability to detect targets directly behind the wind turbines can be affected. Since a shadow region is thought to exist only a few kilometres behind a wind farm and the size is believed to be defined by a straightforward geometric relationship between the radar and the wind turbine farm, only the low level coverage is affected.
+Human Factors Considerations
+SUR13A.86 	The wind farm effects described in earlier sections, such as twinkling effects and increased amount of clutter on the display, may cause undesired display effects that would cause discomfort or affect a controller’s ability to visually interpret the surveillance picture in an accurate manner. For example, the controller becoming over familiar with false returns on a display can lead to automatically making assumptions that such returns are simply wind turbine clutter, even when true targets appear within that region. Increased clutter increases controller workload.
+Part 4: Overview of Mitigation Techniques
+SUR13A.87 	It appears that the mitigation techniques can be categorised in to several key types. This section identifies each category and includes a discussion around each topic.
+Work-rounds
+SUR13A.88 	Work-rounds are interim measures which are easy to implement solutions adopted by an ANSP which would enable the ANSP to continue providing service using surveillance radar, under reduced operational efficiency or an increased level of risk, which may be deemed acceptable whilst a long-term full mitigation solution is being progressed. Such measures inherit limitations which makes it only suitable for a limited period or a limited set of circumstances and are likely to avoid such effects rather than addressing the effects experienced by radar.
+SUR13A.89 	Work-rounds include moving the locations of the wind turbines (where this is feasible and in planning stage), introducing sector blanking, re-routing traffic such that all aircraft fly around the wind farm rather than over it, moving any other operational areas of the airfield, or remove PSR and use SSR only etc. These measures may not be sufficient in the long term as the number of wind turbines is likely to increase over time and are therefore temporary measures rather than a permanent fix to the problem.
+SUR13A.90 	PSR sector blanking is the means of ensuring that clutter caused by a wind turbine development is not presented to the controller by deliberately masking fixed areas on the radar display. Such a solution can only be viable when the operational use of the radar is such that completely removing all radar coverage on specified radials at certain levels is deemed operationally acceptable.
+SUR13A.91 	Some ANSPs have also looked in to the possibility of finding temporary measures to overcome the wind farm interference by adjusting the false alarm thresholds (CFAR) and the slow speed filters in their PSR systems. Typically a filter exists within the ATC PSR that will filter from the air traffic controller’s screen any objects moving slower than 30 mph (or a defined limit). The filter also removes any static signals it receives leaving only moving objects over 30 mph on the screen.
+Advantages
+Less costly
+May be relatively quick to implement
+Disadvantages
+May become unsuitable in the longer term
+May not completely eliminate the interference
+May only be suitable under specific circumstances
+In-Fill Radars
+SUR13A.92 	In-fill radars appear to be a popular form of mitigation under consideration by many ANSPs in order to overcome wind farm interference on their primary radars. Several manufacturers are known to have developed in-fill solutions specifically designed for the purpose of wind farm mitigation on ATC radars. This either involves combining the target data from a radar that does not have line-ofsight to the wind farm so that the area on the ATC display that is affected by a particular ANSP’s radar, can be filled in by the use of an external feed from a different radar or by implementing a radar with a smaller coverage area that is situated somewhere within the wind farm or where the wind farm is within its within-line-of-sight such that the airspace above the wind farm area can be monitored using the in-fill radar, therefore a complete air situation picture can be produced by combining the two results.
+SUR13A.93 	In-fill radars involve either 2D or 3D radar solutions.
+Advantages
+Has the potential to be a complete solution that can eliminate all of wind farm clutter over a given area
+Disadvantages
+Increased cost due to purchasing, operating and maintaining an additional radar.
+May be subject to spectrum availability limitations
+Planning permission and restrictions make deploying green field solutions difficult
+Potential increase in spectrum charges
+May need several in-fill radars as wind farm areas grow in size over time
+Need for additional equipment, maintenance, by the ANSP or a third party
+Processors are required for plot combination therefore additional equipment and room will be required
+Potential to increase additional processing delays, and increase plot loading
+3 Dimensional (3D) Radars
+SUR13A.94 	Traditional ATC primary radars measure only the range and bearing of the target and do not measure altitude data. They are therefore classed as two dimensional radars. Hence 2D PSRs can only display range and bearing information on the controller’s display. An SSR on the other hand obtains pressure altitude data from aircraft transponder responses in the form of a Mode C reply, thus allowing a controller to be made aware of the targets vertical position as well as range and bearing.
+SUR13A.95 	Some PSRs can provide 3D information by using multiple beams of radio
+waves at two or more elevation angles allowing the elevation of the target to be derived by measuring the strength of the returns from each beam. Typically these are used as air defence radars, allowing 3D tracking of non-transponding aircraft. Figure 5 provides a graphical representation of the way in which the 3D radar operates.
+SUR13A.96 	3D radars can therefore be used as in fill radars above wind farm affected areas and could be the ideal solution to the wind farm interference issues on primary radars.
+Figure 5: An image of a typical 3D radar
+Advantages
+Have the potential to be a complete solution that can eliminate 100% of wind farm clutter over a given area
+Slant range error correction is possible and much easier with the height information available
+Disadvantages
+Potentially costly
+May need several in-fill radars as wind farm areas grow in size over time
+Need for additional equipment, maintenance, by the ANSP or a third party
+Processors are required for plot combination therefore additional equipment and room will be required
+Potential to increase additional processing delays, and increase plot loading
+High PRF Radars
+SUR13A.97 	Some manufacturers have also developed radars that utilise a high transmitter Pulse Repetition Frequency. This technique makes it possible to discriminate between aircraft and wind turbines by analysing their Doppler signatures and remove the turbine clutter from the display. Such radars may be used as in-fills or, if sufficient range is achievable, the radar may be used as an alternative to a conventional PSR.
+Advantages
+Have the potential to eliminate most if not all wind farm clutter from the ATC displays
+Disadvantages
+Could lead to increased RF pollution due to the number of in fill radars likely to be required
+Increased spectrum utilisation
+High power necessary to achieve longer ranges
+May require several radars to cover a large wind farm or several wind farm areas impacting several areas on display
+Could be costly
+If used as an in-fill, disadvantages of an in-fill solution apply
+Use of Spectrum Filters
+SUR13A.98 	Some manufacturers have attempted to develop a solution that is based on modifying their existing (in service) radars by incorporating a software based spectrum filter to compare the target Doppler signatures whilst maintaining the same (relatively low or normal) PRF with the aim of giving the system the ability to discriminate between turbines and aircraft in a similar way to the high PRF radars discussed above. The discrimination is achieved by carefully analysing the Doppler signatures that exhibits specific spectral characteristics returned by a wind turbine as opposed to an aircraft by using multiple advanced processing algorithms used by the software.
+SUR13A.99 	The success of such a solution depends on how accurately such a filter can perform and process the Doppler signatures. The various processing algorithms are used to perform this function.
+Advantages
+If successful, easy to implement solution as this would require a spectrum filter software upgrade
+No need for in-fill radars
+Can be rolled out to all radars of the same type without having to implement new radars
+Disadvantages
+Additional processing capacity required (this may involve additional processing hardware)
+May increase processing times
+May not be able to eliminate 100% of wind turbine clutter
+May not work for all radars in all locations
+NOTE: As yet it is unknown weather this can be made to work as it is still under research and development phase.
+Predictive and Multi-sensor Trackers (Data Fusion from Multiple Sensors)
+SUR13A.100 	There have been proposals to employ specialist tracking systems to overcome the impact of wind turbine farms on radar. Such solutions offer the addition of plot extraction and predictive tracking to any compatible radar. Although this may not provide a complete solution to address all potential effects they may offer some potential for the radar processing system to make a semiintelligent assessment of returns from the vicinity of a wind turbine farm in order to distinguish clutter, including that induced by turbines, from aircraft. If such a system proved to be sufficiently robust then thresholds could be lowered and detection of aircraft over turbines improved. A sufficiently comprehensive fused picture also has the potential to address the issue of shadowing.
+Use Alternative Technologies less Susceptible to Wind Turbine Interference
+SUR13A.101 	Wind farm interference has been one of the key drivers forcing ANSPs to look at alternative technologies for air traffic surveillance.  However CAP 670 SUR 01 states:
+“PSR is the minimum level of equipment necessary to provide Radar Control, Traffic Service or Deconfliction Service. SSR or other surveillance technologies may, to varying extent, be required to supplement PSR in order to safely accommodate increases in traffic complexity or density.”
+SUR13A.102 	Therefore a means of non-co-operative surveillance is necessary for the detection of non-co-operative targets in areas at least where the environment is not fully co-operative. Although SSR only operation is allowed in special circumstances such as during PSR failures, surveillance with co-operative only techniques is accepted in limited circumstances depending on the airspace type as stated in SUR 01.
+Multistatic Primary Radar
+SUR13A.103 	A key solution that would overcome the need for a PSR that is able to detect non-co-operative targets is Multistatic radars, which are believed to be less susceptible to the effects of wind farm interference. However, Multistatic systems are not currently widely used or produced by manufacturers in a civil air traffic environment. It is anticipated that Multistatic primary radars will bring greater advantages to the civil ATM infrastructure over the coming years.
+Multilateration or SSR only Operation
+SUR13A.104 	Co-operative only surveillance may be viable in areas where full or the majority of the airspace comprises co-operative targets. However, current CAA policy has to be reviewed in order to permit SSR only or co-operative only surveillance in circumstances other than in situations where PSR is temporarily unavailable due to failures. Multilateration, SSR or ADS-B are some of the cooperative techniques that can detect co-operative targets despite the presence of wind farms.
+Stealth Solutions
+SUR13A.105 	These techniques try to develop radar absorbing materials (RAM) as well
+as to design new wind turbines with reduced RCS, preserving the efficiency of turbines in terms of electricity production and construction costs. RAM may consist of ferrite paints or polymer layers incorporating crystalline graphite which are coated onto the wind turbines to reduce the RCS.
+Part 5: Analysis of Mitigation Techniques
+General
+SUR13A.106 	It should be noted that any mitigation solution that is deemed acceptable under the circumstances at the time of approval may no longer be acceptable if the ANSP’s circumstances change in future. The number of wind turbines affecting an ANSP’s surveillance services may change in future such that the ANSP might experience more wind turbine effects, previously not experienced or considered as negligible, due to new wind turbine installations. As such, mitigation solutions such as sector blanking may no longer be feasible. This section identifies the various mitigation techniques and provides guidance regarding the potential issues of using such techniques and where possible policy statements relating to the use of such techniques.
+SUR13A.107 	ANSPs are also reminded that the mitigation mechanisms listed here are guidance only and must not be regarded as mitigations that are recommended or endorsed by the CAA. The decision regarding the most appropriate mitigation mechanism must be made by the ANSP, following a hazard identification and risk assessment as per the SMS of individual ANSPs. It may be that a combination of more than one mitigation mechanism is necessary to overcome wind turbine interference effects. The CAA has no reason to raise objections to any wind turbine mitigation solution, provided that an acceptable level of safety is maintained and the air traffic service being provided is safe under the conditions at the time approval. Hence approval of a mitigation solution must not be regarded as an approval that assures safety of the air traffic service in a future environment which could have potentially more wind turbine effects with different severity levels where further mitigations may be necessary. Where further effects are experienced by future wind farm installations, the CAA will revise the approvals under the new circumstances and take an appropriate course of action.
+SUR13A.108 	ANSPs are advised that when choosing a mitigation solution, all current and planned wind turbine installations (if known) in the ANSP’s coverage volume are considered and a thorough assessment is conducted prior to choosing the appropriate solution, to avoid business risks. Addition of further mitigations in the future will require production of safety cases, reduced ability to continue service in the airspace given the circumstances (until problems are fixed), potential cost to purchase and implement more mitigation solutions (i.e. 2nd in-fill radar, additional processing capacity).
+Operational Mitigations
+SUR13A.109 	Increased levels of clutter, false targets and false tracks on the
+surveillance display can lead to an increased risk of the controller not detecting
+conflicting traffic, delay in aircraft being identified and placed under an ATS and increase in controller workload.
+SUR13A.110 	The ANSP may decide to apply operational mitigations where practicable. The controllers may be able to tolerate the effects, if not re-route traffic, reduce the information provided or limit the level of service provided. Consequently, guidance on how air traffic controllers should or should not apply radar services in proximity to clutter is generic and is covered in CAP 493 (Manual of Air Traffic Services (MATS) Part 1) Section 1 Chapter 5 and in unit-specific MATS Part 2 documents.
+Tolerating Clutter and/or Other Effects
+SUR13A.111 	Radar clutter can be created by a large number of sources, not just by wind turbines and, in some circumstances, its effects can be tolerated. The effects can take different forms on processed and unprocessed surveillance displays. Although the effects may seem tolerable, consideration must be given to the effects that are not apparent on the surveillance display, and human factors considerations such as controllers becoming over familiar with the effects and making erroneous assumptions.
+Re-routing Air Traffic
+SUR13A.112 	Subject to existing airspace restrictions (including environmental constraints), air traffic controllers may be able to tactically re‑route aircraft to avoid overflight of wind turbine clutter, thereby maintaining aircraft identity at all time and enabling safe ATS provision. However, re-routing aircraft has the potential to: impair service provision; reduce efficient airspace use; create ‘choke points’ of high intensity use within unregulated Class G airspace; increase controller workload; and increase both fuel burn and emission levels. If permanent re-routing measures are considered, service providers (in consultation with wind energy developers) must fully adhere to CAP 1616 (Changing Airspace Design) where required. The CAA's regulatory process for changes to airspace design is potentially complex as it requires consultations and engagement with airspace users and local communities, so early consultation with CAA Airspace Regulation is strongly recommended to ensure a smooth process.
+Limiting ATS or Reducing the Surveillance Information Provided
+SUR13A.113 	The existence of clutter may necessitate limiting the air traffic service, or air traffic services to be reduced below the level requested by the pilot. For example limitations may be applied to the coverage volume where the service is provided or available. Equally, in uncontrolled airspace the traffic information that can be provided may be reduced, and there may be reduced ability to provide deconfliction advice. The procedures for providing air traffic services in the event
+of clutter appearing on the situation display, listed in MATS Part 1 Section 1 Chapter 5 are stated below for information.
+Controlled Airspace
+SUR13A.114 	Most air traffic inside controlled airspace is flying according to Instrument Flight Rules (IFR) and are provided with standard separation from other IFR traffic by air traffic controllers. In the majority of cases, separation is provided by means of radar. In controlled airspace it is a controlled environment within which flight is only possible subject to ATC clearance; hence an unauthorised aircraft should not exist within the airspace boundaries. All aircraft are supposed to be in radio contact with the air traffic service. However aircraft may suffer from loss of radio contact and traffic from outside the controlled airspace may infringe separation by coming into contact with controlled traffic.
+SUR13A.115 	In the event of clutter or false targets being present on the situational display the radar service shall not be limited, nor the air traffic service terminated.
+SUR13A.116 	Controllers should consider the extent of the effects and if necessary take the following actions:
+The controller may vector the aircraft around the affected area; however, this might not be practicable due to traffic density, airspace availability and/or the requirement to follow specific arrival or departure tracks.
+If the intensity of the clutter or false targets is such that the controller is not able to clearly see the aircraft’s PSR or SSR position symbol, radar separation shall not be used to separate it and other controlled aircraft.
+SUR13A.117 	The controller remains responsible for providing separation from aircraft that are considered to be infringing controlled airspace. Therefore, the controller should consider the nature of the clutter including any observed movement, relative speed and track and track consistency, and take appropriate action if a detection is considered to be an unknown aircraft.
+Uncontrolled Airspace
+SUR13A.118 	In uncontrolled airspace, aircraft may fly without contacting any air traffic control agency. Therefore traffic in uncontrolled airspace has the option to participate in a surveillance based service or not. Currently deconfliction service and traffic service are the surveillance based services that are provided in uncontrolled airspace. Whilst most aircraft prefer to receive a surveillance based service from the units providing UK FIS, the targets appearing on PSR can contain both known and unknown traffic.
+SUR13A.119 	In the event of clutter or false targets being present on the situational display controllers should consider the nature and extent of the clutter/false targets and if necessary take the following actions:
+For aircraft in receipt of a Deconfliction Service, controllers should inform the pilot of the extent of the clutter and where practicable offer a reroute. However, this may not be possible due to traffic density, airspace availability and/or the requirement to follow specific arrival or departure tracks. The extent of such a re‑route should where possible aim to achieve the planned lateral deconfliction minima from the observed clutter. However, it may still be necessary to reduce traffic information/deconfliction advice from the direction of the clutter as detailed at Section 1 Chapter 11 of CAP 493.
+For aircraft in receipt of a Traffic Service, and those aircraft under a Deconfliction Service that are not re‑routed as above, controllers shall inform pilots of a reduction in traffic information/deconfliction advice as detailed at Section 1, Chapter 11, of CAP 493. If the controller cannot maintain aircraft identity, the service shall be terminated.
+For all surveillance services, in order to maintain track identity of aircraft being vectored to final approach, if re-routing around the clutter is not practicable for the reasons specified above, an alternative type of approach may need to be conducted.
+Surveillance Radar Approaches In all Classes of Airspace
+SUR13A.120 	Where the increased levels of clutter or false targets affect the surveillance display for aircraft intending to make a radar approach, procedures described in CAP 493 Section 1 Chapter 5 must be applied.
+Transponder Mandatory Zones and Surveillance by Co-operative Ground Sensor
+SUR13A.121 	Under current UK regulations or proposals, not all UK airspace will require a transponder to be fitted and used by aircraft. However it is recognised that in certain circumstances and in certain areas, mandatory transponder carriage can provide significant safety benefits. The CAA has regulatory powers to create Transponder Mandatory Zones (TMZ) for a number of reasons; one of which may be to help mitigate the wind turbine effects on a primary radar. Further details on TMZs can be found in CAP 764.
+SUR13A.122 	ANSPs may choose to provide surveillance by a suitable co‑operative
+sensor over the wind farm area, in addition to the main PSR, as a mitigation to the wind farm clutter on a surveillance display.
+Adjusting Radar Antenna Elevation
+SUR13A.123 	Evidence suggests that wind turbine clutter may be avoided by raising the antenna beam elevation angle. However the obvious effect of this is a reduction in low-level radar coverage.
+Plan the Location of the Radar to make use of Terrain Shielding
+SUR13A.124 	It may be possible that if a new radar or a replacement radar is likely to be affected, to plan the location of the radar to provide some shielding from the wind turbines using existing terrain surrounding the area.
+Moving Airfield Operational Areas
+SUR13A.125 	Although a highly unlikely scenario, some ANSPs may find that it is viable to move the locations of some operational areas of the airfield where detection is affected by wind farm clutter. Where such an option is being considered, the aerodrome standards aspects must be liaised with the CAA.
+Changing the Wind Farm Location or its Characteristics
+SUR13A.126 	Some ANSPs, in collaboration with the operators of a planned wind turbine installation, may find through careful planning and premodelling that adjustment to the wind farm is possible in order to minimise the predicted effects of a wind farm on an ATC surveillance radar. For example, careful spacing between the turbines and the shape of a wind farm can significantly reduce its RCS as seen by the radar hence causing minimal effects on a surveillance system. This option is obviously possible only prior to the implementation of a planned wind farm.
+SUR13A.127 	Also, clutter suppression techniques and advanced digital tracking described in this document may reduce the effects of wind turbines on radars that use Doppler processing. However, not all radar systems have advanced signal processing algorithms. Hence where it is possible, the RCS of turbines should be reduced.
+Physical or Terrain Masking/Clutter Suppression Fence
+SUR13A.128 	In certain circumstances, and where low level radar coverage in the area of wind turbine development is not required, it may be possible to use either existing terrain or a man-made object to prevent a radar from seeing the wind turbines.
+SUR13A.129 	Reflections from nearby mountains and other large clutter can sometimes be of such magnitude that it is not practical to completely suppress their undesirable effects by either MTI or range gating. One technique for reducing the magnitude of such large clutter seen by a fixed radar is to erect an electromagnetically opaque fence around  the radar or between the radar and the clutter source to prevent the radar from viewing the clutter directly. The two
+way isolation provided by a typical fence with a straight edge might be about 40 dB, where the isolation is given by the ratio of the clutter signal in the absence of a fence to that in the presence of the fence. The isolation is limited by the diffraction of the electromagnetic energy behind the fence.
+Greater isolation than that provided by a straight-edge fence can be had by incorporating two continuous slots near to, and parallel with, the upper edge of the fence to cancel a portion of the energy diffracted by the fence [Reference 9].
+SUR13A.130 	A fence can suppress the clutter seen by the radar, but it produces other effects not always desirable. It will limit the accuracy of elevation-angle measurement because of the blockage of the fence and the error caused by the energy diffracted by the fence. Energy diffracted by the fence also interferes with the direct path from the radar to cause multipath lobbing of the radiation pattern in the angular region just above the fence. Radar energy backscattered from the fence can sometimes be large enough to damage the receiver front-end.
+PSR Sector Blanking or Range-azimuth Gating (RAG)
+SUR13A.131 	This process identifies particular range-azimuth cells, or groups of cells,
+within which returns are suppressed. RAG usually involves suppression of all returns from the identified cells, creating a hole in the radar cover. Certain radar systems have the ability to blank out configurable areas to prevent the radar from processing returns from those areas. However other methods simply involve masking the affected areas on the controller’s display. In the latter situation the clutter is still generated but simply masked from display. Regardless of the means of enabling PSR blanking, it is important to note that all radar returns i.e. legitimate aircraft as well as wind turbine clutter, are prevented from being presented to the air traffic controller. Therefore, this mitigation can only be used in areas in which the ATS provider or ANSP deems a total loss of data to be acceptable.
+SSR only or Co-operative only Operation
+SUR13A.132 	Currently co-operative/SSR only operation is allowed within certain parts of the en-route airspace as specified in CAP 670 SUR 01. SSR only service may also be permitted on a temporary basis in the event of failure of a primary radar. However it may be justifiable to use SSR only to maintain detection of aircraft within a limited part of a surveillance display that is affected by wind turbines.
+Alternative Non-co‑operative Techniques less Susceptible to Wind Turbine Interference
+SUR13A.133 	There is a growing enthusiasm amongst aviation industry stakeholders as
+well as the UK government to look into alternative surveillance technologies that could replace primary radar systems that are capable of detecting non-cooperative targets. As such a number of research institutes as well as some radar system manufacturers are looking in to the possibility of using Multistatic primary surveillance systems, whereas the legacy PSR systems are monostatic systems where the receiver and the transmitter are co‑located.
+SUR13A.134 	There is strong evidence to suggest that multistatic primary systems could be an ideal replacement for PSR systems which will be far less susceptible to wind turbine interference whilst able to detect non-co-operative targets. Some manufacturers have already developed prototype multistatic systems to be tested for civil air traffic surveillance. Although not near term it is anticipated that multistatic primary radar systems are likely to be implemented by manufacturers in the UK as a replacement to PSR in the longer term.
+SUR13A.135 	Once there is sufficient level of confidence in the technology, appropriate standards and regulatory guidance will be developed and incorporated into CAP 670 SUR section concerning the ANO approval of such systems.
+NOTE: Guidance on the approval of multistatic systems is included in Appendix B to the CAP 670 SUR section.
+Use of Amplitude Thresholds
+SUR13A.136 	If unwanted targets (such as rain or birds) are expected to have a lower radar cross-section than the desired targets, the amplitude of the unwanted returns can be expected to be lower than that of the genuine targets. A voltage threshold can be set in the radar causing returns below a given amplitude to be ignored. However, wind turbines can have RCS larger than aircraft targets so this method has very limited utility.
+Constant False Alarm Rating Thresholds/Temporal Threshold
+Processing
+SUR13A.137 	A development of the amplitude threshold method is to apply thresholds which will maintain a constant false alarm rate (CFAR). This process, also known as temporal threshold processing, is designed to maintain radar performance in areas where there is clutter. A threshold is set for a group of range-azimuth cells. If the largest return from that area in one antenna sweep is of greater amplitude than the largest return from the previous antenna sweep, the threshold is increased to try to eliminate the clutter.
+SUR13A.138 	This process is quite effective in removing shifting clutter returns from the radar screen. However, if a desired target within the area has a weaker return than the clutter, or if it stays within the area for several antenna sweeps (as for example a hovering or slow-moving helicopter might), the clutter threshold will eliminate that genuine target as well as the clutter.
+Use of Clutter Maps
+SUR13A.139 	Point clutter such as buildings, towers, chimneys and radio masts, and much ground clutter, is predictable and unchanging. Rather than requiring the radar to analyse and detect this clutter and process it on every antenna sweep, using up processor power, the clutter characteristics can be stored in a memory circuit, which is then accessed on each sweep to remove that clutter from the signal. This is known as a clutter map.
+SUR13A.140 	Some radars have numerical limits on the number of range-azimuth cells
+which can be used for clutter mapping or RAG techniques. The total number of cells available may not be sufficient to accommodate processing of all clutter sources visible to the radar, especially where extensive wind farms are involved [Ref 1].
+Application of Automated Tracking Techniques
+SUR13A.141 	Most modern radars display aircraft tracks made of plots confirmed as aircraft plots rather than displaying the unprocessed raw video. This is based on analysis of successive returns from a target to determine the direction and speed of its movement. Such automatic tracking radars will display only targets meeting the specified track criteria hence, for example, returns which do not match the speed characteristics of an aircraft will not be displayed.
+SUR13A.142 	Enhanced target tracking techniques can be used after detection. For
+example Feature Aided Tracking (FAT) identifies features from signals and process them in a probabilistic manner. The tracker would incorporate special processing techniques such as adaptive logic, map aided processing, processing prioritisation, enhanced tracking filters or classification algorithms.
+Display of Predicted Target Positions in Tracking radars
+SUR13A.143 	Automatic tracking processes can also involve the track processor predicting where the next plot from the aircraft will be, given its track history in terms of speed and direction. Prediction of target positions and therefore display of predicted positions can therefore allow tracking to continue over areas where the radar may not actually be illuminating the aircraft.
+SUR13A.144 	In a tracking radar, when a new detection is received, an attempt is made to associate it with existing tracks. Over the wind farm area, the next target position in a track could be based on an actual target position or a false wind turbine plot. This can lead to track deviation and target position inaccuracy.
+SUR13A.145 	The predicted positions are displayed when no target detection is made. Since the tracker may take into account some false wind turbine detections into the predicting mechanism, the predicted tracks may also be erroneous and misleading.
+SUR13A.146 	As illustrated in the diagram below, the difference between horizontal positions of the predicted target positions and the true target position may be unknown and may be less than the separation minima applied.
+Figure 6: Effect of track coasting over a wind farm area on a ATC display
+Suppression of Track Initiation Over Wind Farm Areas
+SUR13A.147 	Tracking processors can also suppress track initiation in selected areas. This will reject any track which first appears in a selected area (such as a rangeazimuth cell containing a wind turbine) but will retain pre-existing tracks which have entered that cell from elsewhere [Reference 1].
+Use of Adaptive Moving Target Indication (MTI) Techniques
+SUR13A.148 	MTI processes several consecutive returned pulses. The output of this process identifies any object with zero Doppler, i.e. which is static, and can then eliminate that object from the radar display. Basic MTI can only eliminate static objects. Adaptive MTI (AMTI) not only filters out the fixed clutter, but also estimates the predominant Doppler value of the remaining moving clutter in each range-azimuth cell, and filters it out. AMTI can therefore cancel out moving as well as fixed clutter [Reference 1].
+Use of an In-fill Radar
+SUR13A.149 	The use of “In-Fill” radars is a popular mitigation technique currently considered by many aviation stakeholders to address the wind turbine interference issues on primary radars. The word “In-Fill” implies filling in part of the surveillance picture with the aid of a different surveillance source. Hence the idea of an in-fill radar is to feed data from a different surveillance source to the areas on the surveillance display affected by wind turbines.
+SUR13A.150 	These surveillance sources may take various forms. As discussed in sections above, it may be that providing data with a co-operative surveillance sensor is feasible in the airspace controlled a particular ANSP. It may be a primary radar which simply does not see the wind farm since the wind farm is not in its vicinity due to where it is located.
+SUR13A.151 	However there are in-fill radars particularly designed to have the capability to detect targets in the presence of wind turbines when both the wind turbines and targets are in its coverage. There are a number of issues to be considered when assessing the suitability of a mitigation solution including in-fill radars and any equipment based solutions that are discussed in the following section.
+Part 6: Issues to be Considered when Assessing the Suitability of Wind Turbine Mitigation Techniques for ATC Radars
+SUR13A.152 	This section identifies aspects that must be considered when using and implementing various wind turbine mitigation techniques. Whilst most issues highlighted in this section are relevant to in-fill solutions, other techniques must also be considered for applicability.
+S Band In-fill Radars – Wimax Interference Protection
+SUR13A.153 	Any S-band in-fill radar solution must take in to account the Wimax
+interference on S-band radars which could cause safety related issues to surveillance services in a Wimax environment. It is therefore expected any manufacturer of S-band in-fill radars to be aware of the Wimax interference issue and to ensure this has been taken into consideration within the design of the equipment. Wimax interference on S‑band radars could result in data output by those radars being unsuitable for use. Further information on the effects of Wimax interference on S-band radars can be provided by the CAA upon request. Furthermore, where transmissions from S‑band radars cause interference effects to Wimax stations this could result in alteration or revocation of the licence issued under the Wireless Telegraphy Act by Ofcom.
+SUR13A.154 	From a safety perspective, an S-band in-fill radar might not be affected by
+Wimax interference at the time of its ANO approval, due to the absence of a Wimax environment at the time. Moreover the CAA does not currently have a policy statement or a requirement where ANSPs must claim that the transmitters are suitably designed to operate safely in the presence of Wimax signals. In which case should a transmitter become susceptible to Wimax interference effects, and is thought to be suffering from such effects, the CAA will make necessary steps to review the ANO approval, attach new conditions or in the worst case scenario revoke the ANO approval until the interference issues are resolved by a suitable mechanism.
+SUR13A.155 	ANSPs must be aware that the effects of interference on a surveillance display may not be obvious and may take a long period to identify. There is potential to lose targets, reduce the maximum range that the radar can detect targets etc. which may not be easily detectable. As a consequence, if an in-fill radar is subject to interference effects, it may well be undetected and unknown by the ANSP. The data fed by the in-fill radar may therefore be unsuitable for use.
+SUR13A.156 	Future licences to operate primary radars in S-band may therefore be subject to limitations with conditional terms that the transmitters must be Wimax compliant.
+SUR13A.157 	Deleted.
+SUR13A.158 	Any CAA approvals for S-band in-fill radars will take the Wimax interference issue in to account.
+Performance of Solutions Involving Additional Equipment
+SUR13A.159 	Whilst some mitigation solutions are completely software based, or involve changes external to the surveillance system (i.e. traffic/wind farm/environment/clutter suppression fence), some mitigation solutions involve making modifications to the ground based surveillance system. This mainly includes in-fill radar solutions and any solutions that require additional processing capability, data transmission links, data from other surveillance sources or equipment such as plot assigner combiners for data fusion.
+SUR13A.160 	This section focuses on guidance on how an ANSP should consider any modifications to the ground based surveillance system from a safety perspective.
+SUR13A.161 	The complete ground based surveillance system includes sensors, any data transmission links, power supplies, data processors, data fusion systems, display systems (HMI)s, redundant feeds, safety nets and servers, including people and procedures involved.
+SUR13A.162 	Implementation of a wind turbine mitigation solution could mean adding surveillance sensors, power supplies, data transmission links, additional processing equipment and introducing additional procedures etc. Any modification made to the elements of the “ground based surveillance system” should be considered as a safety related change.
+SUR13A.163 	The following diagram illustrates a scenario where an in-fill solution is introduced as a mitigation resulting in the ground based surveillance system being modified.
+Figure 7: Ground based surveillance system following integration of in-fill radar SUR13A.164 	In the illustrated scenario, introduction of the mitigation technique has resulted in more equipment involving the in-fill radar itself, data transmission links and plot combiner systems being added into the existing ground based surveillance chain. Prior to focusing on the performance of individual elements in the system such as the infill radar, it must be remembered that the data will be used for the same surveillance application (e.g. 3 NM separation). The objective is to maintain the acceptable level of safety that is currently achieved or achieve better safety levels by further reducing the risks where possible.
+SUR13A.165 	Any added components to the surveillance system must be considered as elements or components of the overall ground based surveillance system. The performance that must be delivered by the “ground based surveillance system” is the minimum performance that the surveillance system shall meet that is suitable for the operational requirements of the selected application defined herein as the Required Performance of a surveillance system.
+SUR13A.166 	The required performance of a surveillance system is defined in CAP 670 SUR 02. The required performance includes the following performance related parameters:
+Surveillance data items
+Update period
+Accuracy/Precision
+Resolution
+Continuity
+Reliability
+Availability
+Latency
+System integrity
+Data integrity
+Coverage
+False targets etc.
+SUR13A.167 	The required performance depends on the application for which the ANSP wishes to use the surveillance data, and the operational requirements in the context in which the ANSP provides the services. Whilst some of the performance parameters are required to perform the application, the system integrity requirements must be derived through a hazard identification and a risk assessment process. Once the safety integrity requirements necessary to
+achieve an acceptable level of safety is known, these can be further apportioned to individual lower level system elements. This means that the failure modes, their effects and rates of occurrences (probabilities) must be identified through a risk assessment process. For example the in-fill radar’s failure rates and associated data transmission links failures can contribute to the overall hazard rates. However the consequence of such failures may not be severe enough or the ANSP may not have to lose the entire surveillance system as a result. The failure modes, their effects, their rates, the resulting consequences and severity levels are essential to be identified in the risk assessment process.
+SUR13A.168 	A systematic risk assessment process will enable the ANSP to derive the performance required from the individual components in the system including but not limited to in-fill radars, power supplies, redundant feeds, data links, or any other mitigation requiring additional equipment to be integrated to the system.
+SUR13A.169 	The underlying requirement is that the overall ground based surveillance system shall be able to deliver the required performance necessary to provide service.
+Integration of In-fill Radar Target Positions to the Main Primary Radar Display
+SUR13A.170 	This section describes a common issue associated with translating range and azimuth data measured by a two dimensional radar to range and azimuth measurements with respect to the reference point of another radar known as the slant range error.
+Figure 8: Slant Range Differences when measured by two radars
+SUR13A.171 	Typically primary radar position information is presented as a range and bearing value on the controller’s display with reference to the position of the
+radar head. The measured range is the slant range rather than the ground range. When accepting an in-fill radar feed from a radar situated at a different location to that of the main PSR, the position information output by the in-fill sensor has to be expressed with reference to the main primary radar on the controller’s display in order to have a common reference point for integration of range and bearing data.
+SUR13A.172 	For example the main PSR and the in-fill radar illustrated in the diagram measures R1 and l1 range information and bearing of the target. The elevation angles Ɵ and β are unknown since the radars do not measure elevation. For a given range, and an azimuth, the aircraft could be anywhere in the vertical plane, depending on the elevation angle at which the aircraft is precisely located. Unless the two radars are located symmetrically from the location of the target at the same height, the slant range measured by the two radars will always be different. The l1 slant range value given by the in-fill radar must be converted to the slant range with respect to the location of the main radar to be able to display target data from both radars on the same surveillance display measured with respect to a common reference point. This is impossible without the height information of the target from at least one source. The height information applied for this correction may be height information measured by a 3D radar, or Mode C information available from SSR data or, when such data is unavailable, an assumed value in some cases.
+SUR13A.173 	For example the slant range and azimuth detected by the in-fill radar can be transformed to ground range and position in X, Y, Z co‑ordinates if the elevation is known. If the relative positions of the main primary radar and the infill radars are known, the X, Y, Z co‑ordinates can then be transposed to ground range, and position in X, Y, Z co‑ordinates with respect to the main primary radar origin. The height data can then be applied to covert the Cartisian X, Y, Z co‑ordinated to range and azimuth polar co-ordinates with respect to the origin of the primary radar.
+SUR13A.174 	The slant range correction process becomes easier if the in-fill radar is a 3D radar which contains an accurate height information, or if the Mode C information is available from at least one surveillance feed. In the absence of this information, the height information applied will be an estimated value depending on the method used by the integration mechanism and the in-fill radar involved.
+SUR13A.175 	An alternative solution to the slant range error problem is to co-locate the two surveillance sensors or locate them as close as possible, although this may not be always feasible.
+Replacing In-fill Radar Data with Main Primary Radar Data
+SUR13A.176 	Often the output from the in-fill radar are integrated into the main primary radar, by removing the cluttered area of wind turbines detected by the main
+primary radar and replacing this area with the output from the in-fill radar. Since the display consists of range and azimuth cells, removal of range and azimuth cells consisting of wind turbine area requires careful identification of the area that requires removing from the existing surveillance picture and needs replacement.
+Figure 9: Illustration of potential to lose targets by the in-fill process
+SUR13A.177 	Typically most in-fill radars have shorter maximum range than the approach primary radars. For example a typical approach primary radar has a range of about 40–60 NM coverage. In the illustration above, the maximum range of in-fill radar is R1, whilst the maximum range of the main radar is much more beyond R1. All aircraft flying in the cylindrical volume of airspace above the wind turbine are likely to be affected by wind turbine interference on the controller’s display. The maximum range of the in-fill radar may be just about enough to cover the farthest point of the wind farm region from the in-fill radar at the ground level. However since targets are above ground level, the slant range to the target exceeds the maximum coverage range of the in-fill radar at the upper layers of airspace. The target is therefore not seen by the in-fill radar. The target is detected by the main PSR, however as the range covering the cylindrical volume of airspace above the wind farms is removed from the main PSR picture, there is potential for this target to disappear from the display making it completely undetected. The in‑fill radar coverage should therefore be enough to reach aircraft in the farthest and upper most levels of vertical coverage in the operational coverage volume. Similarly the area removed by the
+main PSR should not result in gaps of coverage by both radars where aircraft will not be displayed.
+SUR13A.178 	Similarly if the aircraft is within the coverage of both the main and the in-fill radar however outside of the area (range) which is removed by the main radar, the target will appear twice on the surveillance display.
+Figure 10: Illustration of potential to duplpicate targets by the in-fill process
+Coverage of Surveillance Sources Providing Coverage over the Wind
+Farm Region
+SUR13A.179 	Depending on the mitigation mechanism chosen by the ANSP, service may be provided based on surveillance data from a co‑operative sensor or a primary radar in-fill sensor or by having duplicate coverage on full or part of the surveillance display including the wind farm region by an additional primary sensor. Whilst the in-fill sensor must provide complete coverage over the full volume of airspace within the operational boundaries above the wind farm, its range may further extend. Similarly any other sensor providing coverage over the wind farm region may not only have coverage just above the wind farm but extended beyond that. ANSPs may wish to have this additional coverage for added benefits such as increased redundancy and contingency measures.
+SUR13A.180 	The range of the in-fill radars specifically designed to address wind turbine
+interference normally have a shorter range than the normal primary radars used
+for air traffic surveillance. However, the greater the coverage the greater may be the benefits for the ANSPs that receive in-fill data. Also limited coverage of in-fill radars could mean that several in-fill sensors are necessary to address various areas on the display affected by wind turbines including new infrastructure to support each time an in-fill is added.
+SUR13A.181 	It may also be that the in-fill radar requires coverage outside the precise wind farm area to enable it to smoothly integrate the targets with the targets from main radar. In the case of a co-operative sensor providing coverage over the wind farm region, having extended coverage could mean that combined data could be presented with increased confidence regarding the target position.
+Locating the In-fill Sensors
+SUR13A.182 	As described in paragraph SUR13A.143, in-fill sources can take many different forms. Some in-fill radars are specifically designed with sufficient range coverage to cover only the area of a wind farm. Whilst others may have a bigger range, that can be used for additional redundancy in the system. Some in-fill solutions are designed to be located within the wind farm whilst others can be located outside of the wind farm.
+Performance Monitoring of the In-fill Radar
+SUR13A.183 	Any surveillance sources providing surveillance data to form the overall surveillance picture affects the performance of the entire surveillance system. This section focuses on performance monitoring of primary in-fill radars.
+SUR13A.184 	Although the in-fill system may be tested and its performance demonstrated at the commissioning of the in-fill system, all surveillance systems must have methods of monitoring the on-going performance.
+SUR13A.185 	All primary radars, whether plot extracted or non-plot extracted, have methods of alignment checking. This normally involves permanent echoes or active reflectors (MTI Markers). These can either be displayed on the controller’s display and or used in the BITE/RTQC for automatic detection of mis-alignment.
+SUR13A.186 	In addition to alignment checking Built In Test Equipment (BITE) and Real Time Quality Control (RTQC) functions within modern systems check the ongoing performance of the system.
+Timeliness of In-Fill Data
+SUR13A.187 	“Timeliness” of data is defined as the difference between the time of output of a data items and the time of applicability of the data items in the SPI IR.
+SUR13A.188 	Any delays introduced either by the inaccuracies or inconsistencies of the time stamping process, the measurement and processing equipment can lead to
+the data being invalid and inaccurate at the time the data items are actually used.
+SUR13A.189 	Surveillance reports should be time stamped at the radar site either by
+absolute time stamp, or by time-in-storage. Accuracy of this time stamping is determined by the difference between the reported time of measurement and the actual time of measurement of the target position. As aircraft are normally moving when a radar position measurement is taken, accurate reporting of the target position requires the measured range, measured azimuth and the time of measurement.
+SUR13A.190 	The accurate time stamping is very important for the plot association by the two radars for the same target. The time stamping process used by the in-fill sensor and the main radar may be different, but any temporal inconsistencies must be identified and be minimised.
+Plot Correlation Process
+SUR13A.191 	Some ANSPs use an additional surveillance feed simply for overlaying data. Plot combination is also easy when the two radars are co-located since and the rotation is synchronised. Also plot association and combination from two cooperative sensors become an easier process due to the availability of identification data.
+SUR13A.192 	However in-fill radars may not always be co-located with the main PSR or be rotating type. The difficulty with the in-fill data is that the data from the two sensors must be presented as if they were measured from the main radar in a timely and accurate manner. Whether the plots within the wind farm region are displayed as combined or reinforced plots, some form of time correlation is necessary, otherwise the picture shown within the wind farm region of the display will be the surveillance picture at a different point in time than the data shown on the rest of the display. This will result in the position data shown in the wind farm region having a position error relative to the error in measurements by the main radar. Also especially around the boundary of the wind farm region plots in and out from the wind farm region must be correlated to those plots detected by the main radar to continue tracks.
+SUR13A.193 	Also due to the differences in position error at the boundary of the wind farm region, greater separation may also be necessary as a precautionary measure.
+SUR13A.194 	Such a correlation process requires a tracking process in order to estimate the current position of a target detected by the main radar at the time of detection of the same target by the in-fill radar.
+Accuracy
+SUR13A.195 	Surveillance data displayed to the controller must always meet the required horizontal position accuracy regardless of whether the surveillance data is obtained from a single sensor or multiple different sensors. The position accuracy is the accuracy with which the radar system provides the true position of the aircraft at a given time. Accurate reporting of the aircraft position requires reporting of measured range, measured azimuth and time of measurement.
+SUR13A.196 	The accuracy is expressed in terms of maximum positional errors which are categorised as systematic errors, residual errors and jumps.
+SUR13A.197 	There are many factors that impact the accuracy of the positional information measured by a radar. These are applicable to both the main radar and the in-fill radar. The systematic errors are bias errors for each radar in position and time with respect to an absolute reference system. These for example can be caused by bad north alignment of the radar. These can be corrected if known. Residual errors are the deviations in position which exist between the measured target report position and the trajectory at the time of the target report, after correcting any systematic errors. Residual errors can be caused by phenomena such as occasional beam distortion, small timing errors, quantisation noise etc.
+SUR13A.198 	The accuracy of the reported position information by the in-fill surveillance system may be predicted by the performance prediction models used by the manufacturers of such systems. However the accuracy of the positional information reported by the overall ground based surveillance system following the implementation and integration of in-fill radar data must be demonstrated through practical performance assessment tests.
+Co-ordinate Conversion Process
+SUR13A.199 	In a radar data processing system that uses target reports from a number of sensors, all measured plot positions have to be transformed into one common co-ordinate system. Sometimes the latitude/longitude co-ordinates of a radar system are not accurate, causing systematic offsets in the calculated X, Y variables. Additional errors may be caused by the inaccuracy of the co-ordinate conversion algorithm. Since all such errors are mixed with the errors in the measured range and azimuth variables, they can only be properly estimated by a tool that uses very accurate co-ordinate conversion algorithm and a reliable earth model such as WGS-84.
+Differences in Update Rates/Scan Rates
+SUR13A.200 	Scan time is the mean time between successive measurements of the same target. For a rotating radar, this is the revolution rate. The update rates between the main PSR and the in-fill system may not be the same. The in-fill
+radar may scan at a faster rate on a target than the main PSR. However the update rate required by the operational requirement may be that of the main radar.
+SUR13A.201 	A higher scan rate of the in-fill radar means that more up-to-date and more accurate position information is available from the in-fill radar than the main radar. It is however up to the ANSP to decide whether the most recent position by the in-fill radar must be used each time data is updated on the controller’s screen, or whether an averaged position or a position corresponding to the time of measurement by the main radar is to be output.
+Processing Capacity (In-fills/filter software/work-rounds)
+SUR13A.202 	Any infill solution requires additional processing in order to integrate the positional data from an in-fill radar to the main radar picture correctly and accurately.
+SUR13A.203 	The ANSP may need to implement additional processing equipment in order to enhance the processing capacity of the system.
+SUR13A.204 	Also an ANSP may be affected by more than one wind farm in the operational area of the screen so that it may be necessary to integrate more than one in-fill radar feed in order to mitigate clutter from all wind turbines affecting the ANSP’s PSR coverage.
+SUR13A.205 	The ANSP should consider the capacity of their existing systems or new systems to process the in-fill feed/s, additional equipment and facilities required for such equipment and identify any limitations.
+Processing Delay/Latency (in-fills/filter software/work-rounds)
+SUR13A.206 	Any additional level of processing required by various wind farm mitigation techniques, be it either an in-fill solution or a spectrum filter software based solution, has the likelihood of increasing the processing delay.
+Data Formats of an In-fill Radar and the Required Processing System Capability
+SUR13A.207 	When using an in-fill radar as a mitigation solution it must be possible to integrate the in-fill radar data into the main PSR data used by the airfield. Most modern radars use the ASTERIX format including all NATS en-route radars. However older systems within the UK may still use formats such as RDIF. In order to be able to integrate an infill radar data, the infill radar must have the capability to output the target data in the same format that is used by the ANSP surveillance system.
+Analogue Radar Sources as In-fill Radars
+SUR13A.208 	Although most modern primary radar systems are plot extracted systems, there still exist a number of non-plot extracted primary radar systems in the UK that are used for providing civil air traffic services.
+SUR13A.209 	It is also possible that radar feeds are provided from such non-plot extracted PSRs as in-fill feeds to other primary radars that suffer from wind turbine effects simply due to the fact that the radar providing the feed does not see the wind farm due to terrain effects. However the primary radars that are specially designed as in-fill radars to address wind turbine effects are modern systems and are therefore likely to be plot-extracted systems.
+SUR13A.210 There are additional issues specifically related when trying to combine data involving non-plot extracted systems.
+SUR13A.211 	Where an analogue PSR is being used as an in-fill radar to be integrated
+into a plot-extracted system, the data from the analogue must be plot extracted in order for it to be possible to integrate the analogue radar data into a plot extracted radar picture. A plot extractor must then be fitted at the radar head of the analogue radar to make such integration possible. The plot extractor must then output the plot data in an appropriate format.
+SUR13A.212 	Equally when using a plot-extracted in-fill feed to be integrated into a nonplot extracted system, the two areas on the display would look significantly different whereby the area on the display with the in-fill data would look as confirmed tracks or plots, and the rest of the area on the display would display the raw video.
+SUR13A.213 	From a display point of view this is not a recommended practice. Radar Displays are the coupling link between radar information and the operator. By using processed radar data on the display the display technique is optimised to improve the information transfer to the operator, whereas an unprocessed display showing the raw video has a different degree of information transfer to the operator leaving the operator to do the processing through his visual sensors.
+SUR13A.214 	Also, when trying to correlate target data of an aircraft transiting the boundary of the wind farm region, the track correlation and integration becomes an impractical process due to the different levels of processing in the two types of data.
+SUR13A.215 	Although it is highly unlikely and technically possible to combine analogue
+in-fill data feed into an analogue primary radar, the unprocessed video from the two radars of the same target may look very different both in size and intensity, hence combining two analogue feeds is not an ideal situation.
+PSR/SSR Combined In-fill Feeds
+SUR13A.216 	An ANSP might choose a remote surveillance data feed from a combined PSR/SSR system that does not see the wind farm, but is capable of detecting the targets within the same area of airspace affected by wind turbine for the local primary radar. For example the current NATS Cromer feed to Norwich is populated with Combined and SSR-only target reports.
+SUR13A.217 	If the in-fill is a combined feed it is also possible to use a combined in-fill
+feed as long as the message formats from the combined feed are compatible with the message formats used by the main primary radar and the processing systems that are used to integrate the in-fill sources and the main PSR source.
+SUR13A.218 	Having SSR Mode C altitude information can be an added benefit to the slant range correction process described in a previous section.
+SUR13A.219 	SSR only or other co-operative only in-fill data may be acceptable in circumstances where the ANSP could provide a valid safety argument that all targets within the airspace that is affected by wind turbines on the controllers display, are fully equipped with transponders.
+Display Aspects
+SUR13A.220 	It is also necessary to consider how the in-fill areas are integrated into a surveillance display system (HMI) and how the in-fill areas impact the controller’s display.
+Figure 11: Multiple In-fill areas on a surveillance display
+SUR13A.221 	It is expected that rather than feeding completely independent individual feeds into the display system, some combination process will be applied prior to the display system to correlate and combine target reports where necessary.
+SUR13A.222 	There may be more than one in-fill area on a controller’s display for which additional processing mechanisms have been applied to the data received by various in-fill sources.
+SUR13A.223 	The co-ordinate conversion process and the timeliness of data discussed in previous sections are also important in ensuring that data displayed on the HMI are valid and accurate.
+SUR13A.224 	It is important to consider how the in-fill areas or wind turbine affected areas are displayed to the controller both in normal operating conditions and in the failures of the in-fill radar or other mitigation solution applied to the surveillance data over the wind farm area.
+SUR13A.225 	In normal operation, displaying the in-fill region can be advantageous as a method of on-going performance verification by manual observation by the controller. For example the controller would be aware that the data over the wind farm region are fed in from an in-fill sensor or special processing techniques are applied over this region. Hence track continuity, track jumps or losses can be noted over this area.
+SUR13A.226 	In the case of a failure of a wind farm mitigation technique, depending on the system configuration, this region may appear as a totally blank area, or filled in with wind turbine clutter making the failure more obvious to the controller.
+SUR13A.227 	Also, in the failure of the in-fill radar, or other mitigation techniques applied, ANSPs must also consider means of mitigating the risks arising from this failure. It may be that the controller has to either switch and choose a different infill source or apply special procedures to mitigate by procedural control.
+Use of Height Information from 3D Radars or Mode C Information from
+PSR & SSR Combined in-fill Feeds
+SUR13A.228 	As described previously, the slant range error must be corrected when integrating data from a radar located in a different location than the main primary radar. The height information is necessary for applying this correction. This is often done either by using height information from a 3D radar where the in-fill radar used is a 3 dimensional radar, or where SSR information is available, by using the Mode C pressure altitude information.
+SUR13A.229 	When neither of these altitude information sources are unavailable, and the main radar and the in-fill radars are not co-located, normally a configurable default altitude setting is applied for the slant range correction process where the
+default value can be selected to best suit the particular circumstances around the enhancement areas, the type of in-fill radar and the use of the airspace.
+Mitigations Against Failures of Mitigation Techniques including In-Fill Radars
+SUR13A.230 	A mitigation technique is applied to mitigate any risks that arise due to the effects of wind turbine interference. Therefore the failure of a mitigation technique including an in-fill radar would mean that the increased level of risk exists upon its failure.
+SUR13A.231 	In the event of a failure of an in-fill source (or other mitigation process), the following options may be considered:
+To tolerate the cluttered area until the in-fill radar is re-instated in service
+apply a work-round such as sector blanking if this is a feasible option (no targets at all in the in-fill area)
+use a different surveillance source such as a remote SSR feed to cover the infill area if this is feasible in the airspace concerned
+switch to complete procedural control without the use of display
+SUR13A.232 	In each situation, the appropriateness of these various options depends on a number of variables in the specific context of operation. These include:
+the availability of other in-fill sources or secondary only sources (e.g. SSR or
+WAM)
+the transponder equipage of aircraft in the affected area
+operational significance of the affected area
+ability of the processing systems to configure to switch to various sources and modes of operation
+the approximate time to repair the in-fill source and re-instate it
+controller’s overall ability to adopt to each situation
+Indication of Failure of Wind Turbine Mitigation Technique
+SUR13A.233 	The failure of an in-fill radar or other automated processing technique used
+may be indicated by the controller using an audible alarm or a visual indication or both. Otherwise the failure of the in-fill source may only be visible to the controller by the continuous absence of any target data on the display.
+Impact of Using Automatic Mitigation Techniques on Safety Nets
+SUR13A.234 	The use of an in-fill radar or other automatic mitigation techniques may also have an impact on the performance of safety nets. The current ground based safety nets policy is stated in CAP 670 under Display System Technical Requirements.
+SUR13A.235 	Depending on the mitigation technique applied, it may not be possible to operate the safety nets over the wind farm area. Also in the failure of an in-fill radar, the absence of positional data would mean that the safety net function cannot be applied during this outage period. Whilst the safety nets must not be relied upon to achieve an acceptable level of safety, ANSPs may have taken the contribution of the safety nets into account when achieving an acceptable level of safety. In such circumstances risks of losing the safety nets functionality must be addressed by appropriate mitigation means.
+Reliance on In-fill Radars as a Back up Surveillance Coverage Method
+SUR13A.236 	Although highly unlikely it is possible for an ANSP to rely on an in-fill radar
+to provide coverage over a greater range beyond the wind farm affected area, to use as a fall back surveillance layer, in the event of a failure of a main Primary Radar. In some in-fill solutions the range may be configurable to depending on the operational requirement. It is known that some wind farm mitigation primary radars have the ability to adjust its range beyond 20 NM.
+SUR13A.237 	If this is the case, the wind farm mitigation radar could perform two roles:
+to act as a mitigation of wind farm clutter on the display that is an essential part of the main surveillance system used primarily under normal circumstances
+to act as a contingency measure (a redundant feed) in the event of a failure of the main PSR
+SUR13A.238 	In such circumstance the ANSP’s safety case must identify the in-fill radar’s contribution both as a mitigation (i.e. a barrier) in the event tree analysis and also in assessing the failure modes of the main surveillance system including the entire ground based surveillance chain. Hence the failure rates of an in-fill radar and the rates of failures would affect the main surveillance system as well as the availability of a barrier that would act as a mitigation in the failure of the main PSR.
+Support and Maintenance of Mitigation Equipment
+SUR13A.239 	The support and maintenance requirements for the in-fill radars (or other
+equipment based solutions) is another area which should be considered by the ANSPs in selecting the appropriate mitigation solution. It is possible that the in-fill radar may be maintained under separate contractual arrangements by a 3rd party. Effective maintenance and repairing processes increase the availability and the reliability of the in-fill radar, hence is a contributory element in providing a robust safety argument for the reliability and availability of the in-fill solution.
+Approval of In-fill service Providers as ANSPs or CNS Providers
+SUR13A.240 	Currently where an in-fill radar is not operated by the user of the data, that operator is considered to be an ‘operating organisation’ i.e. an organisation responsible for the provision of engineering and technical services supporting air traffic, communication, navigation and surveillance services.
+“operating organisation means an organisation responsible for the provision of engineering and technical services supporting air traffic , communication, navigation and surveillance services.”
+SUR13A.241 	The user of the data provided by the operating company is considered to
+be the CNS provider and will be a certificated ANSP. Typically, in the UK there are no ‘stand alone’ CNS providers. All certificated CNS providers are associated with the provision of an Air Traffic Service or an Air Ground Communication Service.
+SUR13A.242 	However providers, or potential providers, of in-fill service data should be aware that the CAA is considering redefining providers of such surveillance services as CNS providers, which would require the provider’s organisation or company to obtain certification as an Air Navigation Service Provider (ANSP), providing CNS services, in accordance with Regulation 550/2004 Chapter II, the Service Provision Regulation. This would require the provider to demonstrate compliance with Commission Implementation Regulation (EU) No. 1035/2011 Annex I, Annex II and Annex V.
+Part C, Section 3: Appendix A to SUR 13: Guidance on Wind Farm Mitigation Techniques
+Part 7: Existing Guidance Material
+SUR13A.243 	The CAA has published CAP 764 “CAA Policy and Guidelines on Wind Turbines” which contains further guidance and safeguarding considerations.
+SUR13A.244 	The Eurocontrol Wind Turbine Task Force has also developed some guidance material for assessing wind turbine effects on ATC radars which can be accessed via the following link:
+https://www.eurocontrol.int/download/publication/node-field_download-4982-0
+SUR13A.245 	CAP 670 GEN 01 contains generic high level requirements and guidance on the safety assessment of wind turbines near ATC radars.
+SUR13A.246 	ICAO Doc 8071, Manual on testing radio navigation aids, Volume 3 (Testing of Surveillance Radar Systems) provides further information and guidance on radar testing methods.
+Part C, Section 3: Appendix A to SUR 13: Guidance on Wind Farm Mitigation Techniques
+Part C, Section 3: Annex A to SUR 13: A Schematic Diagram of a Surveillance System

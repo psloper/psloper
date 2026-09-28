@@ -1,0 +1,296 @@
+CAP 670: Air Traffic Services Safety Requirements
+UK Civil Aviation Authority
+=================================================================
+Edition    : Third Issue, Amendment 1/2019, 1 June 2019, effective 1 August 2019.
+             (c) Civil Aviation Authority, 2019.
+Source     : a .docx copy of CAP 670 supplied by the user on 2026-09-19.
+Extraction : word/document.xml read directly, paragraphs and table rows kept.
+             Tables appear between <<TABLE>> and <<END TABLE>> with cells
+             separated by " | ". An empty cell prints as a blank between bars.
+Caveat     : FIGURES ARE NOT READ. Figure 3 (the RAG diagram) and the process
+             flow chart at the end of Appendix A to GEN 02 are images, so their
+             content is NOT in this extract and remains unverified.
+
+This file holds Part B, Section 4: GEN 01, GEN 02 and Appendix A to GEN 02,
+verbatim. The figures the tool quotes are checked against this text by
+test/cap670.test.mjs.
+-----------------------------------------------------------------
+
+GEN 01: Wind Turbines
+Introduction
+GEN01.1 A wind turbine is a device that converts the wind’s kinetic energy into electrical power. A wind farm comprises two or more wind turbine generators.
+GEN01.2 This document provides guidance which an ATS Provider or ANSP can apply in
+order to safeguard against the possibility of adverse effects on ATS operations caused by wind turbine development in the vicinity of an aeronautical radio station. Sources of guidance to facilitate the process of assessment are also provided.
+Capture by ATS Provider of Development Proposal
+GEN01.3 An ATS Provider or ANSP should be notified of a wind turbine development proposal by the developer. This notification provides the opportunity to enter into consultation with the developer and provide comment on the proposed development, ahead of a formal planning application.
+GEN01.4 In order to ensure comprehensive notification of any intended development, ATS Providers and ANSPs are advised to arrange for the relevant Local Planning Authority (LPA) to inform and consult with them, when they receive wind turbine development proposals within a minimum radius of 20 km from their Aerodrome or Radio Site.
+GEN01.5 ATS Providers and ANSPs should also ensure that any area of particularly intense aircraft activity, e.g. an approach to a runway, is also considered by the LPA as requiring safeguarding. This will normally be outside the ‘standard’ 20 km range and may extend to 34 km for ILS approaches. It should be noted that such ranges could require consultation with more than one LPA.
+Responsibilities and Limitations
+GEN01.6 Wind turbine developments need to be considered as a safeguarding activity.
+GEN01.7 The ATS Provider or ANSP is responsible for ensuring, as far as is reasonably practicable, that such development does not impact on the safety of the ATS environment.
+GEN01.8 The ATS Provider or ANSP is responsible for deciding whether or not it can accept any degradation to the ATS environment.
+GEN01.9 If the ATS Provider or ANSP predicts that the degradation is unacceptable then it should make representations to the appropriate Local Authority.
+GEN01.10 The ATS Provider or ANSP, after consultation with the developer, is responsible for mitigating against any deterioration to ATS caused by wind turbine developments. The CAA may request to examine any mitigation measures taken and may vary approvals for ATS where the deterioration caused by a wind turbine development has an adverse effect on the continued safe operation of that service.
+Assessment of Effect
+GEN01.11 Wind turbines have the potential to adversely affect the ability to provide ATS in several ways, not least because of degradation of radio signals emitted by aeronautical radio stations due to multi-path inference caused by reflection from the static elements (i.e. nacelles and masts) or signal modulation effects due to rotating turbine blades.
+GEN01.12 Aerodrome licensees and ATS Providers are reminded that information regarding the technical safeguarding of aeronautical radio stations at their aerodromes, including examples of the minimum dimensions for those areas which must be safeguarded, is contained in CAP 670 Part B, Section 4 GEN 02.
+GEN01.13 The CAA has been made aware of research that indicates the possibility of wind turbines adversely affecting the quality of radio communication between air traffic controllers and aircraft under their control. Further work is being undertaken to establish the extent, likelihood and severity of the problem and until further information is available, issues concerning wind turbines and VHF communications should be dealt with on a case by case basis. ANSPs are advised to include the radiation pattern of their antenna systems and the radio horizon in their considerations.
+Note: A wind farm whose blade tips, at their maximum height, are below the visual horizon when viewed from a point situated 25 m above an aeronautical radio station site may be acceptable to an ANSP.
+Additional Guidance
+GEN01.14 Further guidance regarding wind farm planning considerations and issues can be sought from:
+CAP 764 CAA Policy and Guidelines on Wind Turbines
+(www.caa.co.uk/CAP764). This document aims to provide assistance to aviation stakeholders when addressing wind energy related issues, thereby ensuring greater consistency across the whole aviation industry in the consideration of the potential impact of proposed wind turbine developments.  The National Planning Policy Framework, published by the Ministry of
+Housing, Communities and Local Government
+The Wireless Telegraphy Act 2006.
+GEN 02: Technical Safeguarding of Aeronautical Radio Stations Situated at UK Aerodromes: Guidance Material
+Introduction
+GEN02.1 Aerodromes licensees together with their ATS Providers are responsible for the technical safeguarding of all of the radio sites for which they hold approvals under the ANO 2016. This document provides guidance to assist with that process.
+GEN02.2 Aerodrome Licensees and ATS Providers who register safeguarding maps with the LPA should receive from that LPA a copy of any applications for developments either on or within the vicinity of the Aerodrome. This information should be made available to the person responsible for the technical safeguarding of radio sites.
+GEN02.3 If safeguarding is not undertaken then it is likely that a gradual degradation of the
+integrity of the radio signal will take place. This will be perceived in several ways; for example, complaints from pilots or ATC regarding poor coverage, increased background noise or worsening flight calibration results for ILS. This can be avoided by proactively safeguarding the technical sites.
+GEN02.4 The ATS Engineering Inspector will expect to see evidence of adequate technical safeguarding. If the quality of service of the radio signal reduces below acceptable limits, he or she can withdraw the ANO approval for the affected radio facility until corrective measures have been taken.
+Definition
+GEN02.5 Technical Safeguarding is the process employed to protect radio signals from being affected by physical or electromagnetic changes in their transmission environment.
+Background
+GEN02.6 Technical Safeguarding consists of two processes, Physical Protection and Radio Spectrum Protection. Physical Protection
+GEN02.7 Most physical objects act as reflectors or diffractors of radio signals. A combination of object size, material, proximity and incident radio wavelength can make them particularly efficient reflectors or diffractors. Technical site safeguarding, a process applied as part of the technical safeguarding of Radio
+sites, seeks to prevent any development near to a radio transmitter or receiver site, which may degrade the radio signal by enabling such reflection or diffraction.
+Physical Protection Process
+GEN02.8 Every aeronautical radio station requires a technical area to be safeguarded against the possibility that buildings or other structures erected within the safeguarded area cause interference to the signal radiated by that station.
+GEN02.9 On an aeronautical chart, a frame, representing this area, is drawn around the aerial of the radio aid. If a proposed development falls within that frame or volume, further analysis, or reasoned outright rejection should be considered. In the case of development within an ILS area it is expected that computer modelling of the development is undertaken. The size and shape of the frame or volume is dependent upon the type of equipment and its aerial system.
+GEN02.10 The dimensions provided below are examples of frame sizes associated with specific types of equipment. These sizes should be applied in the absence of data from other sources. Aerodromes are encouraged to obtain specific criteria from the manufacturer or supplier of their equipment. It is likely that the manufacturer may specify a smaller area to be safeguarded, which could provide operational benefits to the Aerodrome. Aerodromes are expected to maintain and apply criteria pertinent to their own technical sites. The Engineering Inspector may wish to examine the criteria used.
+Example Frame Sizes
+ILS
+Note: The following dimensions should not be confused with the ILS Critical and Sensitive areas.
+ILS Localiser Cat I/II
+GEN02.11 The frame can be defined as two separate sectors:
+A sector of 750 m radius centred on the localiser and ±60° about the runway centreline at ground level, in the direction of the runway threshold.
+A sector, centred on the localiser, ±15° about the runway centreline and 1500 m along the runway, at ground level, in the direction of the runway threshold.
+ILS Localiser Cat III
+GEN02.12 The above Cat I/II sectors plus two additional sectors:
+A rectangle 300 m either side of and parallel to the extended runway centreline commencing 100 m behind the respective localiser and extending
+to 100 m beyond the end of concrete at the landing end of the respective runway. This area is defined at ground level.
+A volume commencing 100 m from the end of concrete at ground level on a projected 1:50 slope to a range of 1000 m and ±300 m about the extended runway centreline.
+Note 1: These frames are defined with respect to the localiser site and the landing ‘end of concrete’ to take account of the variable length of runways and inset threshold conditions.
+Note 2: Aerodromes may consider extending the above Cat III criteria of ± 300 m to ± 500 m if large scale development on the edge of the ± 300 m boundary is likely.
+ILS Glide Path
+GEN02.13 This sector is defined with respect to the glide path aerial mast.
+GEN02.14 A sector of 750 m radius ±60° about a line originating at the base of the glide path aerial parallel to the approach runway centreline.
+DME associated with ILS or MLS
+GEN02.15 An inverted cone of 500 m radius with a 2% (1:50) slope, originating at the base of the DME aerial.
+MLS
+Azimuth System
+GEN02.16 A rectangle ±100 m either side of the extended runway centreline originating 100 m behind the aerial and extending to 100 m beyond the landing end of the respective runway. This area is defined at ground level as 4.3.1.2 a.
+Elevation Systems
+GEN02.17 A sector of 500 m radius, centred at the base of the elevation aerial, ±30° about a line parallel to the approach runway centreline.
+VOR
+GEN02.18 At ground level a circle of 230 m radius from the site centre with a further slope at 2% (1:50) out to 900 m radially from the site centre.
+DME
+GEN02.19 The foregoing VOR constraints where co-located with a VOR otherwise a 2% (1:50) slope surface originating at the site ground level extending 300 m radially.
+Radar: 10 cm, 23 cm, 50 cm and SSR
+GEN02.20 The radar system shall be safeguarded with criteria which are derived from the following as a minimum:
+Operational Range.
+Base of Coverage.
+Operational Usage.
+Equipment Manufacturer’s recommended clearances to prevent deterioration of the system’s performance.
+GEN02.21 The criteria for safeguarding should include the following for all radar systems:
+1. A Sterile Zone around the antenna to permit clean, un-interrupted beam formation:
+Which should be precisely defined with respect to a clear reference point on the antenna system;
+Which should be derived from the vertical and horizontal beam patterns of the antenna type;
+Which should state both the vertical and horizontal extents of the Sterile Zone.
+A safeguarded slope should be defined around the system which shall assure the system’s performance such that it continues to support the operational requirement:
+Which should be precisely defined with respect to a clear reference point on the antenna system;
+Which should define the gradient of the slope.
+The criteria should also include consideration of the construction, shape, location, orientation and materials used in any application.
+Note 1: Example of Sterile Zone criteria: ‘The Sterile Zone is an area of z metres in radius centred on the rotation axis of the radar antenna. The zone extends y metres below the electrical centre of the antenna.’
+Note 2: Example of slope criteria: ‘The protected slope shall be 1 in a*, centred on a point on the rotation axis of the radar antenna that is b* metres below the lower edge of the antenna. The slope shall extend to a ground distance of c* metres from the rotation axis of the antenna.’
+*a, b and c are numbers defined by the system characteristics.
+GEN02.22 For clarity, the safeguarded areas should be described diagrammatically as well as textually.
+Surface Movement Radar
+GEN02.23 The airport boundary from ground level.
+VHF Direction Finder
+GEN02.24 Ground level safeguarding of circle radius 120 m centred on aid, and 2% (1:50) slope from ground level at aid out to 450 m radially.
+VHF/UHF Receivers/Transmitters
+GEN02.25 Ground level safeguarding of circle radius 91 m centred on the base of the main aerial tower (or equivalent structure). Additionally, from an elevation of 9 m on this circle a 2% (1:50) slope out to a radius of 610 m.
+Radar and Radio Link Routes
+GEN02.26 Certain areas of high ground may need to be safeguarded against development in order to protect radar/radio beams. Such areas should be individually specified.
+75 MHz Marker Beacons
+GEN02.27 Ground level safeguarding out to 100 m radially.
+NDB
+GEN02.28 From the centre of the aerial, at a height of 5 m out to 30 m radius, with a further slope to a height of 14 m above ground, out to 90 m radius.
+Radio Spectrum Protection Assessment
+GEN02.29 Radio signals may also be degraded by interference from other radio sites, such as a broadcast station whose harmonics conflict with an aerodrome frequency. An assessment to ascertain the impacts and safeguarding against such third party radio site development may be necessary.
+GEN02.30 Deleted.
+Appendix A to GEN 02: Methodology for the Prediction of Wind Turbine Interference Impact on Aeronautical Radio Station Infrastructure
+Introduction
+Turbine interference prediction is a complex process which requires a detailed technical knowledge of radio propagation theory and the application of a defined prediction methodology.
+Prediction of turbine interference impacts above a threshold value will not automatically result in the rejection of a given development proposal.  Technical impact (interference levels) and operational impacts are assessed separately.  The type of operational usage and the geographic location and volume of affected airspace (Volume of Interest) will affect the level of operational impact and hence sensitivity to a particular development proposal.
+The level of technical impact in any given scenario will vary considerably dependant upon a number of variables including but not limited to:-
+Size of turbine
+Rotation rate
+Number of turbines
+Development layout
+Adjacent developments (accumulated impact)
+Physical separation from the radio station
+Terrain profile
+Signal levels
+Transmitted frequency
+A wind turbine can produce two types of signal interference which are significant in the context of Aeronautical Communication Systems i.e. multipath reflection and amplitude modulation in the form of repetitive fast fading.
+Multipath reflection is caused by reflection and re-radiation of a radio signal from the turbine tower structure.
+Amplitude modulation in the form of fast fading can be visualised as being a similar effect to that which would be observed when shining the light from a torch through the rotating blades of a desk fan.
+Two assessment methodologies are discussed within this document, as follows:-
+Method 1 - Zonal assessment – Red, Amber, Green (RAG method)
+Method 2 - Carrier to Interference ratio prediction (C/I method)
+The RAG method is used to enable a quick pass GO/NOGO assessment to be made for a proposed development and class of turbine, and to define the region of uncertainty where a more complex technical analysis will be required, supported by an operational airspace impact assessment.
+Turbine Classes
+This document defines five separate classes of wind turbines found in the UK as shown in table 1 below.  These classifications have been defined to provide consistency in the safeguarding process.  The reference turbine type is a design in common usage.  Where a chosen turbine type is a borderline match for two classes and the appropriate classification may be ambiguous, then the larger turbine classification should be utilised for impact assessment.
+Example - A turbine with hub height 20 metres, rotor diameter 18 metres, tip height 29 metres is classified as Medium Class due to the rotor diameter exceeding 15 metres.
+<<TABLE>>
+Turbine Class | Hub Height Range | Rotor Diameter Range | Tip Height Range
+Small | < 20 metres | < 15 metres | < 27.5 metres
+Medium | 20 – 40 metres | 15 – 35 metres | 27.5 – 57.5 metres
+Large | 40 – 60 metres | 35 – 60 metres | 57.5 – 90 metres
+Reference | 80 metres | 90 metres | 125 metres
+Large Industrial | 60 – 95 metres | 60 – 126 metres | 90 – 158 metres
+<<END TABLE>>
+Table 1 – Turbine Classes
+UK Radio Station Infrastructure
+UK ANSP operate a network of radio stations throughout the UK. These radio stations provide a range of operational services using the VHF and UHF aeronautical communications frequency bands.  The relative level of operational sensitivity for a given development proposal will be principally determined by terrain profile, the type of operational services being provided by the radio station and the volume of airspace affected.  In general terms, VHF communications services tend to be less sensitive than UHF services to turbine related interference as can be determined from the relative radar cross section (RCS) values for VHF and UHF bands in tables 4 and 5 below.
+Carrier to Interference Ratio
+For any proposed development, peak levels of turbine related interference (Carrier to Interference) must fall below a defined tolerance threshold (in dB) at the receiving equipment aerial input in order to guarantee the safe provision of services.  This C/I value ensures that audio quality as perceived by either Air Traffic Controller or Pilot is not significantly impaired. The threshold value was determined from laboratory-based susceptibility testing of a wide range of ground based and airborne radio receiver types.  It has a modest safety margin included to allow for signal fading, effects of weather, multipath reflection etc., which will all potentially degrade the C/I ratio further.
+Radar Cross Section
+RCS is a critical radio frequency parameter which indicates the ‘relative reflectivity’ of a target and which is related to the physical dimensions of the target object and the illuminating radio frequency.   In simple terms, the use of RCS allows the extent of turbine related interference to be determined for a specific type of turbine.  The RCS value is a number defined on a logarithmic scale and it increases with turbine dimensions and frequency of radio signal.  RCS values have been assigned to the classes of turbine as defined below and these values were used to define the extent of their associated RAG assessment zones.
+A reference turbine class has been defined (see below). RCS values for this turbine type have been established and refined over a period of time in line with the practical application of safeguarding high availability critical infrastructure systems.  RCS Values have been assigned to four further classes of wind turbine – these values have been scaled from the reference turbine RCS at 461 MHz in terms of swept blade area and radio frequency.
+RCS values have been calculated assuming an illuminating frequency of 127 MHz for VHF, and 368 MHz for UHF frequency bands.
+Method 1 - Zonal Assessment
+This method has been developed to enable rapid and non technical GO/NOGO assessments to be made for simple development proposals only – i.e. between 1 and 10 turbines.  Where the development proposal is complex in terms of scale, local environment, cumulative impact or terrain profile then this method is not appropriate but it can be used to obtain an initial indication of potential impact.
+Zonal assessment is made on the basis of two parameters:-
+Minimum separation between turbine and infrastructure site assuming a flat earth
+Angular displacement of turbine hub with respect to infrastructure site base level
+Reference to Figure 3 and Table 2 will allow a Zonal assessment to be conducted.
+Assessment zones are defined as follows:-
+RED – The minimum separation distance from an infrastructure site at which a single turbine of a given class can be sited and which will ensure a minimum acceptable C/I ratio at the receiver equipment. Violation of this parameter will result in automatic rejection of the development proposal.
+GREEN – The separation distance from an infrastructure site at which a multiple turbine development (up to 10 turbines) of a given class can be sited and which will almost certainly exceed the required C/I criteria at the receiver equipment irrespective of terrain, geometry and operational considerations.
+AMBER – The separation range situated between RED and GREEN zones. In this region it is anticipated that the proposed development will produce a level of comms interference and could potentially impact safe service provision.  An amber zone assessment will not necessarily imply rejection of the proposal.   The development will require a more detailed technical assessment using the C/I method as defined below with any degradation in communications performance deemed acceptable following an operational impact assessment conducted by ANSP air traffic operations personnel.
+NOTE – It is apparent that the probability of acceptance for a development falling within the amber zone definition increases as physical separation and elevation angle tend towards the green zone.
+RAG Safeguarding Criteria – nearest turbine
+Figure 3 – RAG Assessment Methodology (for illustration purposes only)
+<<TABLE>>
+ | Distance | Angle
+ | Red (km) | Green (km) | Degrees Red | Degrees Green
+Large Industrial | 2.1 | 17.2 | 2.6° | 0.4°
+Reference | 1.3 |  | 3.5° | 0.5°
+Large | 0.8 |  | 3.6° | 0.6°
+Medium | 0.5 |  | 4.6° | 0.7°
+Small | 0.25 |  | 4.6° | 0.7°
+<<END TABLE>>
+Table 2 – RAG Assessment Parameters
+Out of Scope Proposals
+If no part of a turbine installation is visible to the radio site, then regardless of physical separation or size / quantity of turbine(s), that development proposal will be acceptable.
+For single turbine developments, if the hub height falls below radio station base height (AMSL) then the red zone physical separation criteria can be used without any further analysis. i.e. any turbine which would otherwise be classified as marginal (Amber) development is deemed to be acceptable by default provided that minimum physical separation is maintained as defined by the red zone criteria for that turbine class.
+Developments proposals that either fall into the Amber “Impact Zone” or are deemed inappropriate for Zonal Assessment may be acceptable if supported by technical impact assessment using the C/I prediction method as described below and subject to a favourable operational impact assessment undertaken by ANSP air traffic operations personnel.
+Large developments i.e. turbine tip height greater than 110 metres AGL , and / or  more than 10 turbines will require detailed assessment using the C/I prediction method as outlined below.
+Interpretation of Assessment
+Separate assessments are made for both hub elevation angle and physical separation to allow terrain effect to be factored – see table 3 below.
+Where terrain slopes downwards and away from the radio site towards the proposed wind farm then turbine related interference is reduced allowing physical separation to be reduced. Upward sloping terrain will tend to increase the interference effect and physical separation must be increased to compensate.
+<<TABLE>>
+ASSESSMENT | 
+DISTANCE | ANGLE | OVERALL | RATIONALE
+RED | RED | RED | Excessive impact
+RED | AMBER | AMBER | Terrain sloping downwards
+RED | GREEN | GREEN | Terrain sloping downwards
+AMBER | RED | RED | Excessive impact
+AMBER | AMBER | AMBER | Indeterminate impact
+AMBER | GREEN | GREEN | Terrain sloping downwards
+GREEN | RED | AMBER | Terrain sloping upwards
+GREEN | AMBER | GREEN | Marginal impact
+GREEN | GREEN | GREEN | Acceptable impact
+<<END TABLE>>
+Table 3 – Combined Assessment
+Method 2 – Carrier to Interference Prediction
+C/I prediction is a complex process which requires a detailed technical knowledge of radio propagation theory and the application of a defined prediction methodology using professional radio planning software tools.  This type of assessment must be performed by following the defined methodology and undertaken by a suitably qualified consultancy practice or organisation.
+NOTE – the ANSPs reserve the right to independently verify any C/I prediction produced by a third party by utilising the prescribed methodology and supplied development data.
+NOTE – Receiver Sites will be assessed as Transmitter Sites using the methodology defined below.
+Radiation Pattern Envelope (RPE)
+A generic RPE should be produced for the specific class of turbine as outlined below.
+Turbine RCS values in tables 4 and 5 should be selected for the most appropriate class of turbine as previously defined in table 1.
+<<TABLE>>
+VHF | Bistatic | Monostatic
+ | dBsm | RCS m2 | dBsm | RCS m2
+Large Industrial | 51.0 |  | 41.0 | 
+Reference | 48.1 |  | 38.1 | 
+Large | 43.8 |  | 33.8 | 
+Medium | 39.9 |  | 29.9 | 
+Small | 32.5 | 1782 | 22.5 | 178
+<<END TABLE>>
+Table 4 – RCS Values – VHF
+<<TABLE>>
+UHF | Bistatic | Monostatic
+ | dBsm | RCS m2 | dBsm | RCS m2
+Large Industrial | 55.6 | 364254 | 45.6 | 36425
+Reference | 52.7 |  | 42.7 | 
+Large | 48.4 |  | 38.4 | 
+Medium | 44.5 |  | 34.5 | 
+Small | 37.1 | 5162 | 27.1 | 516
+<<END TABLE>>
+Table 5 – RCS Values - UHF
+Alternatively, where Frequency = 127 for VHF, 368 for UHF, RCS values can be derived by scaling from the reference turbine as follows:-
+Monostatic RCS value = 10 Log (23281 * (Rotor Diameter / 90)2 * Frequency / 461)  in dBm2
+Peak Bistatic RCS value is 10dB higher
+Radiation Pattern Envelope (RPE) is derived as follows:-
+General Scatter Region (GSR) – use Monostatic RCS value
+Forward Scatter Region (FSR) – use Bistatic RCS value
+Roll off characteristic between FSR and GSR is generated using the relative amplitude (RA) equation as defined by ITU-R BT805 (the reference turbine uses a mean blade width of 2.5m, other turbines are scaled proportionately).
+RPE’s are aligned individually for each turbine with FSR peak values coincident with the bearing from radio site to turbine.
+Turbine Transmit Power
+Transmit power values shall be calculated for each individual turbine as follows:-
+Calculate free space path loss between transmitting aerial at the radio station and the turbine hub.
+Determine any path losses above free space.
+o NOTE – Path loss above free space can be derived using ITU-R
+525/526/Delta Bullington propagation model and a k factor of 4/3  • Calculate the equivalent isotropic signal received at the hub at 127MHz and 368MHz.
+Using conventional radar theory and the appropriate RCS value, calculate the isotropic power re-radiated by the turbine at 127MHz (Power A) and 368MHz (Power B).
+Radio Station
+Baseline (default) data for a typical radio station shall be used, as follows:-
+Tower coordinates to < 10 metres accuracy
+Antenna height – 10 metres
+Operating Frequency o VHF : 127 MHz o UHF : 368 MHz
+Aerial Polar Pattern : Omnidirectional
+Aerial Gain : 2.1 dBi
+Aerial system losses : 3dB
+Transmitter Power  o VHF : 50 Watts o UHF : 100 Watts
+Turbine(s)
+Baseline data for each turbine shall be used as follows:-
+Tower coordinates to < 10 metres accuracy.
+Aerial height – Use hub height AGL
+Operating Frequency o VHF – 127 MHz o UHF – 368 MHz
+Aerial Gain : 0 dBi
+Aerial system losses : 0dB
+Transmitter Power  o VHF : as calculated (Power A) o UHF : as calculated (Power B)
+RPE forward lobe for each turbine to be aligned in a direction pointing away from the transmitter on the bearing (True) from radio site to turbine.
+Propagation Model
+The following radio propagation model shall be used for coverage plot prediction:-
+ITU-R 525/526/Delta Bullington
+Coverage Plots
+VHF – Produce coverage plots from radio site using field strength limit of 26 dBuV/m
+UHF - Produce coverage plots from radio site using field strength limit of 35 dBuV/m
+Produce VHF and UHF coverage plots from the radio site at the following altitudes:-
+1000ft  AGL
+2000ft  AGL
+5000ft  ASL
+10000ft ASL
+20000ft ASL
+At the same altitudes as above, produce turbine coverage plots to cover the same area as the radio station.  Where Wanted signal (W) is the carrier (C) and Unwanted signal (U) is the turbine related interference (I) -
+For a single turbine:-
+At each altitude, produce a C/I ratio map with the turbine interferer o Acceptance criteria = > 20dB C/I ratio in the volume of interest
+For multiple turbines:-
+1)    At each altitude, produce a C/I ratio map for the worst single turbine interferer o Acceptance criteria = > 23dB C/I ratio in the volume of interest
+NOTE – Equates to two worst case turbines with in-phase interference
+2)    At each altitude, produce a C/I ratio map with all turbine interferers added o Acceptance criteria = > 14dB C/I ratio in the volume of interest
+NOTE – Assumes all turbines producing in-phase interference
+Notes
+Volume of Interest is defined as a volume of airspace in which there is a predicted degradation of signal quality due to turbine related interference and there is an operational requirement for aeronautical communications.
+The Volume of Interest will be determined following an operational impact assessment performed by air traffic control personnel as part of the mandated safeguarding process.
+Dependant upon the Volume of Interest as determined for any specific case, predicted C/I ratios which fall below the relevant acceptance criteria will not automatically exclude a development.
+When performing an interference prediction, a useful check is to determine the degree of confidence inherent within the prediction.   This can be achieved by repeating the prediction process using progressively higher values of monostatic and bistatic RCS until the appropriate C/I threshold is breached.  A significant variation in RCS between the published value for the turbine class and the RCS value required to breach the C/I threshold is indicative of a reasonable safety margin and provides some level of confidence that the development proposal will not compromise ATC service provision.
+Wind Turbine Communications Impact Assessment - Process Flow
+Part B, Section 4: GEN 03: Safety Requirements for Operational Trials in Air Traffic Services

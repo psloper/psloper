@@ -1,0 +1,894 @@
+/* ===========================================================================
+   Wind Farm / Radar Interference Assessor
+
+   Visual language: an engineering console, not a web page. Dense information,
+   square edges, hairline rules, monospaced numbers, and colour used only to
+   carry meaning (severity, visibility, detection state). No decorative
+   gradients and no colour that does not stand for something.
+   =========================================================================== */
+
+:root {
+  /* surfaces */
+  --bg:          #080b0e;
+  --surface:     #0e1317;
+  --surface-2:   #141a20;
+  --surface-3:   #1a222a;
+  --rule:        #222c35;
+  --rule-strong: #33414d;
+
+  /* text
+     --ink-mute was #5d6b78, which measured 3.42:1 on --surface and failed
+     WCAG AA (4.5:1) in sixteen places, every one of them under 18.66 px.
+     #7e8d9b is the same hue and saturation lifted until it clears 4.5:1 on
+     the WORST background it ever sits on, which is a severity wash inside a
+     finding card, not the page. --ink-dim moved up with it so the three
+     steps stay tellable apart. */
+  --ink:      #d3dde5;   /* 13.6:1 on --surface */
+  --ink-dim:  #a4b4c2;   /* 8.3:1  */
+  --ink-mute: #7e8d9b;   /* 4.55:1 on the worst wash, 5.49:1 on --surface */
+
+  /* meaning */
+  --rf:       #45b8d8;   /* radar, beam, RF structures */
+  --ok:       #3fd18b;   /* detected, clear, acceptable */
+  --warn:     #f0a83a;   /* marginal, degraded */
+  --bad:      #e8524a;   /* lost, blocked, critical */
+  --info:     #8d7fe8;   /* mitigation zones and constructs */
+  --terrain:  #6b7a63;
+
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  /* Type scale. Six steps, strictly increasing, with an 11 px floor.
+     Nothing in the interface is allowed below that: the audit found 48
+     elements at 9.5 and 10 px, which is smaller than any dense tool sets
+     body text and smaller than most people can read comfortably. Density
+     now comes from spacing, not from shrinking the letters. */
+  --t-tag:    11px;   /* faceplate labels: PLAN POSITION INDICATOR, metric names */
+  --t-data:   12px;   /* monospaced figures: tables, readouts, axis numbers */
+  --t-small:  13px;   /* notes, secondary controls, buttons */
+  --t-body:   14px;   /* prose and control labels */
+  --t-lead:   16px;   /* the product name, dialog and section titles */
+  --t-metric: 22px;   /* the four numbers the whole tool exists to produce */
+
+  /* Every checkbox, radio and slider in the page, including the ones inside
+     dialogs that were still rendering in browser blue. */
+  accent-color: var(--rf);
+
+  /* Without this the native scrollbars, and any control the sheet does not
+     style, render light against a near-black page. */
+  color-scheme: dark;
+
+  --rail-w: 300px;
+  --panel-w: 360px;
+}
+
+* { box-sizing: border-box; }
+
+/* No 300 ms double-tap delay on touch, and a tap highlight we chose rather
+   than the browser's default blue box. */
+button, label, a, summary, .rail-tab, .seg-btn, input, select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--rf) 22%, transparent);
+}
+
+html, body {
+  margin: 0; height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: 1.45;
+  overflow: hidden;
+  /* Lining, fixed-width figures everywhere. Without this the stat columns in
+     the national screen went ragged the moment a value wrapped. */
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* Off-screen until focused, then the first thing a keyboard reaches. Eight
+   top-bar buttons and seven rail tabs stood between Tab and the controls. */
+.skip-link {
+  position: absolute; left: 8px; top: -60px; z-index: 50;
+  background: var(--rf); color: var(--bg);
+  padding: 9px 14px; border-radius: 0 0 3px 3px;
+  font-size: var(--t-small); font-weight: 600; text-decoration: none;
+  transition: top 120ms;
+}
+.skip-link:focus-visible { top: 0; outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ------------------------------------------------------------------ topbar */
+
+.topbar {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(200px, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand > div { min-width: 0; }
+
+.brand-mark {
+  width: 26px; height: 26px; flex: none;
+  border: 1.5px solid var(--rf);
+  border-radius: 50%;
+  position: relative;
+}
+.brand-mark::after {
+  content: ""; position: absolute; inset: 50% auto auto 50%;
+  width: 11px; height: 1.5px; background: var(--ok);
+  transform-origin: left center; transform: rotate(-28deg);
+}
+
+.topbar h1 {
+  margin: 0; text-wrap: balance; overflow-wrap: break-word; font-size: var(--t-lead); font-weight: 600; letter-spacing: -0.005em;
+}
+/* Was tracked-out uppercase, which made a plain sentence look like a label and
+   competed with the title directly above it. It is a sentence: set it as one. */
+.brand-sub {
+  margin: 3px 0 0; font-size: var(--t-tag); color: var(--ink-mute);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.verdict { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* The verdict is the answer. It was a 10 px chip between a title and a row of
+   eight buttons, so it lost. Given room, weight and a tinted field of its own. */
+.verdict-chip {
+  flex: none;
+  font-family: var(--mono); font-size: var(--t-tag); font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 2px;
+  border: 1px solid currentColor;
+}
+.verdict-chip[data-level="critical"] { color: var(--bad);  background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.verdict-chip[data-level="major"]    { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.verdict-chip[data-level="minor"]    { color: var(--rf);   background: color-mix(in srgb, var(--rf) 12%, transparent); }
+.verdict-chip[data-level="info"]     { color: var(--ok);   background: color-mix(in srgb, var(--ok) 12%, transparent); }
+
+/* Two lines rather than an ellipsis. The verdict is a sentence the user is
+   meant to read, and '12 turbines r...' is not one.
+
+   Below 1700 px the brand and eight buttons leave under 150 px for it, which is
+   not enough for a sentence either. There the chip carries the verdict on its
+   own and the Findings panel carries the detail, so the sentence is dropped
+   rather than shown as a stub. */
+.verdict-text {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.3;
+  font-size: var(--t-small); color: var(--ink-dim);
+}
+
+/* One action is the way in to everything else; the rest are peers. A single
+   emphasised button stops the row reading as eight equal choices. */
+.topbar-actions { display: flex; gap: 5px; align-items: center; }
+.btn.primary {
+  color: var(--rf);
+  border-color: color-mix(in srgb, var(--rf) 55%, var(--rule-strong));
+  background: color-mix(in srgb, var(--rf) 12%, var(--surface-2));
+}
+.btn.primary:hover { background: color-mix(in srgb, var(--rf) 20%, var(--surface-2)); }
+.topbar-actions .sep {
+  width: 1px; align-self: stretch; margin: 2px 4px;
+  background: var(--rule-strong);
+}
+
+.btn {
+  background: var(--surface-2);
+  border: 1px solid var(--rule-strong);
+  color: var(--ink);
+  min-height: 28px; padding: 6px 11px;
+  border-radius: 3px;
+  font-size: var(--t-small);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms, border-color 120ms;
+}
+.btn:hover { background: var(--surface-3); border-color: var(--rf); }
+.btn:focus-visible { outline: 2px solid var(--rf); outline-offset: 1px; }
+.btn.ghost { background: transparent; color: var(--ink-dim); }
+.btn.ghost:hover { color: var(--ink); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* ------------------------------------------------------------------ layout */
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--panel-w);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rail, .panel {
+  background: var(--surface);
+  min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.rail  { border-right: 1px solid var(--rule-strong); }
+.panel { border-left: 1px solid var(--rule-strong); overflow-y: auto; overscroll-behavior: contain; }
+
+/* -------------------------------------------------------------- control rail */
+
+.rail-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--rule);
+  flex: none;
+}
+.rail-tab {
+  background: transparent; border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 9px 4px;
+  font-size: var(--t-small); letter-spacing: 0.03em;
+  color: var(--ink-mute); cursor: pointer;
+}
+.rail-tab:hover { color: var(--ink); }
+.rail-tab.is-active { color: var(--rf); border-bottom-color: var(--rf); background: var(--surface-2); }
+
+.rail-body { overflow-y: auto; overscroll-behavior: contain; padding: 15px 15px 36px; flex: 1; }
+
+.group { margin-bottom: 26px; }
+/* Headings in sentence case at a readable size, with the tracked-out uppercase
+   kept for faceplate labels only (metric names, instrument captions, legends).
+   That split is the hierarchy: a heading you read, a tag you scan. */
+.group > h2 {
+  margin: 0 0 10px;
+  font-size: var(--t-body); font-weight: 600; letter-spacing: 0;
+  color: var(--ink); 
+  padding-bottom: 6px; border-bottom: 1px solid var(--rule);
+}
+
+.field { display: block; margin-bottom: 14px; }
+.field > .field-label {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-size: var(--t-body); color: var(--ink-dim); margin-bottom: 5px;
+}
+.field .val { font-family: var(--mono); font-size: var(--t-body); font-weight: 500; color: var(--ink); }
+
+/* 24 px tall, not 18: WCAG 2.2 AA 2.5.8 sets 24x24 as the minimum target and
+   the audit found 33 controls under it, nearly all of them these. The visible
+   track stays 3 px; the extra height is hit area. */
+.field input[type="range"] {
+  width: 100%; height: 24px; margin: 0;
+  -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
+}
+.field input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px; background: var(--surface-3); border-radius: 0;
+}
+.field input[type="range"]::-moz-range-track { height: 3px; background: var(--surface-3); }
+.field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 12px; height: 16px; margin-top: -6.5px;
+  background: var(--rf); border: 0; border-radius: 1px;
+}
+.field input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 16px; background: var(--rf); border: 0; border-radius: 1px;
+}
+
+.field select, .field input[type="number"], .field input[type="text"] {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: 5px 7px;
+  font-family: var(--mono); font-size: var(--t-small);
+}
+.field select:focus, .field input:focus { outline: 1px solid var(--rf); border-color: var(--rf); }
+
+.check {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-bottom: 9px; cursor: pointer; font-size: var(--t-small);
+  min-height: 24px;
+}
+/* The label is the target, so it carries the 24 px; the box itself only has to
+   be big enough to see. 13 px was too small for either job. */
+.check input { margin: 3px 0 0; accent-color: var(--rf); flex: none; width: 16px; height: 16px; }
+.check .check-note { display: block; font-size: var(--t-data); color: var(--ink-mute); line-height: 1.35; }
+
+.hint {
+  font-size: var(--t-data); color: var(--ink-mute); line-height: 1.45;
+  margin: -2px 0 14px; padding-left: 9px;
+  border-left: 2px solid var(--rule);
+}
+
+.mit-block {
+  border-left: 3px solid var(--rule-strong);
+  padding: 11px 13px 5px;
+  margin-bottom: 10px;
+  background: var(--surface-2);
+  border-radius: 0 3px 3px 0;
+}
+.mit-block.is-on { border-left-color: var(--info); }
+.mit-block > .check { margin-bottom: 6px; font-weight: 500; }
+.mit-body { display: none; padding-top: 4px; border-top: 1px solid var(--rule); margin-top: 8px; }
+.mit-block.is-on .mit-body { display: block; }
+
+/* ----------------------------------------------------------------- viewport */
+
+.stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0; min-height: 0;
+  background: var(--bg);
+}
+
+.viewport { position: relative; min-height: 0; overflow: hidden; }
+#scene3d { display: block; width: 100%; height: 100%; }
+
+.vp-overlay { position: absolute; z-index: 2; pointer-events: none; }
+.vp-overlay > * { pointer-events: auto; }
+/* Bounded so the scale caption wraps instead of running under the layer panel
+   on the right, where its last words were being clipped. */
+.vp-top-left     { top: 10px; left: 10px; right: 340px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.vp-top-right    { top: 10px; right: 10px; }
+.vp-bottom-left  { bottom: 10px; left: 10px; }
+.vp-bottom-right { bottom: 10px; right: 10px; max-width: 320px; }
+
+.seg {
+  display: inline-flex;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  backdrop-filter: blur(6px);
+}
+.seg-btn {
+  background: transparent; border: 0; border-right: 1px solid var(--rule);
+  min-height: 26px; padding: 5px 10px; font-size: var(--t-small); color: var(--ink-mute); cursor: pointer;
+}
+.seg-btn:last-child { border-right: 0; }
+.seg-btn:hover { color: var(--ink); }
+.seg-btn.is-active { color: var(--bg); background: var(--rf); font-weight: 600; }
+
+/* Two columns. As one list this panel was tall enough to cover the scale
+   caption behind it and to dominate the view it is meant to sit quietly over. */
+.toggles {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px; padding: 8px 10px;
+  backdrop-filter: blur(6px);
+}
+/* The exaggeration sliders are wider than a column and belong under the list. */
+.toggles label:has(input[type="range"]) {
+  grid-column: 1 / -1; justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px; padding-top: 5px; border-top: 1px solid var(--rule);
+}
+.toggles label:has(input[type="range"]) + label:has(input[type="range"]) {
+  margin-top: 0; padding-top: 0; border-top: 0;
+}
+.toggles label { display: flex; align-items: center; gap: 7px; min-height: 24px; font-size: var(--t-small); color: var(--ink-dim); cursor: pointer; }
+.toggles .full { grid-column: 1 / -1; }
+.toggles input { accent-color: var(--rf); margin: 0; width: 16px; height: 16px; flex: none; }
+/* The exaggeration sliders sit outside .field, so they missed the 24 px rule
+   that every other range control got. */
+.toggles input[type="range"] { width: 96px; height: 24px; }
+
+.legend {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px; padding: 8px 10px;
+  backdrop-filter: blur(6px);
+  font-size: var(--t-data);
+  max-width: 260px;
+}
+.legend h3 {
+  margin: 0 0 5px; font-size: var(--t-tag); letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-mute); font-weight: 600;
+}
+.legend-row { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; color: var(--ink-dim); }
+.swatch { width: 11px; height: 11px; flex: none; border-radius: 1px; border: 1px solid rgba(0,0,0,0.5); }
+.legend-ramp { height: 9px; border-radius: 1px; margin: 4px 0 3px; }
+.legend-scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: var(--t-tag); color: var(--ink-mute); }
+
+.readout {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px; padding: 8px 10px;
+  backdrop-filter: blur(6px);
+  font-family: var(--mono); font-size: var(--t-data);
+}
+.readout-hint { font-family: var(--sans); color: var(--ink-mute); font-size: var(--t-data); }
+.readout h3 { margin: 0 0 5px; font-family: var(--sans); font-size: var(--t-small); color: var(--ink); }
+.readout dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; }
+.readout dt { color: var(--ink-mute); }
+.readout dd { margin: 0; text-align: right; }
+
+.scalebar {
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-dim);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  padding: 3px 8px; border: 1px solid var(--rule);
+  border-radius: 2px; backdrop-filter: blur(4px);
+}
+
+/* ----------------------------------------------------------------- displays */
+
+.displays {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 0.75fr;
+  gap: 1px;
+  background: var(--rule-strong);
+  border-top: 1px solid var(--rule-strong);
+  height: 300px;
+}
+
+.display {
+  margin: 0; min-width: 0;
+  background: var(--surface);
+  display: grid; grid-template-rows: auto 1fr;
+}
+.display figcaption {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline;
+  gap: 2px 10px; min-height: 30px;
+  padding: 6px 10px;
+  font-size: var(--t-tag); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-mute); border-bottom: 1px solid var(--rule);
+}
+.cap-note { text-transform: none; letter-spacing: 0; font-family: var(--mono); font-size: var(--t-data); }
+.display canvas { display: block; width: 100%; height: 100%; min-height: 0; }
+
+/* ---------------------------------------------------------------- panel */
+
+.panel-metrics {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--rule);
+  border-bottom: 1px solid var(--rule-strong);
+  flex: none;
+}
+.metric {
+  background: var(--surface); padding: 11px 13px 12px;
+  display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px;
+}
+/* Reserved height, because three of the four labels wrap to two lines and the
+   fourth does not: without it the big numbers sat on three different baselines. */
+.metric .m-label {
+  flex-basis: 100%;
+  font-size: var(--t-tag); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-mute); margin-bottom: 5px;
+  min-height: 2.3em;
+}
+/* These four are the output of the whole tool. At 17 px they sat inside the
+   noise of a 14 px interface; at 23 px they are the first thing the eye lands
+   on in that corner, which is where it should land. */
+.metric .m-value { font-family: var(--mono); font-size: var(--t-metric); line-height: 1.1; }
+.metric .m-sub { font-size: var(--t-data); color: var(--ink-mute); font-family: var(--mono); }
+.metric .m-value { flex: none; }
+.metric[data-level="bad"]  .m-value { color: var(--bad); }
+.metric[data-level="warn"] .m-value { color: var(--warn); }
+.metric[data-level="ok"]   .m-value { color: var(--ok); }
+
+.panel-section { padding: 15px 15px 17px; border-bottom: 1px solid var(--rule); }
+.panel-section h2 {
+  margin: 0 0 10px;
+  font-size: var(--t-body); font-weight: 600; letter-spacing: 0;
+  color: var(--ink);
+}
+.count { font-family: var(--mono); color: var(--ink-mute); letter-spacing: 0; }
+
+/* Forty-nine rules in this sheet drew a 1 px line. A box round every card is
+   what makes an interface look a decade old: the work is done by the surface
+   level and the space between cards, and the only line kept is the severity
+   rule on the left, which carries meaning. */
+.finding {
+  border-left: 3px solid var(--rule-strong);
+  background: var(--surface-2);
+  margin-bottom: 10px;
+  border-radius: 0 3px 3px 0;
+}
+/* Severity reaches the eye three ways: the rule, a wash across the card, and
+   the tag. Two stacked criticals used to fill the panel with one flat red and
+   nothing inside them stood out; an 8% wash groups the card without shouting. */
+/* Every accent used to run at full saturation whatever its size, so a 3 px
+   rule down a tall card shouted as loudly as the chip that is meant to. The
+   rule is mixed back toward the surface; the tag keeps the pure colour. */
+.finding[data-sev="critical"] { border-left-color: color-mix(in srgb, var(--bad) 80%, var(--surface-3));
+  background: color-mix(in srgb, var(--bad) 7%, var(--surface-2)); }
+.finding[data-sev="major"]    { border-left-color: color-mix(in srgb, var(--warn) 80%, var(--surface-3));
+  background: color-mix(in srgb, var(--warn) 6%, var(--surface-2)); }
+.finding[data-sev="minor"]    { border-left-color: color-mix(in srgb, var(--rf) 80%, var(--surface-3));
+  background: color-mix(in srgb, var(--rf) 6%, var(--surface-2)); }
+.finding[data-sev="info"]     { border-left-color: color-mix(in srgb, var(--ok) 80%, var(--surface-3));
+  background: color-mix(in srgb, var(--ok) 6%, var(--surface-2)); }
+.finding[data-sev="check"]    { border-left-color: color-mix(in srgb, var(--info) 80%, var(--surface-3));
+  background: color-mix(in srgb, var(--info) 6%, var(--surface-2)); }
+
+.finding > summary {
+  cursor: pointer; padding: 8px 10px;
+  display: flex; gap: 8px; align-items: flex-start;
+  list-style: none;
+}
+.finding > summary::-webkit-details-marker { display: none; }
+.finding > summary:hover { background: var(--surface-3); }
+.sev-tag {
+  flex: none; font-family: var(--mono); font-size: var(--t-tag); font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 2px 5px; border-radius: 2px; margin-top: 1px;
+}
+.finding[data-sev="critical"] .sev-tag { color: var(--bad);  background: color-mix(in srgb, var(--bad) 18%, transparent); }
+.finding[data-sev="major"]    .sev-tag { color: var(--warn); background: color-mix(in srgb, var(--warn) 18%, transparent); }
+.finding[data-sev="minor"]    .sev-tag { color: var(--rf);   background: color-mix(in srgb, var(--rf) 18%, transparent); }
+.finding[data-sev="info"]     .sev-tag { color: var(--ok);   background: color-mix(in srgb, var(--ok) 18%, transparent); }
+.finding[data-sev="check"]    .sev-tag { color: var(--info); background: color-mix(in srgb, var(--info) 18%, transparent); }
+
+.finding-title { text-wrap: pretty; font-size: var(--t-body); font-weight: 600; line-height: 1.35; }
+.finding-body { padding: 0 10px 10px 10px; font-size: var(--t-small); color: var(--ink-dim); line-height: 1.55; }
+.finding-body p { margin: 0 0 8px; }
+.finding-metrics {
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 10px;
+  font-family: var(--mono); font-size: var(--t-data);
+  padding: 9px 10px; background: var(--surface); border-radius: 3px;
+}
+.finding-metrics dt { color: var(--ink-mute); }
+.finding-metrics dd { margin: 0; text-align: right; color: var(--ink); }
+.finding-source {
+  margin-top: 8px; font-size: var(--t-data); color: var(--ink-mute);
+  padding-left: 8px; border-left: 2px solid var(--rule-strong); line-height: 1.4;
+}
+.basis-tag {
+  display: inline-block; font-family: var(--mono); font-size: var(--t-tag);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-mute); border: 1px solid var(--rule-strong);
+  padding: 1px 4px; border-radius: 2px; margin-top: 6px;
+}
+
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: var(--t-data); }
+table.data th {
+  text-align: right; font-weight: 600; color: var(--ink-mute);
+  padding: 4px 5px; border-bottom: 1px solid var(--rule-strong);
+  font-size: var(--t-tag); letter-spacing: 0.05em; text-transform: uppercase;
+  position: sticky; top: 0; background: var(--surface);
+}
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data td { padding: 3px 5px; text-align: right; border-bottom: 1px solid var(--rule); }
+table.data tbody tr { cursor: pointer; }
+table.data tbody tr:hover,
+table.data tbody tr:focus-visible { background: var(--surface-3); outline: 2px solid var(--rf); outline-offset: -2px; }
+table.data tbody tr.is-hot td { color: var(--ink); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+
+/* ---------------------------------------------------------------- dialogs */
+
+.dlg {
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 3px;
+  padding: 0;
+  max-width: min(860px, 92vw);
+  width: 100%;
+  max-height: 86vh;
+}
+/* The app behind a dialog is dense and bright. At 0.72 with no blur it stayed
+   legible through the sheet and competed with the dialog's own content. */
+.dlg::backdrop { background: rgba(3, 5, 7, 0.86); backdrop-filter: blur(3px); }
+.dlg header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid var(--rule-strong);
+  position: sticky; top: 0; background: var(--surface); z-index: 1;
+}
+.dlg header h2 { margin: 0; font-size: var(--t-lead); font-weight: 600; }
+.dlg-body { padding: 18px; overflow-y: auto; overscroll-behavior: contain; max-height: calc(86vh - 56px); font-size: var(--t-body); line-height: 1.6; }
+.dlg-body h3 {
+  font-size: var(--t-lead); font-weight: 600; letter-spacing: 0;
+  color: var(--ink); margin: 26px 0 9px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--rule);
+}
+.dlg-body h3:first-child { margin-top: 0; }
+.dlg-body p { margin: 0 0 10px; color: var(--ink-dim); }
+.dlg-body ul { margin: 0 0 12px; padding-left: 18px; color: var(--ink-dim); }
+.dlg-body li { margin-bottom: 5px; }
+.dlg-body code {
+  font-family: var(--mono); font-size: var(--t-small);
+  background: var(--surface-2); border: 1px solid var(--rule);
+  padding: 1px 4px; border-radius: 2px; color: var(--ink);
+}
+.dlg-body .formula {
+  display: block; font-family: var(--mono); font-size: var(--t-small);
+  background: var(--surface-2); border: 1px solid var(--rule);
+  border-left: 2px solid var(--rf);
+  padding: 9px 11px; margin: 8px 0 12px; white-space: pre-wrap; color: var(--ink);
+}
+.dlg-lead { color: var(--ink-dim); margin-top: 0; }
+.dlg-note {
+  border: 1px solid var(--rf); border-left-width: 3px;
+  background: color-mix(in srgb, var(--rf) 8%, transparent);
+  padding: 9px 11px; margin: 0 0 14px; border-radius: 2px;
+  font-size: var(--t-small); color: var(--ink);
+}
+.dlg-head-actions { display: flex; gap: 6px; align-items: center; }
+
+.export-list { list-style: none; margin: 0; padding: 0; }
+.export-list li {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 9px 0; border-bottom: 1px solid var(--rule);
+}
+.export-list li:last-child { border-bottom: 0; }
+.export-name { font-size: var(--t-body); }
+.export-name code {
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-mute);
+  background: transparent; border: 0; padding: 0 0 0 4px;
+}
+.export-actions { display: flex; gap: 6px; }
+.file-btn { text-align: center; cursor: pointer; }
+
+.export-text {
+  width: 100%; min-height: 52vh; resize: vertical;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule-strong); border-radius: 2px;
+  padding: 10px 12px;
+  font-family: var(--mono); font-size: var(--t-data); line-height: 1.5;
+  white-space: pre; overflow: auto;
+}
+.export-text:focus { outline: 1px solid var(--rf); border-color: var(--rf); }
+
+.delta-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: var(--t-small); }
+.delta-table th { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--rule-strong); color: var(--ink-mute); font-size: var(--t-data); }
+.delta-table th:first-child, .delta-table td:first-child { text-align: left; font-family: var(--sans); }
+.delta-table td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--rule); }
+.delta-better { color: var(--ok); }
+.delta-worse  { color: var(--bad); }
+.delta-same   { color: var(--ink-mute); }
+
+.warn-box {
+  border: 1px solid var(--warn);
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--warn) 8%, transparent);
+  padding: 10px 12px; margin: 0 0 14px; border-radius: 2px;
+  font-size: var(--t-small); color: var(--ink);
+}
+
+.noscript { padding: 40px; text-align: center; color: var(--warn); }
+
+/* -------------------------------------------------------------- responsive */
+
+@media (max-width: 1500px) {
+  :root { --rail-w: 268px; --panel-w: 320px; }
+  .displays { height: 250px; }
+}
+
+@media (max-width: 1180px) {
+  body { overflow: auto; }
+  .layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .rail, .panel { border: 0; border-bottom: 1px solid var(--rule-strong); max-height: none; overflow: visible; }
+  .rail-body { max-height: 46vh; overflow-y: auto; border-top: 1px solid var(--rule); }
+  .viewport { height: 62vh; min-height: 380px; }
+  .displays { grid-template-columns: 1fr; height: auto; }
+  .display { height: 300px; }
+  .topbar { grid-template-columns: 1fr; gap: 10px; }
+  .brand-sub { white-space: normal; }
+  .topbar-actions { flex-wrap: wrap; }
+  .verdict-text { white-space: normal; }
+
+  /* The overlays crowd each other once the viewport narrows, so the ones that
+     duplicate information elsewhere step aside. */
+  .scalebar { display: none; }
+  .vp-bottom-right { display: none; }
+  .vp-top-left { max-width: calc(100% - 160px); flex-direction: row; flex-wrap: wrap; }
+  .toggles { padding: 5px 7px; }
+  .toggles label { font-size: var(--t-data); }
+  .legend { max-width: 200px; font-size: var(--t-data); }
+}
+
+@media (max-width: 720px) {
+  .rail-tabs { grid-template-columns: repeat(2, 1fr); }
+  /* 'Loss vs clear site' was wrapping onto three lines inside a 60 px button.
+     One control per row reads, and there is vertical space here to spend. */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .seg-btn { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .vp-top-left { right: 10px; }
+  .panel-metrics { grid-template-columns: 1fr; }
+  .vp-top-right { top: auto; bottom: 10px; right: 10px; }
+  .legend { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+
+/* ------------------------------------------------- imports, sweeps, images */
+
+.action-field .action-btn { width: 100%; margin-top: 2px; }
+.action-field .hint { margin-bottom: 0; }
+
+.export-head {
+  border-bottom: 0 !important;
+  padding-bottom: 2px !important;
+  padding-top: 14px !important;
+}
+.export-head .export-name {
+  font-size: var(--t-tag); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.dlg-wide { max-width: min(1240px, 96vw); }
+
+.sweep-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  align-items: end;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 12px;
+}
+.sweep-controls .field { margin-bottom: 0; }
+.sweep-controls > .btn { height: 30px; }
+
+.sweep-progress {
+  height: 3px; background: var(--surface-3);
+  border-radius: 2px; overflow: hidden; margin-bottom: 10px;
+}
+.sweep-bar { height: 100%; width: 0; background: var(--rf); transition: width 120ms linear; }
+
+.sweep-canvas-wrap {
+  position: relative;          /* the empty state is absolutely placed over it */
+  background: var(--bg);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  height: min(56vh, 560px);
+}
+#sweep-canvas { display: block; width: 100%; height: 100%; }
+
+.sweep-readout {
+  margin: 10px 0 0;
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-dim);
+  min-height: 2.6em; line-height: 1.5;
+}
+
+@media (max-width: 1500px) {
+  .displays { grid-template-columns: 1fr 1.1fr 0.7fr; }
+}
+@media (max-width: 1180px) {
+  .displays { grid-template-columns: 1fr; }
+  .display-narrow { height: 260px; }
+  .sweep-canvas-wrap { height: 46vh; }
+}
+
+
+/* ------------------------------------------------------- evidence register */
+
+.finding-evidence {
+  margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--rule);
+  display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline;
+}
+.ev-label {
+  font-size: var(--t-tag); letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--ink-mute); font-family: var(--mono);
+}
+.ev-item { font-size: var(--t-data); color: var(--ink-dim); display: inline-flex; align-items: baseline; gap: 5px; }
+.ev-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  display: inline-block; transform: translateY(-1px);
+}
+/* Status is encoded in shape as well as colour: only a solid dot means read. */
+.ev-dot[data-status="analysed"]       { background: var(--ok); }
+.ev-dot[data-status="read"]           { background: var(--ok); }
+.ev-dot[data-status="search-summary"] { background: transparent; border: 1.5px solid var(--warn); }
+.ev-dot[data-status="recalled"]       { background: transparent; border: 1.5px dashed var(--bad); }
+.ev-dot[data-status="blocked"]        { background: transparent; border: 1.5px solid var(--ink-mute); }
+
+.ev-entry {
+  border-left: 3px solid var(--rule-strong);
+  background: var(--surface-2);
+  padding: 13px 15px; margin-bottom: 10px; border-radius: 0 3px 3px 0;
+}
+.ev-entry[data-status="analysed"]       { border-left-color: var(--ok); }
+.ev-entry[data-status="search-summary"] { border-left-color: var(--warn); }
+.ev-entry[data-status="recalled"]       { border-left-color: var(--bad); }
+.ev-entry[data-status="blocked"]        { border-left-color: var(--ink-mute); }
+.ev-entry h3 { margin: 0 0 3px; font-size: var(--t-body); color: var(--ink); }
+.ev-meta { margin: 0 0 8px !important; font-size: var(--t-data); color: var(--ink-mute); font-family: var(--mono); }
+.ev-status {
+  margin: 0 0 10px !important; font-size: var(--t-data); font-family: var(--mono);
+  color: var(--ink-dim); display: flex; align-items: center; gap: 6px;
+}
+.ev-caution { color: var(--warn) !important; }
+.ev-supports {
+  font-family: var(--mono); font-size: var(--t-data); color: var(--ink-mute) !important;
+  margin: 8px 0 0 !important; padding-top: 7px; border-top: 1px solid var(--rule);
+}
+
+/* The Office and PDF exports carry a one-line explanation of what you get. */
+.export-name em { display: block; font-style: normal; font-size: var(--t-data);
+  color: var(--ink-3, #7d8b98); margin-top: 2px; }
+
+/* ---------------------------------------------------------- national map */
+/* The map needs the whole window: at national scale a 600 px box turns the
+   country into a smear and every radar into the same pixel. */
+/* The map dialog is laid out with flexbox so the canvas gets exactly the space
+   left after the header, rather than a calc() that has to guess at the header
+   height and the box model. The calc() was wrong by 64 px: the canvas ran past
+   the bottom of the dialog and that strip of the map, including the scale bar,
+   was drawn but never visible. `min-height: 0` is what lets a flex child
+   actually shrink; without it the canvas pushes the container open again. */
+.dlg-full { width: 96vw; max-width: 96vw; height: 92vh; max-height: 92vh; overflow: hidden; }
+/* Scoped to [open]. A bare `display: flex` on a dialog beats the user-agent
+   `dialog:not([open]) { display: none }`, so the closed dialog stayed in the
+   layout and its header swallowed clicks on the page behind it. */
+.dlg-full[open] { display: flex; flex-direction: column; }
+.dlg-full > form { flex: 0 0 auto; }
+.dlg-full .map-wrap { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; }
+/* One line per layer here; see note on .toggles. */
+#map-layers { grid-template-columns: 1fr; }
+.map-wrap canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.map-overlay { position: absolute; pointer-events: none; }
+.map-overlay > * { pointer-events: auto; }
+.map-top-left { top: 10px; left: 10px; width: 330px; display: flex; flex-direction: column; gap: 8px; }
+.map-top-right {
+  top: 10px; right: 10px; bottom: 10px; width: 340px; overflow-y: auto; overscroll-behavior: contain;
+  /* clears the readout that floats over this corner */
+  padding-bottom: 76px;
+}
+.map-bottom-left { bottom: 10px; left: 10px; }
+.map-bottom-right { bottom: 10px; right: 10px; max-width: 460px; }
+.map-panel {
+  background: rgba(10, 16, 22, 0.94); border: 1px solid var(--rule-strong);
+  border-radius: 3px; padding: 11px 13px; font-size: var(--t-small); line-height: 1.5;
+  backdrop-filter: blur(6px);
+}
+/* Sentence case, matching every other section heading; the top margin is
+   what 'By territory' was missing, so it sat hard against the row above. */
+.map-panel h3 {
+  margin: 18px 0 8px; font-size: var(--t-body); font-weight: 600;
+  color: var(--ink); letter-spacing: 0;
+}
+.map-panel h3:first-child { margin-top: 0; }
+.map-panel .big { font-size: var(--t-metric); font-weight: 600; }
+.map-panel table { width: 100%; border-collapse: collapse; font-size: var(--t-data); }
+.map-panel td { padding: 2px 0; }
+/* nowrap is the fix for the ragged column: '1320 of 1447' was breaking
+   across two lines and pulling its row out of line with the rest. */
+.map-panel td:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
+.map-panel .warn, .map-panel h3.warn { color: var(--warn, #e8c23f); }
+.map-panel hr { border: 0; border-top: 1px solid var(--rule); margin: 10px 0; }
+.map-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+/* ------------------------------------------------------------ empty states */
+
+/* A panel that has not been filled yet was a 700 px void with its instruction
+   set below it, outside the space it described, and the button that fills it in
+   a far corner. An empty panel is the best place to say what goes in it. */
+.empty-state {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 0 15%;
+  text-align: center; pointer-events: none;
+}
+.empty-state p { margin: 0; max-width: 46ch; color: var(--ink-mute); font-size: var(--t-body); line-height: 1.6; }
+.empty-state .empty-lead { color: var(--ink-dim); font-size: var(--t-lead); font-weight: 600; }
+[data-state="filled"] > .empty-state { display: none; }
+
+@media (max-width: 1699px) {
+  .verdict-text { display: none; }
+}
+
+/* The band between the one-row layout and the stacked one used to crush the
+   title. With the verdict sentence hidden the chip needs about 90 px, but its
+   grid track kept a 200 px minimum while the brand's track had a minimum of
+   zero, and the eight action buttons could not wrap, so they took the rest:
+   at 1366 px the title ran to 6 lines, and at 1200 px the brand was 0 px wide
+   and the h1 rendered 34 lines, one character each.
+
+   Give the brand a floor wide enough for its longest line to break between
+   words, and let the buttons wrap onto a second row instead of squeezing it.
+   Measured at 1920, 1700, 1500, 1366, 1200, 1180, 900, 768 and 390 px; the
+   line count is asserted by tools/verify-a11y.mjs so it cannot come back. */
+@media (min-width: 1181px) and (max-width: 1699px) {
+  .topbar { grid-template-columns: minmax(240px, 1fr) auto minmax(0, auto); }
+  .topbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
+}
