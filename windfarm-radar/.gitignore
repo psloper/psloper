@@ -4,3 +4,10 @@ dist/
 
 # Harness screenshots, written by tools/verify-aircraft.mjs when SHOT is unset.
 *-harness.png
+
+# Demo screenshots, written by driving the running app. Generated output, like
+# build/ and dist/: 5 MB of already-compressed PNGs that every regeneration
+# would add to the repository history permanently, which is the same trap the
+# distribution zip is kept out of history to avoid. tools/shoot-ui.mjs already
+# defaults to writing outside the repository for the same reason.
+demo/
