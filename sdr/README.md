@@ -116,5 +116,19 @@ cd sdr && node --test test/*.test.js
 - WFM is mono. There is no stereo or RDS decoding.
 - ACARS, VDL2, AIS, APRS and DAB are marked on the band plan but not decoded.
 - S-meter readings are in dBFS (relative to the ADC's full scale), not calibrated dBm.
-- The simulator's voice and music are synthesised for realism; they are not
-  recordings.
+- The simulator's radio traffic is text-to-speech with fictional callsigns, not
+  recordings of real transmissions. Its music is synthesised.
+
+## Simulator speech
+
+The spoken traffic (tower, approach, ATIS, marine, PMR, 2 m, SSB, talk radio) lives
+in `js/sources/speech-clips.js` as 8 kHz, 8-bit clips. To change the phrases, edit
+`PHRASES` in `tools/make_speech.py` and regenerate:
+
+```bash
+pip install piper-tts
+python3 sdr/tools/make_speech.py --piper-model uk_male.onnx,uk_female.onnx,third_voice.onnx
+```
+
+Without Piper it falls back to eSpeak NG, eSpeak or Flite, which sound robotic. If
+`speech-clips.js` is empty, the simulator falls back to its built-in tone voice.

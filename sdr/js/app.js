@@ -46,8 +46,23 @@ const worker = new Worker(new URL('./dsp/worker.js', import.meta.url), { type: '
 worker.onerror = (e) => log(`DSP worker failed: ${e.message || 'unknown error'} (module workers need a current browser)`, 'error');
 const send = (msg, transfer) => worker.postMessage(msg, transfer || []);
 
+// Browsers only allow sound after a user gesture. Never block on it: the receiver
+// runs silently and the "Tap for sound" button (or any tap) unlocks the output.
+function resumeAudio() {
+  const ctx = rt.audio && rt.audio.ctx;
+  if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {}).finally(updateSoundHint);
+}
+
+function updateSoundHint() {
+  const ctx = rt.audio && rt.audio.ctx;
+  $('soundHint').hidden = !ctx || ctx.state === 'running';
+}
+
+document.addEventListener('pointerdown', resumeAudio);
+document.addEventListener('keydown', resumeAudio);
+
 async function ensureAudio() {
-  if (rt.audio) { await rt.audio.ctx.resume(); return; }
+  if (rt.audio) { resumeAudio(); return; }
   try {
     const ctx = new AudioContext({ latencyHint: 'interactive' });
     await ctx.audioWorklet.addModule(new URL('./audio/worklet.js', import.meta.url));
@@ -59,7 +74,8 @@ async function ensureAudio() {
     send({ type: 'init', audioRate: ctx.sampleRate, audioPort: ch.port2 }, [ch.port2]);
     rt.audio = { ctx, gain, player };
     applyVolume();
-    await ctx.resume();
+    ctx.onstatechange = updateSoundHint;
+    resumeAudio();
   } catch (e) {
     rt.audio = { ctx: null, gain: null, failed: true };
     send({ type: 'init', audioRate: 48000, audioPort: null });
@@ -677,4 +693,5 @@ selectTab(st.tab);
 iqScope.draw(null);
 setLink('off', 'Off');
 log('Ready. Press POWER (or Space) to start the receiver.');
+if (document.body.dataset.autostart !== undefined) powerOn();
 requestAnimationFrame(frame);

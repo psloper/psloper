@@ -6,6 +6,7 @@
 import { morseTiming } from '../decoders/morse.js';
 import { encodeBaudot } from '../decoders/baudot.js';
 import { encodeIdentification, encodeAirbornePosition, encodeVelocity, rangeBearing } from '../decoders/adsb.js';
+import { CLIPS, CLIP_RATE } from './speech-clips.js';
 
 export const SIM_FS = 2_000_000;
 export const SIM_REF = { lat: 51.4700, lon: -0.4543 }; // reference receiver position (London Heathrow area)
@@ -129,6 +130,91 @@ class VoiceSource {
 }
 
 /** Simple chord / bass / arpeggio synth for broadcast FM stations. Real output. */
+VoiceSource.prototype.isVoice = true;
+
+// Hilbert transformer (63 taps, Hamming window) used to make recorded speech analytic for SSB.
+const HILBERT = (() => {
+  const N = 63, M = (N - 1) / 2, h = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const n = i - M;
+    if (n % 2 !== 0) h[i] = (2 / (Math.PI * n)) * (0.54 - 0.46 * Math.cos((2 * Math.PI * i) / (N - 1)));
+  }
+  return h;
+})();
+
+/** Decode base64 signed 8-bit PCM clips once; optionally build the quadrature (Hilbert) part. */
+function decodeClips(list, analytic) {
+  return list.map((b64) => {
+    const bin = atob(b64);
+    const re = new Float32Array(bin.length);
+    for (let i = 0; i < bin.length; i++) { const v = bin.charCodeAt(i); re[i] = (v > 127 ? v - 256 : v) / 127; }
+    if (!analytic) return { re, im: null };
+    const N = HILBERT.length, M = (N - 1) / 2;
+    const im = new Float32Array(re.length);
+    for (let i = 0; i < re.length; i++) {
+      let acc = 0;
+      for (let k = 0; k < N; k++) { const j = i + M - k; if (j >= 0 && j < re.length) acc += HILBERT[k] * re[j]; }
+      im[i] = acc;
+    }
+    return { re, im };
+  });
+}
+
+/**
+ * Plays recorded phrases like a real push-to-talk station: carrier up, short pause,
+ * the phrase, a short tail, then silence until the next over. Clips play in order,
+ * so call-and-reply exchanges stay in sequence.
+ */
+class SpeechSource {
+  constructor(rand, clips, { continuous = false, quiet = [2, 7], analytic = false } = {}) {
+    Object.assign(this, { rand, continuous, quiet });
+    this.clips = decodeClips(clips, analytic);
+    this.idx = Math.floor(rand() * this.clips.length);
+    this.state = 'gap';
+    this.left = rand() * 3 * BB;
+    this.pos = 0;
+    this.step = CLIP_RATE / BB;
+  }
+
+  next(state, seconds) { this.state = state; this.left = seconds * BB; }
+
+  render(oRe, oIm, gate, off, count) {
+    for (let i = 0; i < count; i++) {
+      let re = 0, im = 0, g = 1;
+      switch (this.state) {
+        case 'gap':
+          g = this.continuous ? 1 : 0;
+          if (--this.left <= 0) this.next('key', this.continuous ? 0 : 0.2 + 0.2 * this.rand());
+          break;
+        case 'key':
+          if (--this.left <= 0) { this.state = 'talk'; this.pos = 0; }
+          break;
+        case 'talk': {
+          const c = this.clips[this.idx];
+          const k = Math.floor(this.pos), f = this.pos - k;
+          if (k + 1 >= c.re.length) {
+            this.idx = (this.idx + 1) % this.clips.length;
+            this.next('tail', 0.12 + 0.1 * this.rand());
+            break;
+          }
+          re = c.re[k] + (c.re[k + 1] - c.re[k]) * f;
+          if (c.im) im = c.im[k] + (c.im[k + 1] - c.im[k]) * f;
+          this.pos += this.step;
+          break;
+        }
+        case 'tail':
+          if (--this.left <= 0) {
+            const [a, b] = this.continuous ? [0.6, 1.2] : this.quiet;
+            this.next('gap', a + (b - a) * this.rand());
+          }
+          break;
+      }
+      oRe[off + i] = re; oIm[off + i] = im; gate[off + i] = g;
+    }
+  }
+}
+SpeechSource.prototype.isVoice = true;
+
 class MusicSource {
   constructor(rand, { tempo = 112, key = 0, prog = [[0, 4, 7], [9, 12, 16], [5, 9, 12], [7, 11, 14]] } = {}) {
     Object.assign(this, { rand, tempo, key, prog });
@@ -281,7 +367,7 @@ class Station {
         for (let i = 0; i < count; i++) { are[off + i] = L * t3[i]; af[off + i] = 3000 * t1[i]; }
         break;
       case 'wfm':
-        if (this.src instanceof VoiceSource) this.src.render(t1, t2, t3, 0, count);
+        if (this.src.isVoice) this.src.render(t1, t2, t3, 0, count);
         else this.src.render(t1, 0, count);
         for (let i = 0; i < count; i++) {
           const m = t1[i];
@@ -360,44 +446,47 @@ class Station {
 
 function buildStations(rand) {
   const S = (o) => new Station(o);
-  const voice = (o) => new VoiceSource(rand, o);
+  // Recorded phrases when speech-clips.js has them (see tools/make_speech.py), else the synthetic voice.
+  const voice = (o, key, extra = {}) => (CLIPS[key] && CLIPS[key].length
+    ? new SpeechSource(rand, CLIPS[key], { continuous: o.continuous, quiet: o.quiet, ...extra })
+    : new VoiceSource(rand, o));
   return [
     // Broadcast FM (Band II)
     S({ freq: 88.6e6, label: 'SIM FM One', kind: 'wfm', mode: 'WFM', level: 0.06, halfBw: 100e3,
         src: new MusicSource(rand, { tempo: 116, key: 0 }) }),
     S({ freq: 89.1e6, label: 'SIM Talk', kind: 'wfm', mode: 'WFM', level: 0.03, halfBw: 100e3,
-        src: voice({ f0: 115, continuous: true }) }),
+        src: voice({ f0: 115, continuous: true }, 'talk') }),
     S({ freq: 89.8e6, label: 'SIM FM Classic', kind: 'wfm', mode: 'WFM', level: 0.012, halfBw: 100e3,
         src: new MusicSource(rand, { tempo: 72, key: 5, prog: [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]] }) }),
     // Aeronautical VHF (AM, push-to-talk)
     S({ freq: 118.5e6, label: 'Tower (sim)', kind: 'am', mode: 'AM', level: 0.012, halfBw: 5e3,
-        src: voice({ f0: 125, talk: [2, 5], quiet: [2, 7] }) }),
+        src: voice({ f0: 125, talk: [2, 5], quiet: [1.5, 5] }, 'tower') }),
     S({ freq: 118.75e6, label: 'ATIS (sim)', kind: 'am', mode: 'AM', level: 0.006, halfBw: 5e3,
-        src: voice({ f0: 105, continuous: true }) }),
+        src: voice({ f0: 105, continuous: true }, 'atis') }),
     S({ freq: 119.225e6, label: 'Approach (sim)', kind: 'am', mode: 'AM', level: 0.009, halfBw: 5e3,
-        src: voice({ f0: 140, talk: [2, 6], quiet: [3, 8] }) }),
+        src: voice({ f0: 140, talk: [2, 6], quiet: [2, 6] }, 'approach') }),
     // 2 m amateur band
     S({ freq: 144.43e6, label: 'CW beacon (sim)', kind: 'cw', mode: 'CW', level: 0.003, halfBw: 200,
         src: new KeyingSource('VVV VVV DE SIM1BCN SIM1BCN LOC IO91', 16, 3) }),
     S({ freq: 144.8e6, label: 'APRS (not decoded)', kind: 'afsk', mode: 'NFM', level: 0.01, halfBw: 8e3,
         src: new AfskSource(rand) }),
     S({ freq: 145.5e6, label: 'FM calling (sim)', kind: 'nfm', mode: 'NFM', level: 0.008, halfBw: 8e3,
-        src: voice({ f0: 110, talk: [3, 7], quiet: [4, 10] }) }),
+        src: voice({ f0: 110, talk: [3, 7], quiet: [3, 8] }, 'calling') }),
     // Marine VHF
     S({ freq: 156.8e6, label: 'Ch 16 (sim)', kind: 'nfm', mode: 'NFM', level: 0.01, halfBw: 8e3,
-        src: voice({ f0: 118, talk: [2, 5], quiet: [5, 12] }) }),
+        src: voice({ f0: 118, talk: [2, 5], quiet: [3, 8] }, 'ch16') }),
     S({ freq: 156.3e6, label: 'Ch 06 (sim)', kind: 'nfm', mode: 'NFM', level: 0.004, halfBw: 8e3,
-        src: voice({ f0: 135, talk: [2, 4], quiet: [6, 14] }) }),
+        src: voice({ f0: 135, talk: [2, 4], quiet: [5, 12] }, 'ch06') }),
     // PMR446
     S({ freq: 446.00625e6, label: 'PMR ch1 (sim)', kind: 'nfm', mode: 'NFM', level: 0.005, halfBw: 6e3,
-        src: voice({ f0: 150, talk: [1.5, 4], quiet: [3, 9] }) }),
+        src: voice({ f0: 150, talk: [1.5, 4], quiet: [2, 6] }, 'pmr') }),
     // HF 20 m
     S({ freq: 14.025e6, label: 'CW CQ (sim)', kind: 'cw', mode: 'CW', level: 0.004, halfBw: 200,
         src: new KeyingSource('CQ CQ CQ DE SIM1CW SIM1CW K', 18, 5) }),
     S({ freq: 14.0835e6, label: 'RTTY 45 Bd (sim)', kind: 'fsk', mode: 'USB', level: 0.006, halfBw: 2.5e3,
         src: new FskSource('RYRYRY CQ CQ CQ DE SIM1RT SIM1RT 599 TNX QSO 73 K\n') }),
     S({ freq: 14.2e6, label: 'SSB voice (sim)', kind: 'usb', mode: 'USB', level: 0.02, halfBw: 3.2e3,
-        src: voice({ f0: 105, talk: [3, 8], quiet: [2, 6] }) }),
+        src: voice({ f0: 105, talk: [3, 8], quiet: [2, 5] }, 'ssb', { analytic: true }) }),
   ];
 }
 
