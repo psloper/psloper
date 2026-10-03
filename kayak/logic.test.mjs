@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RATING, PROFILES, toKnots, angleDiff, compassPoint, beaufort, windRelativeToShore,
-  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl, describeAge, savedForecastFor,
+  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl, describeAge, savedForecastFor, percentile, ensembleSpread, attachSpread, windConfidence,
 } from './logic.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -248,4 +248,39 @@ test('offline: saved forecast only reused for the same spot', () => {
   assert.equal(savedForecastFor(saved, { lat: 50.71429, lon: -1.98458 }), saved);
   assert.equal(savedForecastFor(saved, { lat: 50.85966, lon: -1.32432 }), null);
   assert.equal(savedForecastFor(null, { lat: 1, lon: 1 }), null);
+});
+
+test('confidence: percentile of model runs', () => {
+  const v = Array.from({ length: 11 }, (_, i) => i); // 0..10
+  assert.equal(percentile(v, 0.1), 1);
+  assert.equal(percentile(v, 0.5), 5);
+  assert.equal(percentile(v, 0.9), 9);
+  assert.equal(percentile([0, 10], 0.25), 2.5); // between two runs: interpolated
+  assert.equal(percentile([], 0.5), null);
+});
+
+test('confidence: spread read from any wind_speed_10m key, in knots', () => {
+  const runs = Array.from({ length: 11 }, (_, i) => i * 1.852); // km/h, 0..10 kn
+  const hourly = { time: ['2026-10-03T12:00'] };
+  runs.forEach((v, i) => { hourly[i ? `wind_speed_10m_member${i}` : 'wind_speed_10m'] = [v]; });
+  hourly.temperature_2m = [99]; // ignored
+  const s = ensembleSpread({ hourly, hourly_units: { wind_speed_10m: 'km/h' } }).get('2026-10-03T12:00');
+  near(s.p10, 1); near(s.p90, 9); assert.equal(s.runs, 11);
+  // Too few runs: no spread rather than a misleading one.
+  assert.equal(ensembleSpread({ hourly: { time: ['t'], wind_speed_10m: [1], wind_speed_10m_member01: [2] } }).size, 0);
+  assert.equal(ensembleSpread(null).size, 0);
+  const rows = attachSpread([{ time: '2026-10-03T12:00' }, { time: 'other' }], new Map([['2026-10-03T12:00', s]]));
+  near(rows[0].windP90, 9); assert.equal(rows[1].windP90, undefined);
+});
+
+test('confidence: wording bands and rating', () => {
+  assert.equal(windConfidence(5, 10), 'high');
+  assert.equal(windConfidence(5, 15), 'medium');
+  assert.equal(windConfidence(5, 20), 'low');
+  assert.equal(windConfidence(null, 5), null);
+  // Forecast inside the limit but the high end over it: CAUTION, Uncertain.
+  const r = rateHour({ ...calm, windKn: 6, windP90: 14 }, PROFILES.beginner);
+  assert.equal(r.rating, RATING.CAUTION);
+  assert.ok(r.reasons.some((x) => x.tag === 'Uncertain'));
+  assert.equal(rateHour({ ...calm, windKn: 6, windP90: 9 }, PROFILES.beginner).rating, RATING.GO);
 });

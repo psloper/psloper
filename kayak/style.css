@@ -121,6 +121,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .sw { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
 .sw.wind { background: var(--c-wind); }
 .sw.gust { background: var(--c-gust); }
+.sw.band { background: var(--c-wind); opacity: 0.25; height: 10px; }
 .sw.wave { background: var(--c-wave); }
 .sw.tide { background: var(--c-tide); }
 .chart { overflow-x: auto; }

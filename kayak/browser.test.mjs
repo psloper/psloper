@@ -70,7 +70,7 @@ const SPOTS = [
 ];
 
 // 96 hours from today's midnight. utc_offset 0 keeps local time = UTC.
-function fakeData({ windDir = 90, sea = [0, 0], seaNull = false } = {}) {
+function fakeData({ windDir = 90, sea = [0, 0], seaNull = false, spread = 0.1 } = {}) {
   const now = new Date();
   const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const times = Array.from({ length: 96 }, (_, i) => new Date(start + i * 3600e3).toISOString().slice(0, 16));
@@ -87,6 +87,19 @@ function fakeData({ windDir = 90, sea = [0, 0], seaNull = false } = {}) {
         precipitation: fixed(0), visibility: fixed(24000), weather_code: fixed(2),
       },
       daily: { time: days, sunrise: days.map((d) => `${d}T06:00`), sunset: days.map((d) => `${d}T20:00`) },
+    },
+    // 51 runs (control + 50 members) around the 7 kn forecast; `spread` is
+    // the knots between neighbouring runs. Member naming follows Open-Meteo's
+    // pattern, but the app reads any key starting "wind_speed_10m".
+    ensemble: {
+      hourly_units: { wind_speed_10m: 'kn' },
+      hourly: Object.fromEntries([
+        ['time', times],
+        ...Array.from({ length: 51 }, (_, m) => [
+          m === 0 ? 'wind_speed_10m' : `wind_speed_10m_member${String(m).padStart(2, '0')}`,
+          fixed(Math.max(0, 7 + (m - 25) * spread)),
+        ]),
+      ]),
     },
     marine: {
       latitude: sea[0], longitude: sea[1],
@@ -113,7 +126,7 @@ test.before(async () => {
 test.after(async () => { await browser?.close(); server?.close(); });
 
 // Opens the page with mocked services. `marine` may be a function (route) => void.
-async function openPage({ opts = { viewport: { width: 1200, height: 900 } }, geo, data, marine } = {}) {
+async function openPage({ opts = { viewport: { width: 1200, height: 900 } }, geo, data, marine, ensemble } = {}) {
   const page = await browser.newPage(opts);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -121,6 +134,7 @@ async function openPage({ opts = { viewport: { width: 1200, height: 900 } }, geo
   await page.route('https://api.open-meteo.com/**', (r) => r.fulfill({ json: data.weather }));
   await page.route('https://marine-api.open-meteo.com/**', marine || ((r) => r.fulfill({ json: data.marine })));
   await page.route('https://geocoding-api.open-meteo.com/**', (r) => r.fulfill({ json: { results: geo } }));
+  await page.route('https://ensemble-api.open-meteo.com/**', ensemble || ((r) => r.fulfill({ json: data.ensemble })));
   await page.goto(base);
   return { page, errors };
 }
@@ -197,6 +211,7 @@ test('works offline: page and last forecast open with no connection', async () =
   await page.route('https://api.open-meteo.com/**', (r) => r.fulfill({ json: data.weather }));
   await page.route('https://marine-api.open-meteo.com/**', (r) => r.fulfill({ json: data.marine }));
   await page.route('https://geocoding-api.open-meteo.com/**', (r) => r.fulfill({ json: { results: spot.results } }));
+  await page.route('https://ensemble-api.open-meteo.com/**', (r) => r.fulfill({ json: data.ensemble }));
   try {
     await page.goto(url);
     await searchAndPickFirst(page, spot.query);
@@ -218,6 +233,33 @@ test('works offline: page and last forecast open with no connection', async () =
     await context.close();
     ownServer.close();
   }
+});
+
+test('forecast confidence: wide model spread flags Uncertain and shows the range', async () => {
+  const spot = SPOTS[2]; // Portland Bill
+  // Runs 7 + (m - 25) * 0.5 kn, clamped at 0: 10th percentile 0 kn, 90th 17 kn.
+  const { page, errors } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea, spread: 0.5 }) });
+  await searchAndPickFirst(page, spot.query);
+  const why = await page.locator('#hourly td.why').allTextContents();
+  assert.ok(why.every((w) => w.includes('Uncertain')), 'every hour tagged Uncertain');
+  assert.equal(await page.locator('#hourly .pill.go').count(), 0, 'no GO hours when the high end is over the limit');
+  assert.match(await page.textContent('#verdict'), /1 in 10 model runs show 17 kn or more/);
+  assert.match(await page.textContent('#now-cards'), /Wind range\s*0 to 17 kn\s*Model runs disagree: low confidence/);
+  assert.match((await page.locator('#hourly tbody tr:not(.day-break)').first().textContent()), /0-17/);
+  assert.equal(await page.locator('#chart path.spread-band').count(), 1, 'shaded range on the chart');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('forecast confidence: ensemble service down, app carries on', async () => {
+  const spot = SPOTS[2];
+  const ensemble = (r) => r.fulfill({ status: 400, json: { error: true, reason: 'Model not available' } });
+  const { page } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea }), ensemble });
+  await searchAndPickFirst(page, spot.query);
+  assert.match(await page.textContent('#now-cards'), /Forecast confidence unavailable/);
+  assert.equal(await page.locator('#hourly tbody tr:not(.day-break)').count(), 72);
+  assert.equal(await page.locator('#chart path.spread-band').count(), 0);
+  await page.close();
 });
 
 test('overloaded marine service is retried once', async () => {

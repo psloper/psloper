@@ -92,6 +92,7 @@
         <div class="legend">
           <span><i class="sw wind"></i>Wind (kn)</span>
           <span><i class="sw gust"></i>Gusts (kn)</span>
+          <span><i class="sw band"></i>Wind range, 1 in 10 to 9 in 10 model runs</span>
           <span><i class="sw wave"></i>Waves (m)</span>
           <span><i class="sw tide"></i>Sea level (m)</span>
         </div>
@@ -100,12 +101,12 @@
 
       <section class="panel">
         <h2>Hour by hour</h2>
-        <p class="fine">* Modelled. Tide is height above or below mean sea level, arrow shows rising or falling.</p>
+        <p class="fine">Range: wind speed 8 in 10 model runs fall within (ECMWF ensemble). A wide range means a less certain forecast. * Modelled. Tide is height above or below mean sea level, arrow shows rising or falling.</p>
         <div class="table-wrap">
           <table id="hourly">
             <thead>
               <tr>
-                <th>Time</th><th>Rating</th><th>Wind</th><th>Gust</th><th>Dir</th>
+                <th>Time</th><th>Rating</th><th>Wind</th><th>Gust</th><th>Range</th><th>Dir</th>
                 <th>Waves</th><th>Swell</th><th>Current*</th><th>Tide m*</th><th>Sea</th><th>Air</th><th>Rain</th><th>Sky</th><th>Why</th>
               </tr>
             </thead>
@@ -122,6 +123,7 @@
           <thead><tr><th>Shown here</th><th>Source</th><th>Official?</th><th>Check against (UK)</th></tr></thead>
           <tbody>
             <tr><td data-label="Shown here">Wind, gusts, air temp, rain, visibility</td><td data-label="Source">Open-Meteo forecast (blend of national weather models)</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)"><a href="https://www.metoffice.gov.uk/weather/specialist-forecasts/coast-and-sea/inshore-waters-forecast" rel="noopener">Met Office inshore waters forecast</a></td></tr>
+            <tr><td data-label="Shown here">Wind range (confidence)</td><td data-label="Source">Open-Meteo ensemble: about 50 runs of the ECMWF model</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)">Met Office inshore waters forecast</td></tr>
             <tr><td data-label="Shown here">Waves, swell, sea temperature</td><td data-label="Source">Open-Meteo marine (global wave models)</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)">Met Office inshore waters forecast</td></tr>
             <tr><td data-label="Shown here">Tide times and heights</td><td data-label="Source">Open-Meteo marine sea level (global ocean model)</td><td data-label="Official?"><strong>No: modelled</strong></td><td data-label="Check against (UK)"><span><a href="https://easytide.admiralty.co.uk/" rel="noopener">Admiralty EasyTide</a> (official UK tide predictions)</span></td></tr>
             <tr><td data-label="Shown here">Tidal current</td><td data-label="Source">Open-Meteo marine ocean current (global model, coarse grid)</td><td data-label="Official?"><strong>No: modelled</strong></td><td data-label="Check against (UK)">Tidal stream atlas or chart tidal diamonds for your area</td></tr>

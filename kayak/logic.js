@@ -283,6 +283,9 @@ export function rateHour(h, limits, opts = {}) {
   };
 
   check(h.windKn, limits.maxWindKn, 'Wind', ' kn');
+  if (h.windP90 != null && h.windKn != null && h.windKn <= limits.maxWindKn && h.windP90 > limits.maxWindKn) {
+    flag(RATING.CAUTION, `Forecast uncertain: 1 in 10 model runs show ${h.windP90.toFixed(0)} kn or more, over your ${limits.maxWindKn} kn limit`, 'Uncertain');
+  }
   check(h.gustKn, limits.maxGustKn, 'Gusts', ' kn');
   check(h.waveM, limits.maxWaveM, 'Waves', ' m', 1);
   check(h.currentKn, limits.maxCurrentKn, 'Current', ' kn', 1);
@@ -366,4 +369,48 @@ export function savedForecastFor(saved, place) {
   if (!saved?.data || !saved.place || !place) return null;
   const same = Math.abs(saved.place.lat - place.lat) < 1e-6 && Math.abs(saved.place.lon - place.lon) < 1e-6;
   return same ? saved : null;
+}
+
+// ---------- forecast confidence (ensemble) ----------
+// Linear-interpolated percentile of a sorted array, p in 0..1.
+export function percentile(sorted, p) {
+  if (!sorted.length) return null;
+  const idx = (sorted.length - 1) * p;
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+// Wind spread per hour from an Open-Meteo ensemble response. Every hourly
+// key starting "wind_speed_10m" (the control run and each member) counts as
+// one model run, so exact member naming does not matter.
+export function ensembleSpread(ens) {
+  const out = new Map();
+  const h = ens?.hourly;
+  if (!h?.time) return out;
+  const keys = Object.keys(h).filter((k) => k.startsWith('wind_speed_10m'));
+  if (!keys.length) return out;
+  const unit = ens.hourly_units?.[keys[0]] || 'kn';
+  h.time.forEach((time, i) => {
+    const vals = keys.map((k) => toKnots(h[k][i], unit)).filter((v) => v != null && !Number.isNaN(v)).sort((a, b) => a - b);
+    if (vals.length < 5) return; // too few runs to say anything
+    out.set(time, { p10: percentile(vals, 0.1), p50: percentile(vals, 0.5), p90: percentile(vals, 0.9), runs: vals.length });
+  });
+  return out;
+}
+
+export function attachSpread(rows, spread) {
+  return rows.map((h) => {
+    const s = spread.get(h.time);
+    return s ? { ...h, windP10: s.p10, windP90: s.p90, windRuns: s.runs } : h;
+  });
+}
+
+// How much the model runs agree, from the 10th to 90th percentile range.
+export function windConfidence(p10, p90) {
+  if (p10 == null || p90 == null) return null;
+  const range = p90 - p10;
+  if (range <= 6) return 'high';
+  if (range <= 12) return 'medium';
+  return 'low';
 }

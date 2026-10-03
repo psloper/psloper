@@ -2,13 +2,14 @@
 // marine and geocoding data (free, no API key) and renders the report.
 import {
   PROFILES, RATING, mergeHourly, buildDaylight, isDaylight, findTideTurns, rateHour,
-  findWindows, tideTrend, rankPlaces, seaCoverage, describeAge, savedForecastFor, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
+  findWindows, tideTrend, rankPlaces, seaCoverage, describeAge, savedForecastFor, ensembleSpread, attachSpread, windConfidence, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
 } from './logic.js';
 
 const HOURS_SHOWN = 72;
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
 const MARINE_URL = 'https://marine-api.open-meteo.com/v1/marine';
 const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
+const ENSEMBLE_URL = 'https://ensemble-api.open-meteo.com/v1/ensemble';
 const LIMIT_KEYS = ['maxWindKn', 'maxGustKn', 'maxWaveM', 'maxOffshoreKn', 'maxCurrentKn'];
 const STORE_KEY = 'seaKayakConditions.v1';
 const FORECAST_KEY = 'seaKayakConditions.lastForecast.v1';
@@ -79,12 +80,16 @@ async function fetchConditions(lat, lon) {
     'sea_surface_temperature', 'sea_level_height_msl', 'ocean_current_velocity', 'ocean_current_direction',
   ].join(',')}`;
 
-  const [weather, marine] = await Promise.allSettled([getJson(weatherUrl), getJson(marineUrl)]);
+  // ECMWF ensemble (about 50 runs) for forecast confidence. Optional.
+  const ensembleUrl = `${ENSEMBLE_URL}?${common}&wind_speed_unit=kn&models=ecmwf_ifs025&hourly=wind_speed_10m`;
+
+  const [weather, marine, ensemble] = await Promise.allSettled([getJson(weatherUrl), getJson(marineUrl), getJson(ensembleUrl)]);
   if (weather.status === 'rejected') throw new Error(`Weather forecast failed: ${weather.reason.message}`);
   return {
     weather: weather.value,
     marine: marine.status === 'fulfilled' ? marine.value : null,
     marineError: marine.status === 'rejected' ? marine.reason.message : null,
+    ensemble: ensemble.status === 'fulfilled' ? ensemble.value : null,
   };
 }
 
@@ -179,7 +184,8 @@ function render() {
   const nowT = localNow(weather.utc_offset_seconds);
   const hourStart = nowT - (nowT % 3600e3);
 
-  const all = mergeHourly(weather, marine)
+  const spread = ensembleSpread(state.data.ensemble);
+  const all = attachSpread(mergeHourly(weather, marine), spread)
     .map((h, i, arr) => ({ ...h, tide: tideTrend(arr, i), ...rateHour(h, limits, { seaBearing, daylight }) }));
   const rows = all.filter((h) => h.t >= hourStart).slice(0, HOURS_SHOWN);
   if (!rows.length) { setStatus('Forecast returned no future hours.', true); return; }
@@ -213,6 +219,12 @@ function renderSeaPoint(cov) {
       ? ` That is more than ${FAR_SEA_POINT_KM} km away, so it may be open water rather than your bay, harbour or river.`
       : '');
 }
+
+const CONFIDENCE_TEXT = {
+  high: 'Model runs agree: high confidence',
+  medium: 'Model runs differ: medium confidence',
+  low: 'Model runs disagree: low confidence',
+};
 
 const RELIABILITY_LABEL = { medium: 'MEDIUM', low: 'LOW', unchecked: 'NOT CHECKED', none: 'NO DATA' };
 
@@ -262,6 +274,8 @@ function renderNow(h, seaBearing) {
   const windV = el('span', {}, fmt(h.windKn, 0, ' kn'), h.windDir != null ? windArrow(h.windDir) : null);
   const cards = [
     card('Wind', windV, `Force ${beaufort(h.windKn) ?? '--'} from ${compassPoint(h.windDir)}${rel ? `, ${rel}` : ''}`),
+    card('Wind range', h.windP90 == null ? '--' : `${h.windP10.toFixed(0)} to ${h.windP90.toFixed(0)} kn`,
+      h.windP90 == null ? 'Forecast confidence unavailable' : CONFIDENCE_TEXT[windConfidence(h.windP10, h.windP90)]),
     card('Gusts', fmt(h.gustKn, 0, ' kn')),
     card('Waves', fmt(h.waveM, 1, ' m'), h.wavePeriodS != null ? `${h.wavePeriodS.toFixed(0)} s period, from ${compassPoint(h.waveDir)}` : 'No marine data'),
     card('Swell', fmt(h.swellM, 1, ' m'), h.swellPeriodS != null ? `${h.swellPeriodS.toFixed(0)} s period` : null),
@@ -313,7 +327,7 @@ function renderChart(rows, daylight, limits) {
   const W = 1000; const left = 44; const right = 10; const top = 14;
   const stripH = 10; const panelH = 90; const gap = 22;
   const panels = [
-    { key: 'wind', series: [['gustKn', 'var(--c-gust)'], ['windKn', 'var(--c-wind)']], unit: 'kn', limit: limits.maxWindKn, min0: true },
+    { key: 'wind', series: [['gustKn', 'var(--c-gust)'], ['windKn', 'var(--c-wind)']], band: ['windP10', 'windP90'], unit: 'kn', limit: limits.maxWindKn, min0: true },
     { key: 'wave', series: [['waveM', 'var(--c-wave)']], unit: 'm', limit: limits.maxWaveM, min0: true },
     { key: 'tide', series: [['seaLevelM', 'var(--c-tide)']], unit: 'm', limit: null, min0: false },
   ];
@@ -353,7 +367,8 @@ function renderChart(rows, daylight, limits) {
 
   panels.forEach((p, pi) => {
     const y0 = top + stripH + 8 + pi * (panelH + gap);
-    const vals = rows.flatMap((h) => p.series.map(([k]) => h[k])).filter((v) => v != null);
+    const keys = [...p.series.map(([k]) => k), ...(p.band || [])];
+    const vals = rows.flatMap((h) => keys.map((k) => h[k])).filter((v) => v != null);
     if (!vals.length) {
       add('text', { x: left + 8, y: y0 + panelH / 2 }, `No ${p.key} data`);
       return;
@@ -370,6 +385,16 @@ function renderChart(rows, daylight, limits) {
     if (p.limit != null) {
       add('line', { x1: left, x2: W - right, y1: y(p.limit), y2: y(p.limit), stroke: 'var(--nogo)', 'stroke-dasharray': '5 4', 'stroke-width': 1 });
       add('text', { x: W - right, y: y(p.limit) - 4, 'text-anchor': 'end' }, 'your limit');
+    }
+    if (p.band) {
+      // Shaded 10th to 90th percentile range of the model runs.
+      const [kLo, kHi] = p.band;
+      const pts = rows.filter((h) => h[kLo] != null && h[kHi] != null);
+      if (pts.length > 1) {
+        const upper = pts.map((h) => `${x(h.t + 1800e3).toFixed(1)},${y(h[kHi]).toFixed(1)}`);
+        const lower = pts.slice().reverse().map((h) => `${x(h.t + 1800e3).toFixed(1)},${y(h[kLo]).toFixed(1)}`);
+        add('path', { d: `M${upper.join('L')}L${lower.join('L')}Z`, fill: 'var(--c-wind)', 'fill-opacity': 0.15, stroke: 'none', class: 'spread-band' });
+      }
     }
     p.series.forEach(([k, color]) => {
       let d = ''; let pen = false;
@@ -392,7 +417,7 @@ function renderTable(rows, daylight) {
   rows.forEach((h) => {
     const day = formatLocal(h.t, dayFmt);
     if (day !== lastDay) {
-      out.push(el('tr', { class: 'day-break' }, el('td', { colspan: '14' }, day)));
+      out.push(el('tr', { class: 'day-break' }, el('td', { colspan: '15' }, day)));
       lastDay = day;
     }
     out.push(el('tr', { class: isDaylight(h.t, daylight) ? '' : 'night' },
@@ -400,6 +425,7 @@ function renderTable(rows, daylight) {
       el('td', {}, el('span', { class: `pill ${h.rating}` }, RATING_LABEL[h.rating])),
       el('td', {}, fmt(h.windKn, 0)),
       el('td', {}, fmt(h.gustKn, 0)),
+      el('td', {}, h.windP90 == null ? '--' : `${h.windP10.toFixed(0)}-${h.windP90.toFixed(0)}`),
       el('td', {}, h.windDir != null ? el('span', {}, compassPoint(h.windDir), windArrow(h.windDir)) : '--'),
       el('td', {}, fmt(h.waveM, 1, ' m')),
       el('td', {}, h.swellM == null ? '--' : `${h.swellM.toFixed(1)} m / ${fmt(h.swellPeriodS, 0, 's')}`),
