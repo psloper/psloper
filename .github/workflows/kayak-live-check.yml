@@ -1,0 +1,35 @@
+name: Kayak app live check
+
+# Calls the real Open-Meteo services with the app's exact requests for six
+# UK spots and checks the answers still fit what the app expects. With an
+# ADMIRALTY_API_KEY repository secret it also re-measures how far the
+# modelled tide times are from official predictions. Results go to the run
+# summary. Scheduled runs only happen from the default branch.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'kayak/live-check*.mjs'
+      - 'kayak/requests.js'
+      - '.github/workflows/kayak-live-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  live-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Live check against Open-Meteo (and Admiralty, if a key is set)
+        env:
+          ADMIRALTY_API_KEY: ${{ secrets.ADMIRALTY_API_KEY }}
+        run: node kayak/live-check.mjs

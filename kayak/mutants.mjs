@@ -13,8 +13,7 @@ import { fileURLToPath } from 'node:url';
 const REPO = fileURLToPath(new URL('..', import.meta.url));
 // Inside the repo so the copy still finds node_modules/playwright.
 const SCRATCH = join(REPO, '.mutants');
-const UNIT = 'logic.test.mjs';
-const UNIT2 = 'tides-official.test.mjs';
+const UNITS = ['logic.test.mjs', 'tides-official.test.mjs', 'live-check.test.mjs'];
 const BROWSER = 'browser.test.mjs';
 
 const SPOTS = ['Oban', 'Rhoscolyn', 'Portland Bill', 'Hamble', 'Itchen', 'Poole'].map((s) => `UK spot: ${s}`);
@@ -136,6 +135,22 @@ const MUTANTS = [
   ['sw.js', "'hazards.js', 'tides-official.js',", "'hazards.js',", ['offline cache lists every file the app loads'], 'offline: official tides file cached'],
   ['tides-official.js', '.filter((s) => s.id && Number.isFinite(s.lat) && Number.isFinite(s.lon));', '.filter((s) => s.id);',
     ['official tides: station list parsed, bad entries dropped'], 'official: bad stations dropped'],
+  ['live-check-lib.mjs', "else if (first.name !== spot.expect || first.country_code !== 'GB')", "else if (first.country_code !== 'GB')",
+    ['live check: wrong first search result fails'], 'live check: search ranking'],
+  ['live-check-lib.mjs', "if (weather.hourly_units?.wind_speed_10m !== 'kn')", 'if (false)',
+    ['live check: missing field, wrong unit and unknown current unit fail'], 'live check: wind unit'],
+  ['live-check-lib.mjs', 'if (!KNOWN_SPEED_UNITS.includes(cu))', 'if (false)', ['live check: missing field, wrong unit and unknown current unit fail'], 'live check: current unit'],
+  ['live-check-lib.mjs', 'for (const k of MARINE_HOURLY) {', 'for (const k of []) {', ['live check: missing field, wrong unit and unknown current unit fail'], 'live check: marine fields'],
+  ['live-check-lib.mjs', 'share(rows, (h) => isNum(h.waveM)) < 0.9', 'share(rows, (h) => isNum(h.waveM)) < 0',
+    ['live check: misaligned hours and too few ensemble runs fail'], 'live check: hour alignment'],
+  ['live-check-lib.mjs', 'if (runs < 20)', 'if (runs < 2)', ['live check: misaligned hours and too few ensemble runs fail'], 'live check: ensemble runs'],
+  ['live-check-lib.mjs', 'warnings.push(`marine: sea model point now', 'fail(`marine: sea model point now',
+    ['live check: moved sea model point is a warning, not a failure'], 'live check: moved point only warns'],
+  ['live-check-lib.mjs', "fail(`marine: ${e.message}`); marine = null;", 'throw e;', ['live check: service error is reported, not thrown'], 'live check: errors reported'],
+  ['live-check-lib.mjs', 'if (admiraltyKey && weather) {', 'if (false) {', ['live check: official tide comparison with a key'], 'live check: official comparison'],
+  ['live-check-lib.mjs', 'const result = r.failures.length ? `FAIL', 'const result = false ? `FAIL', ['live check: report lists failures'], 'live check: report'],
+  ['live-check-lib.mjs', 'if (turns.length < 10 || turns.length > 20)', 'if (turns.length < 10 || turns.length > 12)',
+    ['live check: healthy services pass'], 'live check: no false alarms on healthy data'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 
@@ -162,7 +177,7 @@ function freshCopy() {
 }
 
 // Baseline: everything must pass unmutated.
-const base = runTests(freshCopy(), [UNIT, UNIT2, BROWSER]);
+const base = runTests(freshCopy(), [...UNITS, BROWSER]);
 if (base.failed.size) {
   console.error('Baseline failing, fix tests first:', [...base.failed]);
   process.exit(1);
@@ -170,7 +185,7 @@ if (base.failed.size) {
 // Parent tests only (browser/unit tests have no nested subtests).
 const allTests = [...base.passed].filter((n) => !n.endsWith('.mjs'));
 const browserTests = new Set(runTests(freshCopy(), [BROWSER]).passed);
-const unitTests = new Set(runTests(freshCopy(), [UNIT, UNIT2]).passed);
+const unitTests = new Set(runTests(freshCopy(), UNITS).passed);
 
 const only = process.env.MUTANT_ONLY;
 const selected = only ? MUTANTS.filter((m) => m[4].includes(only)) : MUTANTS;
@@ -193,7 +208,7 @@ for (const [file, find, replace, kills, what] of selected) {
     problems += 1;
     continue;
   }
-  const files = [kills.some((k) => unitTests.has(k)) && UNIT, kills.some((k) => unitTests.has(k)) && UNIT2, kills.some((k) => browserTests.has(k)) && BROWSER].filter(Boolean);
+  const files = [...(kills.some((k) => unitTests.has(k)) ? UNITS : []), ...(kills.some((k) => browserTests.has(k)) ? [BROWSER] : [])];
   // Only the named tests run, so this proves each named test fails.
   const { failed } = runTests(dir, files, kills);
   failed.forEach((t) => killedBy.get(t)?.push(what));

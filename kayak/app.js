@@ -6,12 +6,9 @@ import {
 } from './logic.js';
 import { hazardsNear, HAZARD_RADIUS_KM } from './hazards.js';
 import { fetchOfficialTides, compareWithModel } from './tides-official.js';
+import { forecastUrls, geocodeUrl } from './requests.js';
 
 const HOURS_SHOWN = 72;
-const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
-const MARINE_URL = 'https://marine-api.open-meteo.com/v1/marine';
-const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
-const ENSEMBLE_URL = 'https://ensemble-api.open-meteo.com/v1/ensemble';
 const LIMIT_KEYS = ['maxWindKn', 'maxGustKn', 'maxWaveM', 'maxOffshoreKn', 'maxCurrentKn'];
 const STORE_KEY = 'seaKayakConditions.v1';
 const FORECAST_KEY = 'seaKayakConditions.lastForecast.v1';
@@ -92,20 +89,8 @@ async function getJson(url, retries = 1) {
 }
 
 async function fetchConditions(lat, lon) {
-  const common = `latitude=${lat}&longitude=${lon}&timezone=auto&forecast_days=4`;
-  const weatherUrl = `${WEATHER_URL}?${common}&wind_speed_unit=kn&hourly=${[
-    'temperature_2m', 'apparent_temperature', 'precipitation_probability', 'precipitation',
-    'weather_code', 'visibility', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m',
-  ].join(',')}&daily=sunrise,sunset`;
-  const marineUrl = `${MARINE_URL}?${common}&hourly=${[
-    'wave_height', 'wave_direction', 'wave_period', 'swell_wave_height', 'swell_wave_period',
-    'sea_surface_temperature', 'sea_level_height_msl', 'ocean_current_velocity', 'ocean_current_direction',
-  ].join(',')}`;
-
-  // ECMWF ensemble (about 50 runs) for forecast confidence. Optional.
-  const ensembleUrl = `${ENSEMBLE_URL}?${common}&wind_speed_unit=kn&models=ecmwf_ifs025&hourly=wind_speed_10m`;
-
-  const [weather, marine, ensemble] = await Promise.allSettled([getJson(weatherUrl), getJson(marineUrl), getJson(ensembleUrl)]);
+  const urls = forecastUrls(lat, lon);
+  const [weather, marine, ensemble] = await Promise.allSettled([getJson(urls.weather), getJson(urls.marine), getJson(urls.ensemble)]);
   if (weather.status === 'rejected') throw new Error(`Weather forecast failed: ${weather.reason.message}`);
   return {
     weather: weather.value,
@@ -192,7 +177,7 @@ async function search(query) {
   list.replaceChildren();
   setStatus('Searching...');
   try {
-    const body = await getJson(`${GEOCODE_URL}?name=${encodeURIComponent(query)}&count=20&language=en&format=json`);
+    const body = await getJson(geocodeUrl(query));
     const results = rankPlaces(body.results || [], query).slice(0, 8);
     if (!results.length) { setStatus(`No places found for "${query}".`, true); return; }
     setStatus('Pick your launch spot:');
