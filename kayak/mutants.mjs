@@ -15,6 +15,7 @@ const BROWSER = 'browser.test.mjs';
 
 const SPOTS = ['Oban', 'Rhoscolyn', 'Portland Bill', 'Hamble', 'Itchen', 'Poole'].map((s) => `UK spot: ${s}`);
 const FAR_SPOTS = ['Oban', 'Hamble', 'Itchen', 'Poole'].map((s) => `UK spot: ${s}`);
+const TIDE_SPOTS = SPOTS;
 const OFFSHORE = ['offshore wind and editable limits (desktop)', 'offshore wind and editable limits (phone, dark)'];
 
 // [file, text to find (must occur once), replacement, tests that must fail, what it breaks]
@@ -63,6 +64,21 @@ const MUTANTS = [
   ['app.js', '  ].filter(Boolean));', '  ]);', OFFSHORE, 'stray "null" in verdict'],
   ['app.js', 'box.className = `sea-point ${cov.status}`;', "box.className = 'sea-point';", FAR_SPOTS, 'far sea point warning'],
   ['index.html', 'and 1.5 to 2.5 hours early in Southampton Water and Poole Harbour', 'and later elsewhere', SPOTS, 'measured tide error warning'],
+  ['logic.js', '.filter(({ c, km }) => km <= c.radiusKm)', '.filter(() => true)',
+    ['tide reliability outside the checked areas', 'unchecked open-coast spot: NOT CHECKED badge and general EasyTide link'], 'checked-area radius'],
+  ['logic.js', '.sort((a, b) => a.km - b.km)[0];', '.sort((a, b) => b.km - a.km)[0];',
+    ['tide reliability outside the checked areas'], 'nearest checked area'],
+  ['logic.js', "if (coverage.status === 'far') {", 'if (false) {', ['tide reliability outside the checked areas'], 'far sea point lowers reliability'],
+  ['logic.js', "if (!coverage || coverage.status === 'none') {", 'if (!coverage) {',
+    ['tide reliability outside the checked areas', 'inland spot is flagged and never rated GO'], 'no-data reliability'],
+  ['logic.js', "id: '0063A', level: 'low'", "id: '0063A', level: 'medium'",
+    ['tide reliability for the six checked UK spots', 'UK spot: Hamble'], 'Hamble reliability level'],
+  ['logic.js', '`${EASYTIDE_HOME}?PortID=', '`${EASYTIDE_HOME}?port=',
+    ['EasyTide station link format', 'tide reliability for the six checked UK spots', ...TIDE_SPOTS], 'official station link'],
+  ['app.js', '`Tide reliability: ${RELIABILITY_LABEL[rel.level]}`', '`Tide reliability: ${RELIABILITY_LABEL.medium}`',
+    ['UK spot: Portland Bill', 'UK spot: Hamble', 'UK spot: Itchen', 'UK spot: Poole', 'inland spot is flagged and never rated GO',
+      'unchecked open-coast spot: NOT CHECKED badge and general EasyTide link'], 'reliability badge text'],
+  ['app.js', '  renderTideReliability(tideReliability(state.place.lat, state.place.lon, coverage));', '', TIDE_SPOTS, 'reliability panel shown'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 

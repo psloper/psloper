@@ -82,6 +82,16 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .status { color: var(--muted); min-height: 1.5em; margin: 12px 0 0; }
 .status.error { color: var(--nogo); }
 
+.reliability { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 0.9rem; }
+.reliability p { margin: 0 0 6px; }
+.reliability p:last-child { margin-bottom: 0; }
+.reliability.low, .reliability.none { border-color: var(--nogo); }
+.reliability.medium { border-color: var(--caution); }
+.reliability a.official { font-weight: 600; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-weight: 700; font-size: 0.8rem; }
+.badge.medium { background: var(--caution-bg); color: var(--caution); }
+.badge.low, .badge.none { background: var(--nogo-bg); color: var(--nogo); }
+.badge.unchecked { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
 .sea-point { margin: 16px 0 0; padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; border: 1px solid var(--line); background: var(--panel); }
 .sea-point.far { border-color: var(--caution); background: var(--caution-bg); }
 .sea-point.bad { border-color: var(--nogo); background: var(--nogo-bg); font-weight: 600; }

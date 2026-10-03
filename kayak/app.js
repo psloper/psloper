@@ -2,7 +2,7 @@
 // marine and geocoding data (free, no API key) and renders the report.
 import {
   PROFILES, RATING, mergeHourly, buildDaylight, isDaylight, findTideTurns, rateHour,
-  findWindows, tideTrend, rankPlaces, seaCoverage, FAR_SEA_POINT_KM, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
+  findWindows, tideTrend, rankPlaces, seaCoverage, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
 } from './logic.js';
 
 const HOURS_SHOWN = 72;
@@ -155,7 +155,9 @@ function render() {
   if (!rows.length) { setStatus('Forecast returned no future hours.', true); return; }
 
   $('report').hidden = false;
-  renderSeaPoint(seaCoverage(marine, state.place.lat, state.place.lon));
+  const coverage = seaCoverage(marine, state.place.lat, state.place.lon);
+  renderSeaPoint(coverage);
+  renderTideReliability(tideReliability(state.place.lat, state.place.lon, coverage));
   renderVerdict(rows[0], seaBearing);
   renderNow(rows[0], seaBearing);
   renderTides(all, hourStart);
@@ -180,6 +182,23 @@ function renderSeaPoint(cov) {
     + (cov.status === 'far'
       ? ` That is more than ${FAR_SEA_POINT_KM} km away, so it may be open water rather than your bay, harbour or river.`
       : '');
+}
+
+const RELIABILITY_LABEL = { medium: 'MEDIUM', low: 'LOW', unchecked: 'NOT CHECKED', none: 'NO DATA' };
+
+function renderTideReliability(rel) {
+  const box = $('tide-reliability');
+  box.className = `reliability ${rel.level}`;
+  const linkText = rel.station
+    ? `Official tide times: ${rel.station} (Admiralty EasyTide)`
+    : 'Find official tide times for the nearest port (Admiralty EasyTide)';
+  box.replaceChildren(
+    el('p', { class: 'rel-head' },
+      el('span', { class: `badge ${rel.level}` }, `Tide reliability: ${RELIABILITY_LABEL[rel.level]}`),
+      rel.area ? ` ${rel.area}` : null),
+    el('p', {}, rel.summary, rel.area ? ` Checked against official predictions on ${TIDE_CHECKED_ON}.` : null),
+    el('p', {}, el('a', { class: 'official', href: rel.officialUrl, rel: 'noopener', target: '_blank' }, linkText)),
+  );
 }
 
 function renderVerdict(h, seaBearing) {

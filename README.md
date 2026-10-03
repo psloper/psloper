@@ -170,6 +170,21 @@ launch or has no sea data (inland).
 | Tidal current | Modelled ocean current, coarse grid | Tidal stream atlas or chart tidal diamonds |
 | Wind, waves, visibility | Model forecast | [Met Office inshore waters forecast](https://www.metoffice.gov.uk/weather/specialist-forecasts/coast-and-sea/inshore-waters-forecast) |
 
+### Tide reliability badge
+
+The tide panel shows a reliability badge for your launch, with a direct link
+to official times:
+
+| Badge | When | Official link |
+| --- | --- | --- |
+| MEDIUM | Within a checked open-coast area (Oban, Rhoscolyn) | That area's EasyTide station |
+| LOW | Within a checked area where the model was badly out (Portland, Hamble, Itchen, Poole), or anywhere unchecked whose sea model point is more than 5 km away | Station if checked, otherwise EasyTide search |
+| NOT CHECKED | Unchecked area with a nearby sea model point | EasyTide search |
+| NO DATA | No sea data (inland) | EasyTide search |
+
+Station links use EasyTide's `?PortID=` format. Only the six stations seen
+in the check are linked; the app does not carry a full station list.
+
 ### How far out the modelled tides were (one-off check, 27 September 2026)
 
 Live Open-Meteo sea level for six UK spots, turned into high and low water
@@ -208,8 +223,11 @@ search result order and real sea model point from the live check; the
 weather and tide values in them are synthetic. They need the `playwright`
 dev dependency and a Chromium it can find (`npx playwright install chromium`).
 
+GitHub Actions runs all three test commands on every push or pull request
+that touches the app (`.github/workflows/kayak-tests.yml`).
+
 `npm run test:mutants` breaks one feature at a time in a scratch copy
-(30 deliberate breaks), checks the named tests fail, and checks every test
+(38 deliberate breaks), checks the named tests fail, and checks every test
 failed for at least one break. It exits non-zero if any break goes unnoticed.
 
 ## Not yet verified

@@ -211,6 +211,58 @@ export function seaCoverage(marine, launchLat, launchLon) {
   return { status: km > FAR_SEA_POINT_KM ? 'far' : 'near', distanceKm: km, lat: marine.latitude, lon: marine.longitude };
 }
 
+// ---------- tide reliability ----------
+// Areas where the modelled tide was compared with official Admiralty
+// EasyTide predictions (one check, 27 Sept 2026, about four days, roughly
+// 15 high and low waters per area). Centres are the launch points used in
+// that check. Station IDs are the EasyTide ones seen in that check.
+export const TIDE_CHECKED_ON = '27 September 2026';
+export const TIDE_CHECKS = [
+  { area: 'Oban', lat: 56.41535, lon: -5.47184, radiusKm: 10, station: 'Oban', id: '0372', level: 'medium',
+    summary: 'Model times were 17 to 36 minutes early. Tidal range was close (3.6 m model, 3.3 m official).' },
+  { area: 'Rhoscolyn, Holy Island', lat: 53.25014, lon: -4.59793, radiusKm: 6, station: 'Trearddur Bay', id: '0479', level: 'medium',
+    summary: 'Model times were 14 to 36 minutes early. Tidal range was close (4.4 m model, 4.5 m official).' },
+  { area: 'Portland', lat: 50.51733, lon: -2.45566, radiusKm: 6, station: 'Portland', id: '0033', level: 'low',
+    summary: 'Model high water was about 50 minutes early and the tidal range was overstated (3.4 m model, 1.9 m official). Portland\'s double low water is not shown.' },
+  { area: 'Hamble River', lat: 50.85966, lon: -1.32432, radiusKm: 4, station: 'Warsash', id: '0063A', level: 'low',
+    summary: 'Model times were 80 to 133 minutes early and the tidal range was about half the official one (1.8 m model, 3.7 m official).' },
+  { area: 'Southampton Water and the Itchen', lat: 50.90451, lon: -1.36936, radiusKm: 4, station: 'Southampton', id: '0062', level: 'low',
+    summary: 'Model times were 80 to 122 minutes early and the tidal range was less than half the official one (1.8 m model, 4.0 m official).' },
+  { area: 'Poole Harbour', lat: 50.71429, lon: -1.98458, radiusKm: 6, station: 'Poole Harbour', id: '0036A', level: 'low',
+    summary: 'Model times were 109 to 163 minutes early.' },
+];
+
+export const EASYTIDE_HOME = 'https://easytide.admiralty.co.uk/';
+export function easyTideUrl(stationId) {
+  return `${EASYTIDE_HOME}?PortID=${encodeURIComponent(stationId)}`;
+}
+
+// How far to trust the modelled tide at a launch, and where to find the
+// official times. Levels: medium, low, unchecked, none (no sea data).
+export function tideReliability(lat, lon, coverage) {
+  if (!coverage || coverage.status === 'none') {
+    return { level: 'none', summary: 'No modelled tide for this spot.', officialUrl: EASYTIDE_HOME };
+  }
+  const nearest = TIDE_CHECKS
+    .map((c) => ({ c, km: distanceKm(lat, lon, c.lat, c.lon) }))
+    .filter(({ c, km }) => km <= c.radiusKm)
+    .sort((a, b) => a.km - b.km)[0];
+  if (nearest) {
+    const { c } = nearest;
+    return { level: c.level, area: c.area, summary: c.summary, station: c.station, stationId: c.id, officialUrl: easyTideUrl(c.id) };
+  }
+  if (coverage.status === 'far') {
+    return {
+      level: 'low', officialUrl: EASYTIDE_HOME,
+      summary: `Not checked here, but the sea model point is ${coverage.distanceKm.toFixed(1)} km away. Where that was true in testing (Hamble, Itchen, Poole), model times were 1.5 to 2.5 hours early.`,
+    };
+  }
+  return {
+    level: 'unchecked', officialUrl: EASYTIDE_HOME,
+    summary: 'Not checked here. On the open coasts that were checked, model times were 15 to 35 minutes early.',
+  };
+}
+
 // ---------- rating ----------
 
 function worse(a, b) {

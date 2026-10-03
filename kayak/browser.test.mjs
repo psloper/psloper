@@ -38,30 +38,30 @@ const place = (name, admin1, country_code, latitude, longitude) => ({
 // live marine grid point for that launch with its distance.
 const SPOTS = [
   {
-    query: 'Oban', expect: 'Oban, Scotland', sea: [56.291664, -5.4583282], km: '13.8', far: true,
+    query: 'Oban', expect: 'Oban, Scotland', sea: [56.291664, -5.4583282], km: '13.8', far: true, tide: ['MEDIUM', 'Oban', '0372'],
     results: [place('Assaria', 'Kansas', 'US', 38.68028, -97.60448), place('Oban', 'Scotland', 'GB', 56.41535, -5.47184),
       place('Oban', 'Southland', 'NZ', -46.89887, 168.12897)],
   },
   {
-    query: 'Rhoscolyn', expect: 'Rhoscolyn, Wales', sea: [53.291664, -4.6249847], km: '5.0', far: false,
+    query: 'Rhoscolyn', expect: 'Rhoscolyn, Wales', sea: [53.291664, -4.6249847], km: '5.0', far: false, tide: ['MEDIUM', 'Trearddur Bay', '0479'],
     results: [place('Rhoscolyn', 'Wales', 'GB', 53.25014, -4.59793), place('Rhoscolyn Head', 'Wales', 'GB', 53.25, -4.61667)],
   },
   {
-    query: 'Portland Bill', expect: 'Portland Bill, England', sea: [50.541664, -2.4583282], km: '2.7', far: false,
+    query: 'Portland Bill', expect: 'Portland Bill, England', sea: [50.541664, -2.4583282], km: '2.7', far: false, tide: ['LOW', 'Portland', '0033'],
     results: [place('Portland Bill', 'England', 'GB', 50.51733, -2.45566)],
   },
   {
-    query: 'Hamble', expect: 'Hamble-le-Rice, England', sea: [50.791664, -1.3749847], km: '8.4', far: true,
+    query: 'Hamble', expect: 'Hamble-le-Rice, England', sea: [50.791664, -1.3749847], km: '8.4', far: true, tide: ['LOW', 'Warsash', '0063A'],
     results: [place('Hamble', 'Tennessee', 'US', 36.307, -87.28334), place('Hambleton', 'England', 'GB', 53.76667, -1.16667),
       place('Hambledon', 'England', 'GB', 50.93155, -1.08104), place('Hamble-le-Rice', 'England', 'GB', 50.85966, -1.32432)],
   },
   {
-    query: 'Itchen', expect: 'Itchen, England', sea: [50.791664, -1.3749847], km: '12.6', far: true,
+    query: 'Itchen', expect: 'Itchen, England', sea: [50.791664, -1.3749847], km: '12.6', far: true, tide: ['LOW', 'Southampton', '0062'],
     results: [place('Itchen', 'England', 'GB', 50.90451, -1.36936), place('Itchenor', 'England', 'GB', 50.80561, -0.86689),
       place('Itchen Abbas', 'England', 'GB', 51.09336, -1.23828)],
   },
   {
-    query: 'Poole', expect: 'Poole, England', sea: [50.625008, -1.9583282], km: '10.1', far: true,
+    query: 'Poole', expect: 'Poole, England', sea: [50.625008, -1.9583282], km: '10.1', far: true, tide: ['LOW', 'Poole Harbour', '0036A'],
     results: [place('Poole', 'England', 'GB', 50.71429, -1.98458), place('Poole', 'Kentucky', 'US', 37.64032, -87.64418)],
   },
 ];
@@ -144,6 +144,13 @@ for (const spot of SPOTS) {
 
     assert.match(await page.textContent('#tides'), /High .*m/);
     assert.match(await page.textContent('.warn'), /1\.5 to 2\.5 hours early in Southampton Water and Poole Harbour/);
+
+    // Tide reliability badge and a link to that area's official station.
+    const [level, station, id] = spot.tide;
+    assert.match(await page.textContent('#tide-reliability .badge'), new RegExp(`Tide reliability: ${level}$`));
+    const link = page.locator('#tide-reliability a.official');
+    assert.equal(await link.getAttribute('href'), `https://easytide.admiralty.co.uk/?PortID=${id}`);
+    assert.match(await link.textContent(), new RegExp(`Official tide times: ${station} `));
     assert.deepEqual(errors, []);
     await page.close();
   });
@@ -155,8 +162,20 @@ test('inland spot is flagged and never rated GO', async () => {
   const { page, errors } = await openPage({ geo, data: fakeData({ sea: [53.791664, -1.2083282], seaNull: true, windDir: 270 }) });
   await searchAndPickFirst(page, 'Hambleton');
   assert.match(await page.textContent('#sea-point'), /looks inland/);
+  assert.match(await page.textContent('#tide-reliability .badge'), /NO DATA/);
   assert.equal(await page.locator('#hourly .pill.go').count(), 0, 'no GO hours without sea data');
   assert.doesNotMatch(await page.textContent('#verdict'), /^GO/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('unchecked open-coast spot: NOT CHECKED badge and general EasyTide link', async () => {
+  // Synthetic spot with a close sea point, away from every checked area.
+  const geo = [place('St Ives', 'England', 'GB', 50.21, -5.48)];
+  const { page, errors } = await openPage({ geo, data: fakeData({ sea: [50.225, -5.475] }) });
+  await searchAndPickFirst(page, 'St Ives');
+  assert.match(await page.textContent('#tide-reliability .badge'), /NOT CHECKED/);
+  assert.equal(await page.locator('#tide-reliability a.official').getAttribute('href'), 'https://easytide.admiralty.co.uk/');
   assert.deepEqual(errors, []);
   await page.close();
 });

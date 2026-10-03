@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RATING, PROFILES, toKnots, angleDiff, compassPoint, beaufort, windRelativeToShore,
-  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage,
+  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl,
 } from './logic.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -195,4 +195,43 @@ test('missing sea data is never rated GO', () => {
   const r = rateHour({ ...calm, waveM: null }, PROFILES.advanced);
   assert.equal(r.rating, RATING.CAUTION);
   assert.ok(r.reasons.some((x) => x.tag === 'No sea data'));
+});
+
+test('tide reliability for the six checked UK spots', () => {
+  const expected = {
+    oban: ['medium', 'Oban', '0372'],
+    rhoscolyn: ['medium', 'Trearddur Bay', '0479'],
+    'portland bill': ['low', 'Portland', '0033'],
+    hamble: ['low', 'Warsash', '0063A'],
+    itchen: ['low', 'Southampton', '0062'],
+    poole: ['low', 'Poole Harbour', '0036A'],
+  };
+  for (const [name, [level, station, id]] of Object.entries(expected)) {
+    const s = SPOTS[name];
+    const r = tideReliability(...s.launch, { status: s.km > 5 ? 'far' : 'near', distanceKm: s.km });
+    assert.equal(r.level, level, name);
+    assert.equal(r.station, station, name);
+    assert.equal(r.officialUrl, `https://easytide.admiralty.co.uk/?PortID=${id}`, name);
+  }
+});
+
+test('tide reliability outside the checked areas', () => {
+  // A point inside both the Hamble and Itchen circles (1.9 km and 3.9 km
+  // away) must get the nearer station.
+  assert.equal(tideReliability(50.87461, -1.33933, { status: 'far', distanceKm: 8 }).station, 'Warsash');
+  // Unchecked, sea point close: open-coast wording, generic EasyTide link.
+  const open = tideReliability(50.21, -5.48, { status: 'near', distanceKm: 2 });
+  assert.equal(open.level, 'unchecked');
+  assert.equal(open.officialUrl, 'https://easytide.admiralty.co.uk/');
+  // Unchecked, sea point far: rated low and says why.
+  const far = tideReliability(51.5, -3.2, { status: 'far', distanceKm: 9.3 });
+  assert.equal(far.level, 'low');
+  assert.match(far.summary, /9\.3 km away/);
+  // No sea data at all.
+  assert.equal(tideReliability(53.7, -1.1, { status: 'none' }).level, 'none');
+});
+
+test('EasyTide station link format', () => {
+  // Format seen on a live EasyTide page: https://easytide.admiralty.co.uk/?PortID=0345
+  assert.equal(easyTideUrl('0345'), 'https://easytide.admiralty.co.uk/?PortID=0345');
 });
