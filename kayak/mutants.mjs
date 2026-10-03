@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const REPO = fileURLToPath(new URL('..', import.meta.url));
 // Inside the repo so the copy still finds node_modules/playwright.
 const SCRATCH = join(REPO, '.mutants');
-const UNITS = ['logic.test.mjs', 'tides-official.test.mjs', 'live-check.test.mjs', 'planner.test.mjs'];
+const UNITS = ['logic.test.mjs', 'tides-official.test.mjs', 'live-check.test.mjs', 'planner.test.mjs', 'triplog.test.mjs'];
 const BROWSER = 'browser.test.mjs';
 
 const SPOTS = ['Oban', 'Rhoscolyn', 'Portland Bill', 'Hamble', 'Itchen', 'Poole'].map((s) => `UK spot: ${s}`);
@@ -172,6 +172,23 @@ const MUTANTS = [
   ['app.js', "el('tr', { class: i === 0 ? 'best' : '' }", "el('tr', { class: '' }", ['trip planner: durations follow the tide, best departure first'], 'planner: best highlighted'],
   ['app.js', "    note.textContent = 'Enter a distance and paddling speed above zero.';", "    note.textContent = '';", ['trip planner: durations follow the tide, best departure first'], 'planner: bad input message'],
   ['sw.js', "'requests.js', 'planner.js',", "'requests.js',", ['offline cache lists every file the app loads'], 'offline: planner file cached'],
+  ['triplog.js', 'if (trips.length < MIN_TRIPS) {', 'if (false) {', ['trip log: not enough trips, no suggestion'], 'trip log: minimum trips'],
+  ['triplog.js', "e.feel === 'too-much' && e[m.key] <= current", "e.feel === 'hard' && e[m.key] <= current",
+    ['trip log: too much inside your limit lowers it', 'trip log: log, keep after reload, suggest, apply, export, import, delete'], 'trip log: too much lowers'],
+  ['triplog.js', 'const candidate = above[1];', 'const candidate = above[0];', ['trip log: comfortable trips above your limit raise it, cautiously'], 'trip log: cautious raise'],
+  ['triplog.js', 'const contradicted = trips.some(', 'const contradicted = false && trips.some(', ['trip log: a hard trip below the candidate blocks raising'], 'trip log: hard trip blocks raise'],
+  ['triplog.js', 'if (above.length >= 2) {', 'if (above.length >= 0) {', ['trip log: fits your limit, keep it'], 'trip log: keep when it fits'],
+  ['triplog.js', "typeof e.when === 'string' && FEELS[e.feel])", "typeof e.when === 'string')", ['trip log: import keeps good entries, drops bad, no duplicates'], 'trip log: bad entries dropped'],
+  ['triplog.js', 'const byId = new Map(existing.map((e) => [e.id, e]));', 'const byId = new Map(existing.map((e, i) => [i, e]));',
+    ['trip log: import keeps good entries, drops bad, no duplicates'], 'trip log: no duplicates'],
+  ['triplog.js', 'windKn: num(hour.windKn), gustKn', 'windKn: null, gustKn', ['trip log: entry records the hour and how it felt', 'trip log: log, keep after reload, suggest, apply, export, import, delete'], 'trip log: conditions recorded'],
+  ['app.js', '    saveLog(mergeEntries(loadLog(), [entry]));\n', '', ['trip log: log, keep after reload, suggest, apply, export, import, delete'], 'trip log: trips saved'],
+  ['app.js', '    for (const s of state.suggestions || []) limits[s.metric.limit] = s.suggested;\n', '', ['trip log: log, keep after reload, suggest, apply, export, import, delete'], 'trip log: apply suggestions'],
+  ['app.js', "download: 'kayak-trip-log.json'", "'data-x': 'kayak-trip-log.json'", ['trip log: log, keep after reload, suggest, apply, export, import, delete'], 'trip log: export'],
+  ['app.js', '      saveLog(merged);\n', '', ['trip log: log, keep after reload, suggest, apply, export, import, delete'], 'trip log: import'],
+  ['sw.js', "'planner.js', 'triplog.js',", "'planner.js',", ['offline cache lists every file the app loads'], 'offline: trip log file cached'],
+  ['style.css', '.file-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }', '',
+    ['offshore wind and editable limits (phone, dark)'], 'phone layout: file picker'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 

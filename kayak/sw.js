@@ -2,8 +2,8 @@
 // signal. Network first (so updates arrive as soon as you are online), cache
 // as the fallback. Weather API calls are not cached here; the app keeps the
 // last forecast itself.
-const CACHE = 'kayak-shell-v5';
-const SHELL = ['./', 'index.html', 'app.js', 'logic.js', 'hazards.js', 'tides-official.js', 'requests.js', 'planner.js', 'style.css', 'manifest.webmanifest', 'icon.svg'];
+const CACHE = 'kayak-shell-v6';
+const SHELL = ['./', 'index.html', 'app.js', 'logic.js', 'hazards.js', 'tides-official.js', 'requests.js', 'planner.js', 'triplog.js', 'style.css', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

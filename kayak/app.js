@@ -8,6 +8,7 @@ import { hazardsNear, HAZARD_RADIUS_KM } from './hazards.js';
 import { fetchOfficialTides, compareWithModel } from './tides-official.js';
 import { forecastUrls, geocodeUrl } from './requests.js';
 import { planDepartures } from './planner.js';
+import { FEELS, LOG_METRICS, makeEntry, mergeEntries, suggestLimits } from './triplog.js';
 
 const HOURS_SHOWN = 72;
 const LIMIT_KEYS = ['maxWindKn', 'maxGustKn', 'maxWaveM', 'maxOffshoreKn', 'maxCurrentKn'];
@@ -16,6 +17,7 @@ const FORECAST_KEY = 'seaKayakConditions.lastForecast.v1';
 const ADMIRALTY_KEY = 'seaKayakConditions.admiraltyKey';
 const STATIONS_KEY = 'seaKayakConditions.admiraltyStations.v1';
 const STATIONS_MAX_AGE_MS = 30 * 864e5;
+const LOG_KEY = 'seaKayakConditions.tripLog.v1';
 const RATING_LABEL = { go: 'GO', caution: 'CAUTION', nogo: 'NO-GO' };
 
 const $ = (id) => document.getElementById(id);
@@ -58,6 +60,14 @@ function loadStations() {
 }
 function saveStations(stations) {
   try { localStorage.setItem(STATIONS_KEY, JSON.stringify({ savedAt: Date.now(), stations })); } catch { /* not kept */ }
+}
+
+// Trip log: this browser only (export/import to move or back it up).
+function loadLog() {
+  try { return mergeEntries([], JSON.parse(localStorage.getItem(LOG_KEY)) || []); } catch { return []; }
+}
+function saveLog(entries) {
+  try { localStorage.setItem(LOG_KEY, JSON.stringify(entries)); } catch { /* not kept */ }
 }
 
 // ---------- trip planner inputs ----------
@@ -264,6 +274,9 @@ function render() {
   renderChart(rows, daylight, limits);
   renderTable(rows, daylight);
   renderPlan(rows, daylight);
+  state.logHours = all.filter((h) => h.t <= hourStart);
+  renderLogForm();
+  renderLog();
 }
 
 function renderSeaPoint(cov) {
@@ -427,6 +440,45 @@ function renderPlan(rows, daylight) {
   note.textContent = parts.join(' ');
 }
 
+// ---------- trip log ----------
+function renderLogForm() {
+  const sel = $('log-hour');
+  const keep = sel.value;
+  sel.replaceChildren(...state.logHours.slice().reverse().map((h) => el('option', { value: h.time },
+    formatLocal(h.t, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))));
+  if (keep && state.logHours.some((h) => h.time === keep)) sel.value = keep; else prefillLog();
+}
+
+function prefillLog() {
+  const h = state.logHours.find((x) => x.time === $('log-hour').value);
+  if (!h) return;
+  $('log-wind').value = h.windKn == null ? '' : Math.round(h.windKn);
+  $('log-gust').value = h.gustKn == null ? '' : Math.round(h.gustKn);
+  $('log-wave').value = h.waveM == null ? '' : h.waveM.toFixed(1);
+}
+
+function renderLog() {
+  const entries = loadLog();
+  const list = $('log-list');
+  list.replaceChildren(...(entries.length ? entries.map((e) => {
+    const del = el('button', { type: 'button', class: 'secondary small', 'data-id': e.id }, 'Delete');
+    del.addEventListener('click', () => { saveLog(loadLog().filter((x) => x.id !== e.id)); renderLog(); });
+    const when = formatLocal(Date.parse(`${e.when}:00Z`), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const cond = [e.windKn != null && `wind ${Math.round(e.windKn)} kn`, e.gustKn != null && `gusts ${Math.round(e.gustKn)} kn`, e.waveM != null && `waves ${e.waveM.toFixed(1)} m`].filter(Boolean).join(', ');
+    return el('li', {}, el('strong', {}, `${when}, ${e.place}`), `: ${cond}. `, el('span', { class: `feel ${e.feel}` }, FEELS[e.feel]),
+      e.notes ? ` "${e.notes}"` : '', ' ', del);
+  }) : [el('li', {}, 'No trips logged yet.')]));
+
+  const suggestions = suggestLimits(entries, readLimits());
+  $('log-suggest').querySelector('tbody').replaceChildren(...suggestions.map((s) => el('tr', { class: s.suggested !== s.current ? 'change' : '' },
+    el('td', {}, s.metric.label),
+    el('td', {}, `${s.current} ${s.metric.unit}`),
+    el('td', {}, s.suggested === s.current ? 'Keep' : `${s.suggested} ${s.metric.unit}`),
+    el('td', { class: 'why' }, s.reason))));
+  $('log-apply').disabled = !suggestions.some((s) => s.suggested !== s.current);
+  state.suggestions = suggestions;
+}
+
 function renderWindows(rows) {
   const windows = findWindows(rows, 2);
   const list = $('windows');
@@ -577,6 +629,48 @@ function init() {
   $('sea-bearing').addEventListener('change', onSettingsChange);
   LIMIT_KEYS.forEach((k) => $(k).addEventListener('input', onSettingsChange));
   writePlan(prefs.plan);
+  Object.entries(FEELS).forEach(([k, label]) => $('log-feel').append(el('option', { value: k }, label)));
+  $('log-feel').value = 'ok';
+  $('log-hour').addEventListener('change', prefillLog);
+  $('log-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const h = state.logHours?.find((x) => x.time === $('log-hour').value);
+    if (!h || !state.place) return;
+    const val = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : null; };
+    const entry = makeEntry({
+      place: state.place, feel: $('log-feel').value, notes: $('log-notes').value,
+      hour: { ...h, windKn: val('log-wind'), gustKn: val('log-gust'), waveM: val('log-wave') },
+    });
+    saveLog(mergeEntries(loadLog(), [entry]));
+    $('log-notes').value = '';
+    renderLog();
+  });
+  $('log-apply').addEventListener('click', () => {
+    const limits = readLimits();
+    for (const s of state.suggestions || []) limits[s.metric.limit] = s.suggested;
+    writeLimits(limits);
+    onSettingsChange();
+  });
+  $('log-export').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(loadLog(), null, 2)], { type: 'application/json' });
+    const a = el('a', { href: URL.createObjectURL(blob), download: 'kayak-trip-log.json' });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $('log-import').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const before = loadLog().length;
+      const merged = mergeEntries(loadLog(), JSON.parse(await file.text()));
+      saveLog(merged);
+      $('log-status').textContent = `Imported: ${merged.length - before} new trip(s).`;
+    } catch {
+      $('log-status').textContent = 'That file is not a trip log.';
+    }
+    e.target.value = '';
+    renderLog();
+  });
   PLAN_IDS.forEach((id) => $(id).addEventListener('input', onSettingsChange));
 
   $('admiralty-key').value = getAdmiraltyKey();
@@ -607,6 +701,7 @@ function init() {
     );
   });
 
+  renderLog();
   if (prefs.place) loadPlace(prefs.place);
   else setStatus('Search for a launch spot to see conditions.');
 }

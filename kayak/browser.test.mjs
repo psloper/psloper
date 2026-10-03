@@ -8,7 +8,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -383,6 +384,50 @@ test('trip planner: durations follow the tide, best departure first', async () =
   assert.match(await firstRow(), /2 h 01 min/); // 3 nm at 2.73 kn, then 3 nm at 3.27 kn
   await page.fill('#plan-speed', '0');
   assert.match(await page.textContent('#plan-note'), /above zero/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('trip log: log, keep after reload, suggest, apply, export, import, delete', async () => {
+  const spot = SPOTS[2]; // Portland Bill; beginner wind limit 10 kn
+  const { page, errors } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea }) });
+  await searchAndPickFirst(page, spot.query);
+  assert.ok(await page.locator('#log-hour option').count() >= 1);
+  assert.notEqual(await page.inputValue('#log-wind'), '', 'wind prefilled from the forecast');
+  const logTrip = async (wind, feel) => {
+    await page.fill('#log-wind', String(wind));
+    await page.selectOption('#log-feel', feel);
+    await page.click('#log-form button[type=submit]');
+  };
+  await logTrip(8, 'too-much');
+  await logTrip(5, 'ok');
+  await logTrip(6, 'easy');
+  assert.equal(await page.locator('#log-list li').count(), 3);
+  assert.match(await page.textContent('#log-list'), /wind 8 kn.*Too much/);
+
+  await page.reload();
+  await page.waitForSelector('#report:not([hidden])');
+  assert.equal(await page.locator('#log-list li').count(), 3, 'kept after reload');
+
+  // 8 kn felt too much inside the 10 kn limit: suggest 7 kn.
+  const windRow = page.locator('#log-suggest tbody tr').first();
+  assert.match(await windRow.textContent(), /Wind\s*10 kn\s*7 kn\s*Wind of 8 kn felt too much/);
+  await page.click('#log-apply');
+  assert.equal(await page.inputValue('#maxWindKn'), '7');
+
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#log-export')]);
+  const exported = JSON.parse(await readFile(await download.path(), 'utf8'));
+  assert.equal(exported.length, 3);
+
+  const file = join(await mkdtemp(join(tmpdir(), 'kayak-')), 'log.json');
+  await writeFile(file, JSON.stringify([exported[0], { id: 'imported-1', when: '2026-09-20T09:00', place: 'Oban', windKn: 4, gustKn: 6, waveM: 0.2, feel: 'easy' }, { bad: true }]));
+  await page.setInputFiles('#log-import', file);
+  await page.waitForFunction(() => document.querySelector('#log-status').textContent.startsWith('Imported'));
+  assert.match(await page.textContent('#log-status'), /Imported: 1 new trip/);
+  assert.equal(await page.locator('#log-list li').count(), 4);
+
+  await page.locator('#log-list button', { hasText: 'Delete' }).first().click();
+  assert.equal(await page.locator('#log-list li').count(), 3);
   assert.deepEqual(errors, []);
   await page.close();
 });
