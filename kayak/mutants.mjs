@@ -1,6 +1,7 @@
 // Proves each test can fail: breaks one feature at a time in a scratch copy
 // of kayak/, runs the tests, and checks that the tests named in `kills`
-// fail. Then checks every test was made to fail by at least one break.
+// fail (only those tests are run, to keep it fast). Then checks every test
+// was made to fail by at least one break.
 // Run with: npm run test:mutants
 // While developing: MUTANT_ONLY=offline npm run test:mutants (runs matching breaks only,
 // and skips the every-test-was-broken check).
@@ -106,11 +107,28 @@ const MUTANTS = [
   ['app.js', "h.windP90 == null ? 'Forecast confidence unavailable'", "h.windP90 == null ? ''", ['forecast confidence: ensemble service down, app carries on'], 'confidence: unavailable note'],
   ['app.js', "if (weather.status === 'rejected') throw", "if (weather.status === 'rejected' || ensemble.status === 'rejected') throw",
     ['forecast confidence: ensemble service down, app carries on'], 'confidence: optional service'],
+  ['hazards.js', '.filter((h) => h.km <= radiusKm)', '.filter((h) => h.km <= radiusKm * 2)',
+    ['hazards: nearest known races for the six UK spots', 'UK spot: Hamble'], 'hazards: radius'],
+  ['hazards.js', '.sort((a, b) => a.km - b.km);', '.sort((a, b) => b.km - a.km);',
+    ['hazards: nearest known races for the six UK spots', 'UK spot: Poole'], 'hazards: nearest first'],
+  ['hazards.js', 'return ((Math.atan2(y, x) / rad) + 360) % 360;', 'return ((Math.atan2(x, y) / rad) + 360) % 360;',
+    ['hazards: bearing between points', 'hazards: nearest known races for the six UK spots'], 'hazards: direction'],
+  ['hazards.js', "{ name: 'Portland Race', lat: 50.49,", "{ name: 'Portland Race', lat: 50.3,",
+    ['hazards: nearest known races for the six UK spots', 'UK spot: Portland Bill'], 'hazards: Portland Race position'],
+  ['hazards.js', "source: 'Wikipedia (Falls of Lora, Connel Bridge)',", '', ['hazards: list is sane'], 'hazards: checked needs a source'],
+  ['app.js', "hazards.length ? el('p', { class: 'hazard-line' }", "false ? el('p', { class: 'hazard-line' }", ['UK spot: Oban', 'UK spot: Rhoscolyn', 'UK spot: Portland Bill', 'UK spot: Poole'], 'hazards: verdict line'],
+  ['app.js', '  renderHazards(hazards);\n', '', ['UK spot: Oban', 'UK spot: Rhoscolyn', 'UK spot: Portland Bill', 'UK spot: Poole'], 'hazards: list shown'],
+  ['sw.js', "'logic.js', 'hazards.js',", "'logic.js',", ['works offline: page and last forecast open with no connection'], 'offline: hazards file cached'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 
-function runTests(dir, files) {
-  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...files], { cwd: dir, encoding: 'utf8' });
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Runs the given test files; with `names`, only those tests (much faster
+// than the whole browser suite for every break).
+function runTests(dir, files, names) {
+  const filter = names ? [`--test-name-pattern=^(?:${names.map(escapeRe).join('|')})$`] : [];
+  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...filter, ...files], { cwd: dir, encoding: 'utf8' });
   const failed = new Set();
   const passed = new Set();
   for (const line of r.stdout.split('\n')) {
@@ -135,6 +153,7 @@ if (base.failed.size) {
 // Parent tests only (browser/unit tests have no nested subtests).
 const allTests = [...base.passed].filter((n) => !n.endsWith('.mjs'));
 const browserTests = new Set(runTests(freshCopy(), [BROWSER]).passed);
+const unitTests = new Set(runTests(freshCopy(), [UNIT]).passed);
 
 const only = process.env.MUTANT_ONLY;
 const selected = only ? MUTANTS.filter((m) => m[4].includes(only)) : MUTANTS;
@@ -151,8 +170,15 @@ for (const [file, find, replace, kills, what] of selected) {
     continue;
   }
   writeFileSync(path, src.replace(find, replace));
-  const files = kills.some((k) => browserTests.has(k)) ? [UNIT, BROWSER] : [UNIT];
-  const { failed } = runTests(dir, files);
+  const unknown = kills.filter((k) => !browserTests.has(k) && !unitTests.has(k));
+  if (unknown.length) {
+    console.log(`BAD MUTANT  ${what}: no such test(s): ${unknown.join('; ')}`);
+    problems += 1;
+    continue;
+  }
+  const files = [kills.some((k) => unitTests.has(k)) && UNIT, kills.some((k) => browserTests.has(k)) && BROWSER].filter(Boolean);
+  // Only the named tests run, so this proves each named test fails.
+  const { failed } = runTests(dir, files, kills);
   failed.forEach((t) => killedBy.get(t)?.push(what));
   const missed = kills.filter((k) => !failed.has(k));
   if (missed.length) problems += 1;

@@ -5,6 +5,7 @@ import {
   RATING, PROFILES, toKnots, angleDiff, compassPoint, beaufort, windRelativeToShore,
   parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl, describeAge, savedForecastFor, percentile, ensembleSpread, attachSpread, windConfidence,
 } from './logic.js';
+import { HAZARDS, hazardsNear, bearingDeg } from './hazards.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -283,4 +284,31 @@ test('confidence: wording bands and rating', () => {
   assert.equal(r.rating, RATING.CAUTION);
   assert.ok(r.reasons.some((x) => x.tag === 'Uncertain'));
   assert.equal(rateHour({ ...calm, windKn: 6, windP90: 9 }, PROFILES.beginner).rating, RATING.GO);
+});
+
+test('hazards: bearing between points', () => {
+  near(bearingDeg(50, 0, 51, 0), 0);
+  near(bearingDeg(0, 0, 0, 1), 90);
+  near(bearingDeg(51, 0, 50, 0), 180);
+});
+
+test('hazards: nearest known races for the six UK spots', () => {
+  const names = (lat, lon) => hazardsNear(lat, lon).map((h) => h.name);
+  assert.deepEqual(names(...SPOTS.oban.launch), ['Falls of Lora']);
+  assert.deepEqual(names(...SPOTS.rhoscolyn.launch), ['Penrhyn Mawr', 'South Stack race']);
+  assert.deepEqual(names(...SPOTS['portland bill'].launch), ['Portland Race']);
+  assert.deepEqual(names(...SPOTS.poole.launch), ['Poole Harbour entrance', "St Alban's Ledge race (St Alban's Head)"]);
+  assert.deepEqual(names(...SPOTS.hamble.launch), []); // Hurst Narrows is about 23 km away
+  const pr = hazardsNear(...SPOTS['portland bill'].launch)[0];
+  assert.equal(pr.direction, 'S');
+  assert.ok(Math.abs(pr.km - 3.0) < 0.2);
+});
+
+test('hazards: list is sane', () => {
+  assert.ok(HAZARDS.length >= 20);
+  for (const h of HAZARDS) {
+    assert.ok(h.lat > 49 && h.lat < 61 && h.lon > -9 && h.lon < 2, `${h.name} inside the UK box`);
+    assert.ok(h.note.length > 10, `${h.name} has a note`);
+    if (h.checked) assert.ok(h.source, `${h.name} checked but no source`);
+  }
 });

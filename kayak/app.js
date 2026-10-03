@@ -4,6 +4,7 @@ import {
   PROFILES, RATING, mergeHourly, buildDaylight, isDaylight, findTideTurns, rateHour,
   findWindows, tideTrend, rankPlaces, seaCoverage, describeAge, savedForecastFor, ensembleSpread, attachSpread, windConfidence, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
 } from './logic.js';
+import { hazardsNear, HAZARD_RADIUS_KM } from './hazards.js';
 
 const HOURS_SHOWN = 72;
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -194,7 +195,9 @@ function render() {
   const coverage = seaCoverage(marine, state.place.lat, state.place.lon);
   renderSeaPoint(coverage);
   renderTideReliability(tideReliability(state.place.lat, state.place.lon, coverage));
-  renderVerdict(rows[0], seaBearing);
+  const hazards = hazardsNear(state.place.lat, state.place.lon);
+  renderHazards(hazards);
+  renderVerdict(rows[0], seaBearing, hazards);
   renderNow(rows[0], seaBearing);
   renderTides(all, hourStart);
   renderWindows(rows);
@@ -243,7 +246,19 @@ function renderTideReliability(rel) {
   );
 }
 
-function renderVerdict(h, seaBearing) {
+function renderHazards(hazards) {
+  const list = $('hazards');
+  if (!hazards.length) {
+    list.replaceChildren(el('li', {}, `None on this list within ${HAZARD_RADIUS_KM} km. That does not mean there are none: check a chart and pilot guide.`));
+    return;
+  }
+  list.replaceChildren(...hazards.map((h) => el('li', {},
+    el('strong', {}, h.name), ` ${h.km.toFixed(1)} km ${h.direction}`,
+    el('span', { class: h.checked ? 'pos checked' : 'pos' }, h.checked ? ' position checked' : ' position approximate'),
+    el('br'), h.note)));
+}
+
+function renderVerdict(h, seaBearing, hazards = []) {
   const box = $('verdict');
   box.className = `verdict ${h.rating}`;
   const text = {
@@ -256,6 +271,8 @@ function renderVerdict(h, seaBearing) {
     el('h2', {}, `${RATING_LABEL[h.rating]} for ${formatLocal(h.t)}`),
     el('p', {}, text),
     reasons.length ? el('ul', {}, ...reasons) : null,
+    hazards.length ? el('p', { class: 'hazard-line' }, `Known tidal race nearby: ${hazards[0].name}, ${hazards[0].km.toFixed(1)} km ${hazards[0].direction}`
+      + `${hazards.length > 1 ? ` (and ${hazards.length - 1} more)` : ''}. Plan your route and timing around it.`) : null,
     seaBearing == null ? el('p', { class: 'fine' }, 'Tip: set which way your beach faces to get offshore wind warnings.') : null,
   ].filter(Boolean));
 }

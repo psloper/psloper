@@ -41,29 +41,35 @@ const place = (name, admin1, country_code, latitude, longitude) => ({
 // live marine grid point for that launch with its distance.
 const SPOTS = [
   {
+    hazard: 'Falls of Lora',
     query: 'Oban', expect: 'Oban, Scotland', sea: [56.291664, -5.4583282], km: '13.8', far: true, tide: ['MEDIUM', 'Oban', '0372'],
     results: [place('Assaria', 'Kansas', 'US', 38.68028, -97.60448), place('Oban', 'Scotland', 'GB', 56.41535, -5.47184),
       place('Oban', 'Southland', 'NZ', -46.89887, 168.12897)],
   },
   {
+    hazard: 'Penrhyn Mawr',
     query: 'Rhoscolyn', expect: 'Rhoscolyn, Wales', sea: [53.291664, -4.6249847], km: '5.0', far: false, tide: ['MEDIUM', 'Trearddur Bay', '0479'],
     results: [place('Rhoscolyn', 'Wales', 'GB', 53.25014, -4.59793), place('Rhoscolyn Head', 'Wales', 'GB', 53.25, -4.61667)],
   },
   {
+    hazard: 'Portland Race',
     query: 'Portland Bill', expect: 'Portland Bill, England', sea: [50.541664, -2.4583282], km: '2.7', far: false, tide: ['LOW', 'Portland', '0033'],
     results: [place('Portland Bill', 'England', 'GB', 50.51733, -2.45566)],
   },
   {
+    hazard: null,
     query: 'Hamble', expect: 'Hamble-le-Rice, England', sea: [50.791664, -1.3749847], km: '8.4', far: true, tide: ['LOW', 'Warsash', '0063A'],
     results: [place('Hamble', 'Tennessee', 'US', 36.307, -87.28334), place('Hambleton', 'England', 'GB', 53.76667, -1.16667),
       place('Hambledon', 'England', 'GB', 50.93155, -1.08104), place('Hamble-le-Rice', 'England', 'GB', 50.85966, -1.32432)],
   },
   {
+    hazard: null,
     query: 'Itchen', expect: 'Itchen, England', sea: [50.791664, -1.3749847], km: '12.6', far: true, tide: ['LOW', 'Southampton', '0062'],
     results: [place('Itchen', 'England', 'GB', 50.90451, -1.36936), place('Itchenor', 'England', 'GB', 50.80561, -0.86689),
       place('Itchen Abbas', 'England', 'GB', 51.09336, -1.23828)],
   },
   {
+    hazard: 'Poole Harbour entrance',
     query: 'Poole', expect: 'Poole, England', sea: [50.625008, -1.9583282], km: '10.1', far: true, tide: ['LOW', 'Poole Harbour', '0036A'],
     results: [place('Poole', 'England', 'GB', 50.71429, -1.98458), place('Poole', 'Kentucky', 'US', 37.64032, -87.64418)],
   },
@@ -115,6 +121,10 @@ function fakeData({ windDir = 90, sea = [0, 0], seaNull = false, spread = 0.1 } 
   };
 }
 
+// The page renders in well under a second; a short timeout keeps failing
+// runs (and the deliberate-break check) fast.
+const STEP_TIMEOUT_MS = 5000;
+
 let server;
 let browser;
 let base;
@@ -128,6 +138,7 @@ test.after(async () => { await browser?.close(); server?.close(); });
 // Opens the page with mocked services. `marine` may be a function (route) => void.
 async function openPage({ opts = { viewport: { width: 1200, height: 900 } }, geo, data, marine, ensemble } = {}) {
   const page = await browser.newPage(opts);
+  page.setDefaultTimeout(STEP_TIMEOUT_MS);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -161,6 +172,15 @@ for (const spot of SPOTS) {
 
     assert.match(await page.textContent('#tides'), /High .*m/);
     assert.match(await page.textContent('.warn'), /1\.5 to 2\.5 hours early in Southampton Water and Poole Harbour/);
+
+    // Nearest known tidal race, in the list and in the verdict.
+    if (spot.hazard) {
+      assert.match(await page.locator('#hazards li').first().textContent(), new RegExp(`^${spot.hazard} \\d+\\.\\d km`));
+      assert.match(await page.textContent('#verdict .hazard-line'), new RegExp(`Known tidal race nearby: ${spot.hazard}`));
+    } else {
+      assert.match(await page.textContent('#hazards'), /None on this list within 20 km/);
+      assert.equal(await page.locator('#verdict .hazard-line').count(), 0);
+    }
 
     // Tide reliability badge and a link to that area's official station.
     const [level, station, id] = spot.tide;
@@ -206,6 +226,7 @@ test('works offline: page and last forecast open with no connection', async () =
   const data = fakeData({ sea: spot.sea });
   const context = await browser.newContext();
   const page = await context.newPage();
+  page.setDefaultTimeout(STEP_TIMEOUT_MS);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.route('https://api.open-meteo.com/**', (r) => r.fulfill({ json: data.weather }));
