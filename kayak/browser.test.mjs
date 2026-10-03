@@ -76,7 +76,7 @@ const SPOTS = [
 ];
 
 // 96 hours from today's midnight. utc_offset 0 keeps local time = UTC.
-function fakeData({ windDir = 90, sea = [0, 0], seaNull = false, spread = 0.1 } = {}) {
+function fakeData({ windDir = 90, sea = [0, 0], seaNull = false, spread = 0.1, seaLevel = null } = {}) {
   const now = new Date();
   const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const times = Array.from({ length: 96 }, (_, i) => new Date(start + i * 3600e3).toISOString().slice(0, 16));
@@ -114,7 +114,7 @@ function fakeData({ windDir = 90, sea = [0, 0], seaNull = false, spread = 0.1 } 
         time: times,
         wave_height: same(0.3), wave_direction: same(250), wave_period: same(6),
         swell_wave_height: same(0.2), swell_wave_period: same(10), sea_surface_temperature: same(13),
-        sea_level_height_msl: times.map((_, i) => (seaNull ? null : 2 * Math.cos((2 * Math.PI * (i - 3)) / 12.42))),
+        sea_level_height_msl: times.map((_, i) => (seaNull ? null : seaLevel ? seaLevel(i) : 2 * Math.cos((2 * Math.PI * (i - 3)) / 12.42))),
         ocean_current_velocity: same(0.5), ocean_current_direction: same(0),
       },
     },
@@ -349,6 +349,21 @@ test('official tides: no key, Admiralty never contacted', async () => {
   await page.waitForTimeout(300);
   assert.equal(calls, 0);
   assert.equal(await page.textContent('#tides-heading'), 'Tides (modelled)');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('tides: double high water shown once, with its second peak', async () => {
+  const spot = SPOTS[5]; // Poole
+  // Every 12 h: rise, first peak, 0.1 m dip, second peak 2 h later, fall.
+  const shape = [-1.0, -0.4, 0.2, 0.6, 0.8, 0.7, 0.75, 0.6, 0.1, -0.5, -1.0, -1.2];
+  const { page, errors } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea, seaLevel: (i) => shape[i % 12] }) });
+  await searchAndPickFirst(page, spot.query);
+  const items = await page.locator('#tides li').allTextContents();
+  const highs = items.filter((t) => t.startsWith('High'));
+  assert.ok(highs.length >= 2);
+  assert.ok(highs.every((t) => /double high water, second peak \d\d:\d\d/.test(t)), highs.join(' | '));
+  assert.ok(items.every((t, i) => i === 0 || t.slice(0, 3) !== items[i - 1].slice(0, 3)), 'highs and lows alternate');
   assert.deepEqual(errors, []);
   await page.close();
 });

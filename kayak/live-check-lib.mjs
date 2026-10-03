@@ -7,7 +7,7 @@
 // changed that a person should look at (for example a moved sea model point,
 // which would make the browser tests' recorded data stale).
 import { forecastUrls, geocodeUrl, WEATHER_HOURLY, MARINE_HOURLY, FORECAST_DAYS } from './requests.js';
-import { rankPlaces, mergeHourly, findTideTurns, ensembleSpread, seaCoverage } from './logic.js';
+import { rankPlaces, mergeHourly, findTideTurns, findRawTideTurns, ensembleSpread, seaCoverage } from './logic.js';
 import { fetchOfficialTides, compareWithModel } from './tides-official.js';
 
 // Launch points, expected first search result and sea model point distance
@@ -84,7 +84,8 @@ export async function checkSpot(spot, { fetchJson, admiraltyKey = '', fetchFn } 
     if (!kn.length || Math.max(...kn) > 15) fail('merge: current speeds missing or implausible');
     turns = findTideTurns(rows);
     facts.tideTurns = turns.length;
-    if (turns.length < 10 || turns.length > 20) fail(`tides: ${turns.length} high/low waters in ${HOURS} h (expected about 15)`);
+    facts.rawTideTurns = findRawTideTurns(rows).length;
+    if (turns.length < 10 || turns.length > 20) fail(`tides: ${turns.length} high/low waters in ${HOURS} h after merging wiggles (${facts.rawTideTurns} raw; expected about 15)`);
   }
 
   // 5. Ensemble (forecast confidence).
@@ -118,12 +119,12 @@ export async function checkSpot(spot, { fetchJson, admiraltyKey = '', fetchFn } 
 // Markdown report for the GitHub run summary.
 export function formatReport(results, { admiralty = false, when = new Date().toISOString() } = {}) {
   const lines = [`## Kayak app live check (${when})`, ''];
-  lines.push('| Spot | Result | Sea point km | Tide turns | Ensemble runs |' + (admiralty ? ' Official station | Model vs official, mean (worst) min |' : ''));
+  lines.push('| Spot | Result | Sea point km | Tide turns (raw) | Ensemble runs |' + (admiralty ? ' Official station | Model vs official, mean (worst) min |' : ''));
   lines.push('|---|---|---|---|---|' + (admiralty ? '---|---|' : ''));
   for (const r of results) {
     const f = r.facts;
     const result = r.failures.length ? `FAIL (${r.failures.length})` : r.warnings.length ? `warn (${r.warnings.length})` : 'pass';
-    const row = [r.spot, result, f.seaKm?.toFixed(1) ?? '-', f.tideTurns ?? '-', f.ensembleRuns ?? '-'];
+    const row = [r.spot, result, f.seaKm?.toFixed(1) ?? '-', f.tideTurns != null ? `${f.tideTurns} (${f.rawTideTurns} raw)` : '-', f.ensembleRuns ?? '-'];
     if (admiralty) row.push(f.station ?? '-', f.meanDiffMin != null ? `${f.meanDiffMin} (${f.worstDiffMin})` : '-');
     lines.push(`| ${row.join(' | ')} |`);
   }

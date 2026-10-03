@@ -136,7 +136,7 @@ export function isDaylight(t, daylight) {
 // ---------- tides ----------
 // Finds high and low water from the modelled sea level series, refining
 // each hourly extreme with a parabola through its neighbours.
-export function findTideTurns(hours) {
+export function findRawTideTurns(hours) {
   const turns = [];
   for (let i = 1; i < hours.length - 1; i++) {
     const a = hours[i - 1].seaLevelM;
@@ -154,6 +154,32 @@ export function findTideTurns(hours) {
       t: hours[i].t + offset * 3600e3,
       heightM: height,
     });
+  }
+  return turns;
+}
+
+// Turning points closer than this in height are a wiggle on a stand, not a
+// real high and low. The live check found the model's sea level wiggling
+// around the Solent and Poole's double high waters (21 to 30 turns in 96 h
+// instead of about 15).
+export const MIN_TIDE_RANGE_M = 0.15;
+
+// High and low waters with wiggles merged. For a high, small dip, high
+// (double high water) the first high is kept, as official tables do, and
+// marked with when the second peak comes. Lows are treated the same way.
+export function findTideTurns(hours, minRangeM = MIN_TIDE_RANGE_M) {
+  const turns = findRawTideTurns(hours).map((x) => ({ ...x }));
+  let i = 0;
+  while (i < turns.length - 1) {
+    if (Math.abs(turns[i].heightM - turns[i + 1].heightM) >= minRangeM) { i += 1; continue; }
+    const second = turns[i + 2];
+    if (second && second.type === turns[i].type) {
+      turns[i].secondT = second.t;
+      if (turns[i].type === 'high' ? second.heightM > turns[i].heightM : second.heightM < turns[i].heightM) turns[i].heightM = second.heightM;
+      turns.splice(i + 1, 2);
+    } else {
+      turns.splice(i + 1, 1);
+    }
   }
   return turns;
 }

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RATING, PROFILES, toKnots, angleDiff, compassPoint, beaufort, windRelativeToShore,
-  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl, describeAge, savedForecastFor, percentile, ensembleSpread, attachSpread, windConfidence,
+  parseLocal, formatLocal, findTideTurns, findRawTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl, describeAge, savedForecastFor, percentile, ensembleSpread, attachSpread, windConfidence,
 } from './logic.js';
 import { HAZARDS, hazardsNear, bearingDeg } from './hazards.js';
 
@@ -311,4 +311,25 @@ test('hazards: list is sane', () => {
     assert.ok(h.note.length > 10, `${h.name} has a note`);
     if (h.checked) assert.ok(h.source, `${h.name} checked but no source`);
   }
+});
+
+// Synthetic double high water: rise to a first peak, dip 0.1 m, second peak
+// 2 h later, then fall. Hourly, heights in metres.
+const DOUBLE_HW = [-1.0, -0.4, 0.2, 0.6, 0.8, 0.7, 0.75, 0.6, 0.1, -0.5, -1.0, -1.2, -1.0];
+
+test('tides: double high water shown as one high, first peak kept', () => {
+  const hours = DOUBLE_HW.map((seaLevelM, i) => ({ t: i * 3600e3, seaLevelM }));
+  assert.equal(findRawTideTurns(hours).filter((x) => x.type === 'high').length, 2); // raw: two highs and a low between
+  const turns = findTideTurns(hours);
+  assert.deepEqual(turns.map((x) => x.type), ['high', 'low']);
+  assert.ok(Math.abs(turns[0].t / 3600e3 - 4) < 0.5, 'first peak kept');
+  assert.ok(Math.abs(turns[0].secondT / 3600e3 - 6) < 0.5, 'second peak noted');
+  assert.ok(turns[0].heightM >= 0.79, 'height is the higher of the two peaks');
+});
+
+test('tides: real highs and lows are never merged', () => {
+  // Weak neap-like tide, range 0.5 m: well above the 0.15 m wiggle size.
+  const hours = Array.from({ length: 30 }, (_, i) => ({ t: i * 3600e3, seaLevelM: 0.25 * Math.cos((2 * Math.PI * i) / 12.42) }));
+  assert.equal(findTideTurns(hours).length, findRawTideTurns(hours).length);
+  assert.ok(findTideTurns(hours).every((x) => !x.secondT));
 });

@@ -374,6 +374,7 @@ function renderTides(all, hourStart) {
   list.replaceChildren(...turns.slice(0, 8).map((t) => el('li', {},
     el('strong', {}, t.type === 'high' ? 'High ' : 'Low '),
     `${formatLocal(t.t, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}  ${t.heightM >= 0 ? '+' : ''}${t.heightM.toFixed(2)} m`,
+    t.secondT ? el('span', { class: 'fine' }, `  double ${t.type === 'high' ? 'high' : 'low'} water, second peak ${formatLocal(t.secondT)}`) : null,
     t.t < hourStart ? el('span', { class: 'fine' }, ' (passed)') : null,
   )));
 }

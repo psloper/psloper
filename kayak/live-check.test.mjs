@@ -114,7 +114,19 @@ test('live check: official tide comparison with a key', async () => {
   assert.equal(r.facts.matched, '4/4');
   assert.ok(Number.isInteger(r.facts.meanDiffMin));
   const report = formatReport([r], { admiralty: true, when: 'test' });
-  assert.match(report, /\| Oban \| pass \| 13\.8 \| \d+ \| 51 \| OBAN \(0372\) \| -?\d+ \(-?\d+\) \|/);
+  assert.match(report, /\| Oban \| pass \| 13\.8 \| \d+ \(\d+ raw\) \| 51 \| OBAN \(0372\) \| -?\d+ \(-?\d+\) \|/);
+});
+
+test('live check: wiggly Solent-style tide passes once wiggles are merged', async () => {
+  // Small semi-diurnal tide plus a 3-hour ripple: 21 raw turns in 96 h, as
+  // the first live run saw at Hamble, and 15 once merged.
+  const fetchJson = fakeServices(oban, (k, b) => {
+    if (k === 'marine') b.hourly.sea_level_height_msl = b.hourly.time.map((_, i) => 0.5 * Math.cos((2 * Math.PI * i) / 12.42) + 0.07 * Math.cos((2 * Math.PI * i) / 3));
+  });
+  const r = await checkSpot(oban, { fetchJson });
+  assert.equal(r.facts.rawTideTurns, 21);
+  assert.equal(r.facts.tideTurns, 15);
+  assert.deepEqual(r.failures, []);
 });
 
 test('live check: report lists failures', () => {

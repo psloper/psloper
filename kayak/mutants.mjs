@@ -151,6 +151,12 @@ const MUTANTS = [
   ['live-check-lib.mjs', 'const result = r.failures.length ? `FAIL', 'const result = false ? `FAIL', ['live check: report lists failures'], 'live check: report'],
   ['live-check-lib.mjs', 'if (turns.length < 10 || turns.length > 20)', 'if (turns.length < 10 || turns.length > 12)',
     ['live check: healthy services pass'], 'live check: no false alarms on healthy data'],
+  ['logic.js', 'export const MIN_TIDE_RANGE_M = 0.15;', 'export const MIN_TIDE_RANGE_M = 0;',
+    ['tides: double high water shown as one high, first peak kept', 'live check: wiggly Solent-style tide passes once wiggles are merged',
+      'tides: double high water shown once, with its second peak'], 'tides: wiggles merged'],
+  ['logic.js', 'export const MIN_TIDE_RANGE_M = 0.15;', 'export const MIN_TIDE_RANGE_M = 0.6;', ['tides: real highs and lows are never merged'], 'tides: real tides kept'],
+  ['logic.js', '      turns.splice(i + 1, 2);', '      turns.splice(i, 2);', ['tides: double high water shown as one high, first peak kept'], 'tides: first peak kept'],
+  ['app.js', "    t.secondT ? el('span', { class: 'fine' }", "    false ? el('span', { class: 'fine' }", ['tides: double high water shown once, with its second peak'], 'tides: double label'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 
