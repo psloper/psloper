@@ -1,0 +1,53 @@
+name: Kayak app tests
+
+# Runs the sea kayak app's unit tests, browser tests, and the deliberate-break
+# check that proves each test can fail. All network calls in the tests are
+# answered locally, so no weather service access is needed.
+on:
+  push:
+    paths:
+      - 'kayak/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/kayak-tests.yml'
+  pull_request:
+    paths:
+      - 'kayak/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/kayak-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kayak-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Browser tests
+        run: npm run test:browser
+
+      - name: Prove each test can fail (deliberate breaks)
+        run: npm run test:mutants

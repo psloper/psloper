@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sea Kayak Conditions</title>
+  <meta name="description" content="Wind, waves, tides, currents and daylight for sea kayakers, with a go / caution / no-go rating per hour." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b3a53'/%3E%3Cpath d='M4 18c4-3 8-3 12 0s8 3 12 0' stroke='%237fd4ff' stroke-width='2.5' fill='none'/%3E%3Cpath d='M7 12l18 6' stroke='%23ffb347' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0b3a53" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+</head>
+<body>
+  <header class="top">
+    <h1>Sea Kayak Conditions</h1>
+    <p class="sub">Wind, waves, tides and daylight, rated against your own limits.</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="loc-h">
+      <h2 id="loc-h">1. Where are you launching?</h2>
+      <form id="search-form" class="row">
+        <input id="search" type="search" placeholder="Beach, harbour or town (e.g. Oban)" autocomplete="off" aria-label="Search for a place" />
+        <button type="submit">Search</button>
+        <button type="button" id="geo-btn" class="secondary">Use my location</button>
+      </form>
+      <p class="fine">Can't see your spot? Try its full name (for example Hamble-le-Rice, not Hamble) or enter coordinates.</p>
+      <ul id="search-results" class="results" hidden></ul>
+      <details class="manual">
+        <summary>Enter coordinates instead</summary>
+        <form id="coord-form" class="row">
+          <label>Latitude <input id="lat" type="number" step="any" min="-90" max="90" required /></label>
+          <label>Longitude <input id="lon" type="number" step="any" min="-180" max="180" required /></label>
+          <button type="submit">Go</button>
+        </form>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="set-h">
+      <h2 id="set-h">2. Your limits</h2>
+      <div class="grid-settings">
+        <label>Paddler profile
+          <select id="profile"></select>
+        </label>
+        <label>Beach faces (looking out to sea)
+          <select id="sea-bearing">
+            <option value="">Not set (no offshore check)</option>
+            <option value="0">North</option><option value="45">North-east</option>
+            <option value="90">East</option><option value="135">South-east</option>
+            <option value="180">South</option><option value="225">South-west</option>
+            <option value="270">West</option><option value="315">North-west</option>
+          </select>
+        </label>
+        <label>Max wind (kn) <input id="maxWindKn" type="number" min="0" step="1" /></label>
+        <label>Max gust (kn) <input id="maxGustKn" type="number" min="0" step="1" /></label>
+        <label>Max wave height (m) <input id="maxWaveM" type="number" min="0" step="0.1" /></label>
+        <label>Max offshore wind (kn) <input id="maxOffshoreKn" type="number" min="0" step="1" /></label>
+        <label>Max current (kn) <input id="maxCurrentKn" type="number" min="0" step="0.1" /></label>
+      </div>
+      <details class="manual">
+        <summary>Official tide times (optional, needs a free Admiralty key)</summary>
+        <p class="fine">Get a free "UK Tidal API - Discovery" key from the <a href="https://admiraltyapi.portal.azure-api.net/" rel="noopener">ADMIRALTY developer portal</a>. The key stays in this browser and is only sent to the Admiralty service. With it, tide times come from the nearest official station instead of the model.</p>
+        <form id="admiralty-form" class="row">
+          <label>Admiralty API key <input id="admiralty-key" type="password" autocomplete="off" spellcheck="false" /></label>
+          <button type="submit">Save key</button>
+        </form>
+      </details>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p id="offline-banner" class="offline-banner" role="alert" hidden></p>
+
+    <div id="report" hidden>
+      <p id="sea-point" class="sea-point"></p>
+      <section id="verdict" class="verdict" aria-live="polite"></section>
+
+      <section class="panel">
+        <h2>Right now</h2>
+        <div id="now-cards" class="cards"></div>
+      </section>
+
+      <section class="panel two-col">
+        <div>
+          <h2 id="tides-heading">Tides (modelled)</h2>
+          <p id="official-status" class="status" hidden></p>
+          <div id="tide-reliability" class="reliability"></div>
+          <ul id="tides" class="list"></ul>
+          <p class="warn"><strong>Model estimate, not official.</strong> These times come from a global ocean model, not a harbour tide table. Checked against official predictions on 27 September 2026, model times were 15 to 35 minutes early at Oban and Anglesey, about 50 minutes early for Portland high water, and 1.5 to 2.5 hours early in Southampton Water and Poole Harbour. Do not use them for timing in harbours, estuaries or rivers. Check the official times on <a href="https://easytide.admiralty.co.uk/" rel="noopener">Admiralty EasyTide</a> before you go.</p>
+        </div>
+        <div>
+          <h2>Best paddling windows</h2>
+          <ul id="windows" class="list"></ul>
+          <h2 class="mt">Daylight</h2>
+          <ul id="daylight" class="list"></ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Plan a trip</h2>
+        <div class="grid-settings">
+          <label>Heading out towards <select id="plan-bearing"><option value="0">N</option><option value="22.5">NNE</option><option value="45">NE</option><option value="67.5">ENE</option><option value="90">E</option><option value="112.5">ESE</option><option value="135">SE</option><option value="157.5">SSE</option><option value="180">S</option><option value="202.5">SSW</option><option value="225">SW</option><option value="247.5">WSW</option><option value="270">W</option><option value="292.5">WNW</option><option value="315">NW</option><option value="337.5">NNW</option></select></label>
+          <label>Distance (nautical miles) <input id="plan-distance" type="number" min="0" step="0.5" value="6" /></label>
+          <label>Your paddling speed (knots) <input id="plan-speed" type="number" min="0" step="0.1" value="3" /></label>
+          <label>Trip <select id="plan-type"><option value="oneway">One way</option><option value="return">Out and back (turn at half way)</option></select></label>
+        </div>
+        <div class="table-wrap plain">
+          <table id="plan-table">
+            <thead><tr><th>Leave</th><th>Finish</th><th>Time</th><th>Tide help*</th><th>Worst rating</th><th>Why</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="plan-note" class="fine"></p>
+        <p class="fine">Best daylight departures first. * Average modelled current along your route (+ helps, - hinders): it inherits the tide reliability shown above. Wind slowing you down is not included, and the route is treated as a straight line. Check streams in a tidal atlas before committing.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Tidal races and overfalls nearby</h2>
+        <ul id="hazards" class="list"></ul>
+        <p class="warn"><strong>Incomplete list, not for navigation.</strong> About 25 well-known UK races and fast narrows within 20 km of your launch. Positions mark the headland or narrows they form off; races move and grow with tide and wind. Many smaller races are not listed. Use a chart and a pilot guide.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Next 72 hours</h2>
+        <div class="legend">
+          <span><i class="sw wind"></i>Wind (kn)</span>
+          <span><i class="sw gust"></i>Gusts (kn)</span>
+          <span><i class="sw band"></i>Wind range, 1 in 10 to 9 in 10 model runs</span>
+          <span><i class="sw wave"></i>Waves (m)</span>
+          <span><i class="sw tide"></i>Sea level (m)</span>
+        </div>
+        <div id="chart" class="chart"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Hour by hour</h2>
+        <p class="fine">Range: wind speed 8 in 10 model runs fall within (ECMWF ensemble). A wide range means a less certain forecast. * Modelled. Tide is height above or below mean sea level, arrow shows rising or falling.</p>
+        <div class="table-wrap">
+          <table id="hourly">
+            <thead>
+              <tr>
+                <th>Time</th><th>Rating</th><th>Wind</th><th>Gust</th><th>Range</th><th>Dir</th>
+                <th>Waves</th><th>Swell</th><th>Current*</th><th>Tide m*</th><th>Sea</th><th>Air</th><th>Rain</th><th>Sky</th><th>Why</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel" id="log-panel">
+      <h2>Trip log</h2>
+      <p class="fine">Record what you paddled in and how it felt. After a few trips the app suggests limits from your own experience. Kept in this browser only.</p>
+      <form id="log-form" class="grid-settings">
+        <label>When <select id="log-hour"></select></label>
+        <label>Wind (kn) <input id="log-wind" type="number" min="0" step="1" /></label>
+        <label>Gusts (kn) <input id="log-gust" type="number" min="0" step="1" /></label>
+        <label>Waves (m) <input id="log-wave" type="number" min="0" step="0.1" /></label>
+        <label>How it felt <select id="log-feel"></select></label>
+        <label>Notes <input id="log-notes" type="text" maxlength="500" /></label>
+        <button type="submit">Log this trip</button>
+      </form>
+      <p class="fine">Wind, gusts and waves start as the forecast for that hour: change them to what you actually saw.</p>
+      <ul id="log-list" class="list"></ul>
+      <h3>Suggested limits</h3>
+      <div class="table-wrap plain">
+        <table id="log-suggest">
+          <thead><tr><th>Limit</th><th>Yours now</th><th>Suggested</th><th>Why</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="row mt">
+        <button type="button" id="log-apply" disabled>Use suggested limits</button>
+        <button type="button" id="log-export" class="secondary">Export log</button>
+        <label class="file-btn">Import log <input id="log-import" type="file" accept="application/json,.json" /></label>
+      </div>
+      <p id="log-status" class="fine"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Where the data comes from</h2>
+      <div class="table-wrap plain">
+        <table class="sources">
+          <thead><tr><th>Shown here</th><th>Source</th><th>Official?</th><th>Check against (UK)</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Shown here">Wind, gusts, air temp, rain, visibility</td><td data-label="Source">Open-Meteo forecast (blend of national weather models)</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)"><a href="https://www.metoffice.gov.uk/weather/specialist-forecasts/coast-and-sea/inshore-waters-forecast" rel="noopener">Met Office inshore waters forecast</a></td></tr>
+            <tr><td data-label="Shown here">Wind range (confidence)</td><td data-label="Source">Open-Meteo ensemble: about 50 runs of the ECMWF model</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)">Met Office inshore waters forecast</td></tr>
+            <tr><td data-label="Shown here">Waves, swell, sea temperature</td><td data-label="Source">Open-Meteo marine (global wave models)</td><td data-label="Official?">Model forecast</td><td data-label="Check against (UK)">Met Office inshore waters forecast</td></tr>
+            <tr><td data-label="Shown here">Tide times and heights</td><td data-label="Source">Open-Meteo marine sea level (global ocean model)</td><td data-label="Official?"><strong>No: modelled</strong></td><td data-label="Check against (UK)"><span><a href="https://easytide.admiralty.co.uk/" rel="noopener">Admiralty EasyTide</a> (official UK tide predictions)</span></td></tr>
+            <tr><td data-label="Shown here">Tidal current</td><td data-label="Source">Open-Meteo marine ocean current (global model, coarse grid)</td><td data-label="Official?"><strong>No: modelled</strong></td><td data-label="Check against (UK)">Tidal stream atlas or chart tidal diamonds for your area</td></tr>
+            <tr><td data-label="Shown here">Sunrise and sunset</td><td data-label="Source">Open-Meteo, calculated from position</td><td data-label="Official?">Astronomical calculation</td><td data-label="Check against (UK)">Reliable</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel safety">
+      <h2>Before you launch</h2>
+      <ul>
+        <li>This is a planning aid built on computer forecast models. It cannot see local effects like tide races, overfalls, headland acceleration or surf dumping on a steep beach.</li>
+        <li>Check the official marine forecast and tide times for your area (in the UK: Met Office inshore waters forecast and Admiralty EasyTide).</li>
+        <li>Dress for immersion in the water temperature, not the air temperature.</li>
+        <li>Tell someone your plan and expected return time. Carry a way to call for help (VHF radio or phone in a waterproof case).</li>
+      </ul>
+      <p class="fine">Weather and marine data: <a href="https://open-meteo.com/" rel="noopener">Open-Meteo.com</a> (CC BY 4.0).</p>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
