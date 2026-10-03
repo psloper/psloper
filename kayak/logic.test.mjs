@@ -79,6 +79,12 @@ test('strong wind is NO-GO for beginner, fine for advanced', () => {
   assert.equal(rateHour(h, PROFILES.advanced).rating, RATING.GO);
 });
 
+test('over-limit values never read as equal to the limit', () => {
+  const r = rateHour({ ...calm, gustKn: 15.4 }, PROFILES.beginner); // limit 15
+  assert.ok(r.reasons.some((x) => x.text === 'Gusts 15.4 kn over your 15 kn limit'), r.reasons.map((x) => x.text).join('; '));
+  assert.ok(rateHour({ ...calm, gustKn: 17 }, PROFILES.beginner).reasons.some((x) => x.text === 'Gusts 17 kn over your 15 kn limit'));
+});
+
 test('near a limit gives CAUTION', () => {
   assert.equal(rateHour({ ...calm, windKn: 9 }, PROFILES.beginner).rating, RATING.CAUTION);
 });

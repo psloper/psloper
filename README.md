@@ -117,7 +117,22 @@ that pulls wind, waves, swell, currents, modelled tides, water temperature,
 visibility and daylight for a launch spot, then rates every hour of the next
 72 as **GO**, **CAUTION** or **NO-GO** against *your own* limits.
 
-Open `http://localhost:8080/kayak/` after starting the server above.
+Open `http://localhost:8080/kayak/` after starting the server above. On a
+phone it can be added to the home screen and opens with no signal.
+
+## Features
+
+| Feature | What it does |
+| --- | --- |
+| Hourly rating | GO / CAUTION / NO-GO for 72 hours against your editable limits, with the reason for each hour |
+| Offshore wind, wind against tide | Flagged from your beach direction and the modelled current |
+| Forecast confidence | Wind range from about 50 runs of the ECMWF ensemble; CAUTION ("Uncertain") when 1 in 10 runs is over your limit |
+| Tides | Modelled high and low waters with double high/low waters merged and labelled, a reliability badge, and links to official times |
+| Official tides (optional) | With your own free Admiralty Discovery key, the nearest official station's times replace the model's, with the model's error shown |
+| Tidal races nearby | About 25 well-known UK races and fast narrows within 20 km, with distance and direction (incomplete, not for navigation) |
+| Trip planner | Best daylight departures for a route direction, distance and speed, using the modelled current; one way or out and back |
+| Trip log | Record conditions and how they felt; suggested limits from your own trips; export and import |
+| Works offline | Page and last forecast kept on the device, with the forecast's age shown |
 
 ## Data sources
 
@@ -130,6 +145,10 @@ called directly from the browser:
 | Waves, swell, sea temp, currents, tide | Marine | `wave_height`, `swell_wave_height`, `sea_surface_temperature`, `ocean_current_velocity`, `sea_level_height_msl` |
 | Sunrise / sunset | Forecast (daily) | `sunrise`, `sunset` |
 | Place search | Geocoding | `name` search |
+| Forecast confidence | Ensemble (`models=ecmwf_ifs025`) | `wind_speed_10m` for each run |
+
+Optional: official tide times from the ADMIRALTY UK Tidal API (Discovery,
+free, needs your own key; `Stations` and `Stations/{id}/TidalEvents`).
 
 ## How an hour is rated
 
@@ -141,6 +160,8 @@ called directly from the browser:
 | Visibility | under 1 km | under 4 km |
 | Thunderstorm (weather codes 95, 96, 99) | always | |
 | Darkness | | outside sunrise to sunset |
+| Forecast uncertain | | forecast inside the wind limit, but 1 in 10 ensemble runs over it |
+| No sea data | | waves, tide and current could not be checked |
 
 The worst single check sets the hour's rating. Profiles (beginner,
 intermediate, advanced) only preload default limits; every limit is editable
@@ -185,6 +206,15 @@ to official times:
 Station links use EasyTide's `?PortID=` format. Only the six stations seen
 in the check are linked; the app does not carry a full station list.
 
+### Double high waters and wiggles
+
+The model's sea level wiggles around the Solent and Poole Harbour (their
+double high waters and stands). The first live check counted 21 to 30
+"high and low waters" in 96 hours there instead of about 15. Turning
+points less than 0.15 m apart are now merged; for a double high (or low)
+water the first peak is kept, as official tables do, and the second peak's
+time is shown. After the fix the live check counts 15 or 16 at every spot.
+
 ### How far out the modelled tides were (one-off check, 27 September 2026)
 
 Live Open-Meteo sea level for six UK spots, turned into high and low water
@@ -207,37 +237,53 @@ few days, not a long-term accuracy study.
 ## Structure and tests
 
 ```
-kayak/index.html         Page markup
-kayak/style.css          Styling (light and dark, phone friendly)
-kayak/app.js             Fetching, settings, rendering (chart, table, cards)
-kayak/logic.js           Pure logic: merging, units, tides, rating, place ranking
-kayak/logic.test.mjs     Unit tests:        npm test
-kayak/browser.test.mjs   Browser tests:     npm install && npm run test:browser
-kayak/mutants.mjs        Proof tests fail:  npm run test:mutants
+kayak/index.html             Page markup
+kayak/style.css              Styling (light and dark, phone friendly)
+kayak/app.js                 Fetching, settings, rendering
+kayak/requests.js            The exact Open-Meteo requests (shared with the live check)
+kayak/logic.js               Merging, units, tides, rating, confidence, place ranking
+kayak/hazards.js             Known UK tidal races and overfalls
+kayak/tides-official.js      Optional Admiralty official tides
+kayak/planner.js             Departure planner
+kayak/triplog.js             Trip log and limit suggestions
+kayak/sw.js                  Offline cache (service worker)
+kayak/manifest.webmanifest   Install on a phone
+kayak/live-check-lib.mjs     Daily live check rules; kayak/live-check.mjs runs it
+kayak/*.test.mjs             Unit tests (npm test) and browser tests (npm run test:browser)
+kayak/mutants.mjs            Proof that each test can fail (npm run test:mutants)
 ```
 
-The browser tests serve the repo locally, answer every Open-Meteo call with
-fixed data, and drive headless Chromium. There is one test per UK spot
-(Oban, Rhoscolyn, Portland Bill, Hamble, Itchen, Poole) using the real
-search result order and real sea model point from the live check; the
-weather and tide values in them are synthetic. They need the `playwright`
-dev dependency and a Chromium it can find (`npx playwright install chromium`).
+| Command | What it runs |
+| --- | --- |
+| `npm test` | Unit tests (66) |
+| `npm run test:browser` | Headless Chromium tests with every service answered locally (20) |
+| `npm run test:mutants` | 115 deliberate breaks, one at a time in a scratch copy; checks the named tests fail and that every one of the 86 tests fails for at least one break |
+| `npm run live-check` | The live check against the real services (needs network) |
 
-GitHub Actions runs all three test commands on every push or pull request
-that touches the app (`.github/workflows/kayak-tests.yml`).
+The browser tests need the `playwright` dev dependency and a Chromium it can
+find (`npx playwright install chromium`). They use the real search result
+order and sea model points of the six UK spots; weather and tide values in
+them are synthetic.
 
-`npm run test:mutants` breaks one feature at a time in a scratch copy
-(38 deliberate breaks), checks the named tests fail, and checks every test
-failed for at least one break. It exits non-zero if any break goes unnoticed.
+### Continuous checks (GitHub Actions)
+
+| Workflow | When | What |
+| --- | --- | --- |
+| `kayak-tests.yml` | Every push or pull request touching the app | All three test commands |
+| `kayak-live-check.yml` | Daily 06:17 UTC (default branch only), by hand, and on changes to the check | The app's exact requests against live Open-Meteo for the six spots: search ranking, every field, units, ranges, hour alignment, tide turns, ensemble runs, sea point drift. With an `ADMIRALTY_API_KEY` repository secret it also re-measures model vs official tide times. Report in the run summary |
 
 ## Not yet verified
 
-- **Live runs from this repo's own test setup.** The build environment
-  blocks Open-Meteo, so the live check above was done once, outside it.
-  The tests use copies of what it returned, not live calls.
-- **Current direction convention.** Assumed "flowing towards". The model
-  currents do reverse roughly every six hours, so they include tidal
-  streams, but the direction convention was not confirmed.
-- **Current strength in races.** Around Portland the model peaked at about
-  3.5 kn. Tide races there run much faster; the model cannot show them.
-- **Tide accuracy beyond the six spots and four days checked.**
+- **Admiralty API from a browser, and its exact field names.** The code
+  follows the developer portal (endpoint, key header) and parses fields
+  loosely, but no call has been made with a real key. Whether the service
+  allows calls from a web page is unknown; if not, the page says so.
+- **Current direction convention.** Assumed "flowing towards". Currents do
+  reverse about every six hours (so they include tidal streams), but the
+  direction convention is not confirmed.
+- **Tidal race positions.** Four checked against published sources; the
+  rest are approximate. The list is incomplete.
+- **Tide accuracy beyond the six spots and four days checked.** Add the
+  Admiralty secret to have the daily check re-measure it.
+- **Trip log suggestions** are simple rules, not validated against real
+  paddlers' logs.

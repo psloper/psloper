@@ -165,7 +165,9 @@ const MUTANTS = [
   ['planner.js', '    if (done + ground * dt > target) dt = (target - done) / ground;\n', '',
     ['planner: still water takes distance / speed', 'planner: out and back turns round at half way', 'trip planner: durations follow the tide, best departure first'], 'planner: exact finish and turn'],
   ['planner.js', 'if (ORDER.indexOf(h.rating) > ORDER.indexOf(worst)) worst = h.rating;', '', ['planner: worst rating met on the way'], 'planner: worst rating'],
-  ['planner.js', "if (!h || (t - start) / 3600e3 > MAX_TRIP_H) {", "if ((t - start) / 3600e3 > 99) {", ['planner: beyond the forecast is not a plan'], 'planner: end of forecast'],
+  ['planner.js', "if (!h) return { start, feasible: false, why: 'the trip runs past the end of the forecast' };", 'if (!h) return { start, feasible: false, why: \'\' };',
+    ['planner: beyond the forecast is not a plan'], 'planner: end of forecast'],
+  ['planner.js', 'if ((t - start) / 3600e3 > MAX_TRIP_H) return', 'if (false) return', ['planner: beyond the forecast is not a plan'], 'planner: 12-hour cap'],
   ['planner.js', '    if (!isDaylight(h.t, daylight)) return;\n', '', ['planner: daylight departures, best first'], 'planner: daylight starts only'],
   ['planner.js', 'const feasible = plans.filter((p) => p.feasible).sort((a, b) => ORDER.indexOf(a.worst) - ORDER.indexOf(b.worst)\n    || ',
     'const feasible = plans.filter((p) => p.feasible).sort((a, b) => ', ['planner: daylight departures, best first'], 'planner: safest first'],
@@ -189,6 +191,8 @@ const MUTANTS = [
   ['sw.js', "'planner.js', 'triplog.js',", "'planner.js',", ['offline cache lists every file the app loads'], 'offline: trip log file cached'],
   ['style.css', '.file-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }', '',
     ['offshore wind and editable limits (phone, dark)'], 'phone layout: file picker'],
+  ['logic.js', 'const shown = value > max && Number(value.toFixed(digits)) <= max ? value.toFixed(digits + 1) : value.toFixed(digits);',
+    'const shown = value.toFixed(digits);', ['over-limit values never read as equal to the limit'], 'wording: over-limit decimals'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 

@@ -33,9 +33,8 @@ export function planTrip(rows, startIdx, { bearing, distanceNm, speedKn, roundTr
   while (done < distanceNm - 1e-9) {
     const idx = startIdx + Math.floor((t - start) / 3600e3 + 1e-9);
     const h = rows[idx];
-    if (!h || (t - start) / 3600e3 > MAX_TRIP_H) {
-      return { start, feasible: false, why: `does not finish within ${MAX_TRIP_H} hours of forecast` };
-    }
+    if (!h) return { start, feasible: false, why: 'the trip runs past the end of the forecast' };
+    if ((t - start) / 3600e3 > MAX_TRIP_H) return { start, feasible: false, why: `the trip would take more than ${MAX_TRIP_H} hours` };
     if (ORDER.indexOf(h.rating) > ORDER.indexOf(worst)) worst = h.rating;
     h.reasons?.forEach((r) => reasons.add(r.tag));
     const outbound = !roundTrip || done < legNm - 1e-9;

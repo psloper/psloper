@@ -48,7 +48,11 @@ test('planner: worst rating met on the way', () => {
 });
 
 test('planner: beyond the forecast is not a plan', () => {
-  assert.equal(planTrip(rows(3), 2, opts).feasible, false);
+  const p = planTrip(rows(3), 2, opts);
+  assert.equal(p.feasible, false);
+  assert.match(p.why, /past the end of the forecast/);
+  // Very slow over a long forecast: too long rather than off the end.
+  assert.match(planTrip(rows(48), 0, { ...opts, distanceNm: 40 }).why, /more than 12 hours/);
 });
 
 test('planner: daylight departures, best first', () => {

@@ -303,7 +303,9 @@ export function rateHour(h, limits, opts = {}) {
   const flag = (level, text, tag) => { rating = worse(rating, level); reasons.push({ level, text, tag }); };
   const check = (value, max, label, unit, digits = 0) => {
     if (value == null || max == null) return;
-    const v = `${value.toFixed(digits)}${unit}`;
+    // One more decimal when rounding would make an over-limit value look equal to the limit.
+    const shown = value > max && Number(value.toFixed(digits)) <= max ? value.toFixed(digits + 1) : value.toFixed(digits);
+    const v = `${shown}${unit}`;
     if (value > max) flag(RATING.NOGO, `${label} ${v} over your ${max}${unit} limit`, label);
     else if (value > max * CAUTION_FRACTION) flag(RATING.CAUTION, `${label} ${v} near your ${max}${unit} limit`, label);
   };
