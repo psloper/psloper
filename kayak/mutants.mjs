@@ -2,6 +2,8 @@
 // of kayak/, runs the tests, and checks that the tests named in `kills`
 // fail. Then checks every test was made to fail by at least one break.
 // Run with: npm run test:mutants
+// While developing: MUTANT_ONLY=offline npm run test:mutants (runs matching breaks only,
+// and skips the every-test-was-broken check).
 import { spawnSync } from 'node:child_process';
 import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -79,6 +81,15 @@ const MUTANTS = [
     ['UK spot: Portland Bill', 'UK spot: Hamble', 'UK spot: Itchen', 'UK spot: Poole', 'inland spot is flagged and never rated GO',
       'unchecked open-coast spot: NOT CHECKED badge and general EasyTide link'], 'reliability badge text'],
   ['app.js', '  renderTideReliability(tideReliability(state.place.lat, state.place.lon, coverage));', '', TIDE_SPOTS, 'reliability panel shown'],
+  ['sw.js', 'caches.open(CACHE).then((c) => c.addAll(SHELL))', 'Promise.resolve()',
+    ['works offline: page and last forecast open with no connection'], 'offline: page files cached'],
+  ['app.js', '  navigator.serviceWorker.register(\'sw.js\')', '  Promise.reject()',
+    ['works offline: page and last forecast open with no connection'], 'offline: service worker registered'],
+  ['app.js', '    saveForecast(place, state.data);\n', '',
+    ['works offline: page and last forecast open with no connection'], 'offline: forecast saved'],
+  ['logic.js', 'return same ? saved : null;', 'return null;',
+    ['offline: saved forecast only reused for the same spot', 'works offline: page and last forecast open with no connection'], 'offline: saved forecast reused'],
+  ['logic.js', "if (h < 48) return `${h} hour${h === 1 ? '' : 's'}`;", '', ['offline: age of a saved forecast in plain English'], 'offline: age wording'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 
@@ -109,9 +120,11 @@ if (base.failed.size) {
 const allTests = [...base.passed].filter((n) => !n.endsWith('.mjs'));
 const browserTests = new Set(runTests(freshCopy(), [BROWSER]).passed);
 
+const only = process.env.MUTANT_ONLY;
+const selected = only ? MUTANTS.filter((m) => m[4].includes(only)) : MUTANTS;
 const killedBy = new Map(allTests.map((t) => [t, []]));
 let problems = 0;
-for (const [file, find, replace, kills, what] of MUTANTS) {
+for (const [file, find, replace, kills, what] of selected) {
   const dir = freshCopy();
   const path = join(dir, file);
   const src = readFileSync(path, 'utf8');
@@ -133,8 +146,9 @@ rmSync(SCRATCH, { recursive: true, force: true });
 
 console.log('\nEvery test, and the deliberate breaks that made it fail:');
 for (const [t, whats] of killedBy) {
+  if (only) break;
   if (!whats.length) problems += 1;
   console.log(`${whats.length ? 'ok  ' : 'NONE'}  ${t}  <-  ${whats.join(', ') || 'no break made this test fail'}`);
 }
-console.log(`\n${MUTANTS.length} deliberate breaks, ${allTests.length} tests, ${problems} problem(s).`);
+console.log(`\n${selected.length} deliberate breaks${only ? ` (only "${only}")` : ''}, ${allTests.length} tests, ${problems} problem(s).`);
 process.exit(problems ? 1 : 0);

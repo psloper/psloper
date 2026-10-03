@@ -349,3 +349,21 @@ const WMO = {
 export function weatherText(code) {
   return WMO[code] ?? '--';
 }
+
+// ---------- offline ----------
+// Plain-English age of a saved forecast, e.g. "45 minutes", "3 hours", "2 days".
+export function describeAge(ms) {
+  const min = Math.max(0, Math.round(ms / 60000));
+  if (min < 60) return `${min} minute${min === 1 ? '' : 's'}`;
+  const h = Math.round(min / 60);
+  if (h < 48) return `${h} hour${h === 1 ? '' : 's'}`;
+  const d = Math.round(h / 24);
+  return `${d} days`;
+}
+
+// A saved forecast is usable for a place if it was saved for the same spot.
+export function savedForecastFor(saved, place) {
+  if (!saved?.data || !saved.place || !place) return null;
+  const same = Math.abs(saved.place.lat - place.lat) < 1e-6 && Math.abs(saved.place.lon - place.lon) < 1e-6;
+  return same ? saved : null;
+}

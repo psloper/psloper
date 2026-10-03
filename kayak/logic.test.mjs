@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RATING, PROFILES, toKnots, angleDiff, compassPoint, beaufort, windRelativeToShore,
-  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl,
+  parseLocal, formatLocal, findTideTurns, rateHour, findWindows, mergeHourly, tideTrend, rankPlaces, distanceKm, seaCoverage, tideReliability, easyTideUrl, describeAge, savedForecastFor,
 } from './logic.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -234,4 +234,18 @@ test('tide reliability outside the checked areas', () => {
 test('EasyTide station link format', () => {
   // Format seen on a live EasyTide page: https://easytide.admiralty.co.uk/?PortID=0345
   assert.equal(easyTideUrl('0345'), 'https://easytide.admiralty.co.uk/?PortID=0345');
+});
+
+test('offline: age of a saved forecast in plain English', () => {
+  assert.equal(describeAge(45 * 60e3), '45 minutes');
+  assert.equal(describeAge(60e3), '1 minute');
+  assert.equal(describeAge(3 * 3600e3), '3 hours');
+  assert.equal(describeAge(3 * 86400e3), '3 days');
+});
+
+test('offline: saved forecast only reused for the same spot', () => {
+  const saved = { place: { lat: 50.71429, lon: -1.98458 }, data: { weather: {} }, savedAt: 0 };
+  assert.equal(savedForecastFor(saved, { lat: 50.71429, lon: -1.98458 }), saved);
+  assert.equal(savedForecastFor(saved, { lat: 50.85966, lon: -1.32432 }), null);
+  assert.equal(savedForecastFor(null, { lat: 1, lon: 1 }), null);
 });

@@ -1,0 +1,13 @@
+{
+  "name": "Sea Kayak Conditions",
+  "short_name": "Kayak Wx",
+  "description": "Wind, waves, tides and daylight for UK sea kayakers, rated against your own limits.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b3a53",
+  "theme_color": "#0b3a53",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

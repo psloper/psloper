@@ -14,7 +14,10 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.ico': 'image/x-icon' };
+const TYPES = {
+  '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.ico': 'image/x-icon',
+  '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json',
+};
 
 function serve() {
   const server = http.createServer(async (req, res) => {
@@ -178,6 +181,43 @@ test('unchecked open-coast spot: NOT CHECKED badge and general EasyTide link', a
   assert.equal(await page.locator('#tide-reliability a.official').getAttribute('href'), 'https://easytide.admiralty.co.uk/');
   assert.deepEqual(errors, []);
   await page.close();
+});
+
+test('works offline: page and last forecast open with no connection', async () => {
+  // Own server, so it can be shut down: the reload must then come from the
+  // service worker cache, not the network.
+  const ownServer = await serve();
+  const url = `http://127.0.0.1:${ownServer.address().port}/kayak/`;
+  const spot = SPOTS[5]; // Poole
+  const data = fakeData({ sea: spot.sea });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.route('https://api.open-meteo.com/**', (r) => r.fulfill({ json: data.weather }));
+  await page.route('https://marine-api.open-meteo.com/**', (r) => r.fulfill({ json: data.marine }));
+  await page.route('https://geocoding-api.open-meteo.com/**', (r) => r.fulfill({ json: { results: spot.results } }));
+  try {
+    await page.goto(url);
+    await searchAndPickFirst(page, spot.query);
+    await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 10000 });
+
+    await new Promise((resolve) => ownServer.close(resolve));
+    await page.unrouteAll();
+    await page.route('https://*.open-meteo.com/**', (r) => r.abort('internetdisconnected'));
+    await context.setOffline(true);
+    await page.reload();
+
+    await page.waitForSelector('#offline-banner:not([hidden])', { timeout: 10000 });
+    assert.match(await page.textContent('#offline-banner'), /No connection\. Showing the forecast saved .* ago/);
+    assert.equal(await page.locator('#report').isVisible(), true);
+    assert.match(await page.textContent('#tides'), /High .*m/);
+    assert.match(await page.textContent('#status'), /saved forecast for Poole/);
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+    ownServer.close();
+  }
 });
 
 test('overloaded marine service is retried once', async () => {

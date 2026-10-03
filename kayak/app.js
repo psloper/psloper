@@ -2,7 +2,7 @@
 // marine and geocoding data (free, no API key) and renders the report.
 import {
   PROFILES, RATING, mergeHourly, buildDaylight, isDaylight, findTideTurns, rateHour,
-  findWindows, tideTrend, rankPlaces, seaCoverage, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
+  findWindows, tideTrend, rankPlaces, seaCoverage, describeAge, savedForecastFor, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
 } from './logic.js';
 
 const HOURS_SHOWN = 72;
@@ -11,6 +11,7 @@ const MARINE_URL = 'https://marine-api.open-meteo.com/v1/marine';
 const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const LIMIT_KEYS = ['maxWindKn', 'maxGustKn', 'maxWaveM', 'maxOffshoreKn', 'maxCurrentKn'];
 const STORE_KEY = 'seaKayakConditions.v1';
+const FORECAST_KEY = 'seaKayakConditions.lastForecast.v1';
 const RATING_LABEL = { go: 'GO', caution: 'CAUTION', nogo: 'NO-GO' };
 
 const $ = (id) => document.getElementById(id);
@@ -26,6 +27,16 @@ function savePrefs() {
       place: state.place, profile: $('profile').value, seaBearing: $('sea-bearing').value, limits: readLimits(),
     }));
   } catch { /* storage unavailable: settings just won't persist */ }
+}
+
+// Last good forecast, so the page still works at a beach with no signal.
+function saveForecast(place, data) {
+  try {
+    localStorage.setItem(FORECAST_KEY, JSON.stringify({ place, data, savedAt: Date.now() }));
+  } catch { /* storage full or blocked: offline copy just won't be kept */ }
+}
+function loadSavedForecast() {
+  try { return JSON.parse(localStorage.getItem(FORECAST_KEY)); } catch { return null; }
 }
 
 // ---------- settings ----------
@@ -91,12 +102,31 @@ async function loadPlace(place) {
   setStatus(`Loading forecast for ${place.name}...`);
   try {
     state.data = await fetchConditions(place.lat, place.lon);
+    showOfflineBanner(null);
     render();
+    saveForecast(place, state.data);
     setStatus(`Forecast for ${place.name} (${place.lat.toFixed(3)}, ${place.lon.toFixed(3)}).`
       + (state.data.marineError ? ` Marine data unavailable: ${state.data.marineError}` : ''));
   } catch (err) {
-    setStatus(`${err.message}. Check your connection and try again.`, true);
+    const saved = savedForecastFor(loadSavedForecast(), place);
+    if (saved) {
+      state.data = saved.data;
+      showOfflineBanner(saved.savedAt);
+      render();
+      setStatus(`Showing the saved forecast for ${place.name}.`);
+    } else {
+      setStatus(`${err.message}. Check your connection and try again.`, true);
+    }
   }
+}
+
+function showOfflineBanner(savedAt) {
+  const box = $('offline-banner');
+  if (savedAt == null) { box.hidden = true; return; }
+  const when = new Date(savedAt).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  box.textContent = `No connection. Showing the forecast saved ${describeAge(Date.now() - savedAt)} ago (${when}). `
+    + 'Conditions may have changed: check again when you have signal.';
+  box.hidden = false;
 }
 
 async function search(query) {
@@ -420,6 +450,11 @@ function init() {
 
   if (prefs.place) loadPlace(prefs.place);
   else setStatus('Search for a launch spot to see conditions.');
+}
+
+// Cache the page itself so it opens without signal. Skipped on file:// pages.
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').catch(() => { /* offline support unavailable */ });
 }
 
 init();

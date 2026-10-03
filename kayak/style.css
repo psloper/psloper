@@ -92,6 +92,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .badge.medium { background: var(--caution-bg); color: var(--caution); }
 .badge.low, .badge.none { background: var(--nogo-bg); color: var(--nogo); }
 .badge.unchecked { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.offline-banner { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--caution); background: var(--caution-bg); font-weight: 600; }
 .sea-point { margin: 16px 0 0; padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; border: 1px solid var(--line); background: var(--panel); }
 .sea-point.far { border-color: var(--caution); background: var(--caution-bg); }
 .sea-point.bad { border-color: var(--nogo); background: var(--nogo-bg); font-weight: 600; }
