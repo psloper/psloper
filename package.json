@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "python3 -m http.server 8080",
-    "test": "node --test kayak/logic.test.mjs",
+    "test": "node --test kayak/logic.test.mjs kayak/tides-official.test.mjs",
     "test:browser": "node --test kayak/browser.test.mjs",
     "test:mutants": "node kayak/mutants.mjs"
   },

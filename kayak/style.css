@@ -89,6 +89,8 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .reliability.medium { border-color: var(--caution); }
 .reliability a.official { font-weight: 600; }
 .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-weight: 700; font-size: 0.8rem; }
+.badge.official { background: var(--go-bg); color: var(--go); }
+.reliability.official { border-color: var(--go); }
 .badge.medium { background: var(--caution-bg); color: var(--caution); }
 .badge.low, .badge.none { background: var(--nogo-bg); color: var(--nogo); }
 .badge.unchecked { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }

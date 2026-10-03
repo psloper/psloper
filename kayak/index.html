@@ -58,6 +58,14 @@
         <label>Max offshore wind (kn) <input id="maxOffshoreKn" type="number" min="0" step="1" /></label>
         <label>Max current (kn) <input id="maxCurrentKn" type="number" min="0" step="0.1" /></label>
       </div>
+      <details class="manual">
+        <summary>Official tide times (optional, needs a free Admiralty key)</summary>
+        <p class="fine">Get a free "UK Tidal API - Discovery" key from the <a href="https://admiraltyapi.portal.azure-api.net/" rel="noopener">ADMIRALTY developer portal</a>. The key stays in this browser and is only sent to the Admiralty service. With it, tide times come from the nearest official station instead of the model.</p>
+        <form id="admiralty-form" class="row">
+          <label>Admiralty API key <input id="admiralty-key" type="password" autocomplete="off" spellcheck="false" /></label>
+          <button type="submit">Save key</button>
+        </form>
+      </details>
     </section>
 
     <p id="status" class="status" role="status" aria-live="polite"></p>
@@ -74,7 +82,8 @@
 
       <section class="panel two-col">
         <div>
-          <h2>Tides (modelled)</h2>
+          <h2 id="tides-heading">Tides (modelled)</h2>
+          <p id="official-status" class="status" hidden></p>
           <div id="tide-reliability" class="reliability"></div>
           <ul id="tides" class="list"></ul>
           <p class="warn"><strong>Model estimate, not official.</strong> These times come from a global ocean model, not a harbour tide table. Checked against official predictions on 27 September 2026, model times were 15 to 35 minutes early at Oban and Anglesey, about 50 minutes early for Portland high water, and 1.5 to 2.5 hours early in Southampton Water and Poole Harbour. Do not use them for timing in harbours, estuaries or rivers. Check the official times on <a href="https://easytide.admiralty.co.uk/" rel="noopener">Admiralty EasyTide</a> before you go.</p>

@@ -2,9 +2,10 @@
 // marine and geocoding data (free, no API key) and renders the report.
 import {
   PROFILES, RATING, mergeHourly, buildDaylight, isDaylight, findTideTurns, rateHour,
-  findWindows, tideTrend, rankPlaces, seaCoverage, describeAge, savedForecastFor, ensembleSpread, attachSpread, windConfidence, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
+  findWindows, tideTrend, rankPlaces, seaCoverage, describeAge, savedForecastFor, easyTideUrl, ensembleSpread, attachSpread, windConfidence, FAR_SEA_POINT_KM, tideReliability, TIDE_CHECKED_ON, compassPoint, beaufort, windRelativeToShore, formatLocal, localNow, weatherText,
 } from './logic.js';
 import { hazardsNear, HAZARD_RADIUS_KM } from './hazards.js';
+import { fetchOfficialTides, compareWithModel } from './tides-official.js';
 
 const HOURS_SHOWN = 72;
 const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -14,10 +15,13 @@ const ENSEMBLE_URL = 'https://ensemble-api.open-meteo.com/v1/ensemble';
 const LIMIT_KEYS = ['maxWindKn', 'maxGustKn', 'maxWaveM', 'maxOffshoreKn', 'maxCurrentKn'];
 const STORE_KEY = 'seaKayakConditions.v1';
 const FORECAST_KEY = 'seaKayakConditions.lastForecast.v1';
+const ADMIRALTY_KEY = 'seaKayakConditions.admiraltyKey';
+const STATIONS_KEY = 'seaKayakConditions.admiraltyStations.v1';
+const STATIONS_MAX_AGE_MS = 30 * 864e5;
 const RATING_LABEL = { go: 'GO', caution: 'CAUTION', nogo: 'NO-GO' };
 
 const $ = (id) => document.getElementById(id);
-const state = { place: null, data: null };
+const state = { place: null, data: null, official: null };
 
 // ---------- persistence (per-browser convenience only) ----------
 function loadPrefs() {
@@ -39,6 +43,23 @@ function saveForecast(place, data) {
 }
 function loadSavedForecast() {
   try { return JSON.parse(localStorage.getItem(FORECAST_KEY)); } catch { return null; }
+}
+
+// Admiralty key and station list: this browser only.
+function getAdmiraltyKey() {
+  try { return localStorage.getItem(ADMIRALTY_KEY) || ''; } catch { return ''; }
+}
+function setAdmiraltyKey(key) {
+  try { if (key) localStorage.setItem(ADMIRALTY_KEY, key); else localStorage.removeItem(ADMIRALTY_KEY); } catch { /* not kept */ }
+}
+function loadStations() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STATIONS_KEY));
+    return s && Date.now() - s.savedAt < STATIONS_MAX_AGE_MS ? s.stations : null;
+  } catch { return null; }
+}
+function saveStations(stations) {
+  try { localStorage.setItem(STATIONS_KEY, JSON.stringify({ savedAt: Date.now(), stations })); } catch { /* not kept */ }
 }
 
 // ---------- settings ----------
@@ -109,8 +130,10 @@ async function loadPlace(place) {
   try {
     state.data = await fetchConditions(place.lat, place.lon);
     showOfflineBanner(null);
+    state.official = null;
     render();
     saveForecast(place, state.data);
+    loadOfficialTides(place);
     setStatus(`Forecast for ${place.name} (${place.lat.toFixed(3)}, ${place.lon.toFixed(3)}).`
       + (state.data.marineError ? ` Marine data unavailable: ${state.data.marineError}` : ''));
   } catch (err) {
@@ -124,6 +147,34 @@ async function loadPlace(place) {
       setStatus(`${err.message}. Check your connection and try again.`, true);
     }
   }
+}
+
+// Official tide times, if the user has added an Admiralty key. Runs after
+// the main forecast so a slow or failing Admiralty call never blocks it.
+async function loadOfficialTides(place) {
+  const key = getAdmiraltyKey();
+  if (!key) { state.official = null; return; }
+  state.official = { status: 'loading' };
+  setOfficialStatus('Getting official tide times from the Admiralty service...');
+  try {
+    const res = await fetchOfficialTides(key, place.lat, place.lon, { stations: loadStations() });
+    if (state.place !== place) return; // user moved on
+    saveStations(res.stations);
+    state.official = { status: 'ok', station: res.station, events: res.events };
+    setOfficialStatus('');
+  } catch (err) {
+    if (state.place !== place) return;
+    state.official = { status: 'error', error: err.message };
+    setOfficialStatus(`Official tide times not shown: ${err.message}. Showing the model estimate.`, true);
+  }
+  if (state.data) render();
+}
+
+function setOfficialStatus(text, isError = false) {
+  const p = $('official-status');
+  p.textContent = text;
+  p.hidden = !text;
+  p.classList.toggle('error', isError);
 }
 
 function showOfflineBanner(savedAt) {
@@ -194,7 +245,13 @@ function render() {
   $('report').hidden = false;
   const coverage = seaCoverage(marine, state.place.lat, state.place.lon);
   renderSeaPoint(coverage);
-  renderTideReliability(tideReliability(state.place.lat, state.place.lon, coverage));
+  const off = state.official;
+  renderTideReliability(off?.status === 'ok'
+    ? {
+      level: 'official', area: off.station.name, station: off.station.name, officialUrl: easyTideUrl(off.station.id),
+      summary: `Official Admiralty predictions for ${off.station.name}, the nearest tidal station (${off.station.km.toFixed(1)} km from your launch). Times below are official; the model's difference is shown for each.`,
+    }
+    : tideReliability(state.place.lat, state.place.lon, coverage));
   const hazards = hazardsNear(state.place.lat, state.place.lon);
   renderHazards(hazards);
   renderVerdict(rows[0], seaBearing, hazards);
@@ -229,7 +286,7 @@ const CONFIDENCE_TEXT = {
   low: 'Model runs disagree: low confidence',
 };
 
-const RELIABILITY_LABEL = { medium: 'MEDIUM', low: 'LOW', unchecked: 'NOT CHECKED', none: 'NO DATA' };
+const RELIABILITY_LABEL = { official: 'OFFICIAL', medium: 'MEDIUM', low: 'LOW', unchecked: 'NOT CHECKED', none: 'NO DATA' };
 
 function renderTideReliability(rel) {
   const box = $('tide-reliability');
@@ -308,8 +365,23 @@ function renderNow(h, seaBearing) {
 }
 
 function renderTides(all, hourStart) {
-  const turns = findTideTurns(all).filter((t) => t.t >= hourStart - 6 * 3600e3);
   const list = $('tides');
+  if (state.official?.status === 'ok') {
+    const events = compareWithModel(state.official.events, findTideTurns(all), state.data.weather.utc_offset_seconds)
+      .filter((e) => e.t >= hourStart - 6 * 3600e3).slice(0, 8);
+    list.replaceChildren(...events.map((e) => el('li', {},
+      el('strong', {}, e.type === 'high' ? 'High ' : 'Low '),
+      `${formatLocal(e.t, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}  ${e.heightM == null ? '' : `${e.heightM.toFixed(2)} m`}`,
+      el('span', { class: 'fine model-diff' }, e.modelDiffMin == null ? '  (no matching model time)'
+        : e.modelDiffMin === 0 ? '  (model agrees)'
+          : `  (model ${Math.abs(e.modelDiffMin)} min ${e.modelDiffMin < 0 ? 'early' : 'late'})`),
+      e.t < hourStart ? el('span', { class: 'fine' }, ' (passed)') : null,
+    )));
+    $('tides-heading').textContent = 'Tides (official)';
+    return;
+  }
+  $('tides-heading').textContent = 'Tides (modelled)';
+  const turns = findTideTurns(all).filter((t) => t.t >= hourStart - 6 * 3600e3);
   if (!turns.length) {
     list.replaceChildren(el('li', {}, 'No tide data for this point. It may be too far inland or in a sheltered inlet the model does not resolve.'));
     return;
@@ -470,6 +542,14 @@ function init() {
   $('profile').addEventListener('change', () => { writeLimits(PROFILES[$('profile').value]); onSettingsChange(); });
   $('sea-bearing').addEventListener('change', onSettingsChange);
   LIMIT_KEYS.forEach((k) => $(k).addEventListener('input', onSettingsChange));
+
+  $('admiralty-key').value = getAdmiraltyKey();
+  $('admiralty-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    setAdmiraltyKey($('admiralty-key').value.trim());
+    setOfficialStatus(getAdmiraltyKey() ? 'Key saved in this browser.' : 'Key removed.');
+    if (state.place && state.data) { state.official = null; render(); loadOfficialTides(state.place); }
+  });
 
   $('search-form').addEventListener('submit', (e) => {
     e.preventDefault();

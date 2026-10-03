@@ -283,6 +283,76 @@ test('forecast confidence: ensemble service down, app carries on', async () => {
   await page.close();
 });
 
+// Admiralty responses: illustrative station positions, not official.
+const ADMIRALTY_STATIONS = {
+  type: 'FeatureCollection',
+  features: [
+    { type: 'Feature', geometry: { type: 'Point', coordinates: [-1.4, 50.89] }, properties: { Id: '0062', Name: 'SOUTHAMPTON' } },
+    { type: 'Feature', geometry: { type: 'Point', coordinates: [-2.43, 50.57] }, properties: { Id: '0033', Name: 'PORTLAND' } },
+  ],
+};
+
+async function saveAdmiraltyKey(page, key) {
+  await page.click('summary:has-text("Official tide times")');
+  await page.fill('#admiralty-key', key);
+  await page.click('#admiralty-form button[type=submit]');
+}
+
+test('official tides: with a key, nearest station times replace the model', async () => {
+  const spot = SPOTS[4]; // Itchen
+  const { page, errors } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea }) });
+  const keys = [];
+  // Tomorrow, near the fake model's high (about 03:50) and low (about 10:03).
+  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  await page.route('https://admiraltyapi.azure-api.net/**', (r) => {
+    keys.push(r.request().headers()['ocp-apim-subscription-key']);
+    if (r.request().url().endsWith('/Stations')) return r.fulfill({ json: ADMIRALTY_STATIONS });
+    return r.fulfill({ json: [
+      { EventType: 'HighWater', DateTime: `${tomorrow}T03:30:00`, Height: 4.4 },
+      { EventType: 'LowWater', DateTime: `${tomorrow}T09:40:00`, Height: 0.6 },
+    ] });
+  });
+  await saveAdmiraltyKey(page, 'test-key-123');
+  await searchAndPickFirst(page, spot.query);
+  await page.waitForFunction(() => document.querySelector('#tides-heading').textContent === 'Tides (official)');
+
+  assert.ok(keys.length >= 2 && keys.every((k) => k === 'test-key-123'), 'key sent on every Admiralty call');
+  assert.match(await page.textContent('#tide-reliability .badge'), /Tide reliability: OFFICIAL/);
+  assert.match(await page.textContent('#tide-reliability'), /SOUTHAMPTON, the nearest tidal station/);
+  assert.equal(await page.locator('#tide-reliability a.official').getAttribute('href'), 'https://easytide.admiralty.co.uk/?PortID=0062');
+  // utc_offset 0 in the fake forecast, so 03:30 UTC shows as 03:30; model high is about 20 min later.
+  assert.match(await page.locator('#tides li').first().textContent(), /^High .* 03:30\s+4\.40 m\s+\(model (1\d|2\d) min late\)/);
+  assert.match(await page.locator('#tides li').nth(1).textContent(), /^Low .* 09:40\s+0\.60 m\s+\(model (1\d|2\d) min late\)/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('official tides: rejected key falls back to the model, with a clear message', async () => {
+  const spot = SPOTS[4];
+  const { page } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea }) });
+  await page.route('https://admiraltyapi.azure-api.net/**', (r) => r.fulfill({ status: 401, json: { statusCode: 401 } }));
+  await saveAdmiraltyKey(page, 'wrong-key');
+  await searchAndPickFirst(page, spot.query);
+  await page.waitForSelector('#official-status.error');
+  assert.match(await page.textContent('#official-status'), /Admiralty API key was rejected/);
+  assert.equal(await page.textContent('#tides-heading'), 'Tides (modelled)');
+  assert.doesNotMatch(await page.textContent('#tide-reliability .badge'), /OFFICIAL/);
+  await page.close();
+});
+
+test('official tides: no key, Admiralty never contacted', async () => {
+  const spot = SPOTS[4];
+  const { page, errors } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea }) });
+  let calls = 0;
+  await page.route('https://admiraltyapi.azure-api.net/**', (r) => { calls += 1; return r.abort(); });
+  await searchAndPickFirst(page, spot.query);
+  await page.waitForTimeout(300);
+  assert.equal(calls, 0);
+  assert.equal(await page.textContent('#tides-heading'), 'Tides (modelled)');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test('overloaded marine service is retried once', async () => {
   const spot = SPOTS[2];
   let calls = 0;

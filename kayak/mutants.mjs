@@ -14,6 +14,7 @@ const REPO = fileURLToPath(new URL('..', import.meta.url));
 // Inside the repo so the copy still finds node_modules/playwright.
 const SCRATCH = join(REPO, '.mutants');
 const UNIT = 'logic.test.mjs';
+const UNIT2 = 'tides-official.test.mjs';
 const BROWSER = 'browser.test.mjs';
 
 const SPOTS = ['Oban', 'Rhoscolyn', 'Portland Bill', 'Hamble', 'Itchen', 'Poole'].map((s) => `UK spot: ${s}`);
@@ -81,7 +82,7 @@ const MUTANTS = [
   ['app.js', '`Tide reliability: ${RELIABILITY_LABEL[rel.level]}`', '`Tide reliability: ${RELIABILITY_LABEL.medium}`',
     ['UK spot: Portland Bill', 'UK spot: Hamble', 'UK spot: Itchen', 'UK spot: Poole', 'inland spot is flagged and never rated GO',
       'unchecked open-coast spot: NOT CHECKED badge and general EasyTide link'], 'reliability badge text'],
-  ['app.js', '  renderTideReliability(tideReliability(state.place.lat, state.place.lon, coverage));', '', TIDE_SPOTS, 'reliability panel shown'],
+  ['app.js', "  renderTideReliability(off?.status === 'ok'", "  (off?.status === 'ok'", TIDE_SPOTS, 'reliability panel shown'],
   ['sw.js', 'caches.open(CACHE).then((c) => c.addAll(SHELL))', 'Promise.resolve()',
     ['works offline: page and last forecast open with no connection'], 'offline: page files cached'],
   ['app.js', '  navigator.serviceWorker.register(\'sw.js\')', '  Promise.reject()',
@@ -119,6 +120,22 @@ const MUTANTS = [
   ['app.js', "hazards.length ? el('p', { class: 'hazard-line' }", "false ? el('p', { class: 'hazard-line' }", ['UK spot: Oban', 'UK spot: Rhoscolyn', 'UK spot: Portland Bill', 'UK spot: Poole'], 'hazards: verdict line'],
   ['app.js', '  renderHazards(hazards);\n', '', ['UK spot: Oban', 'UK spot: Rhoscolyn', 'UK spot: Portland Bill', 'UK spot: Poole'], 'hazards: list shown'],
   ['sw.js', "'logic.js', 'hazards.js',", "'logic.js',", ['works offline: page and last forecast open with no connection'], 'offline: hazards file cached'],
+  ['tides-official.js', "{ 'Ocp-Apim-Subscription-Key': key }", "{ 'Subscription-Key': key }",
+    ['official tides: fetch sends the key and uses the nearest station', 'official tides: with a key, nearest station times replace the model'], 'official: key header'],
+  ['tides-official.js', 'if (!best || km < best.km)', 'if (!best || km > best.km)',
+    ['official tides: nearest station', 'official tides: fetch sends the key and uses the nearest station', 'official tides: with a key, nearest station times replace the model'], 'official: nearest station'],
+  ['tides-official.js', '? dt : `${dt}Z`', '? dt : dt', ['official tides: events parsed from text or number types, UTC times'], 'official: times are UTC'],
+  ['tides-official.js', 'rawType === 0 || ', '', ['official tides: events parsed from text or number types, UTC times'], 'official: numeric event types'],
+  ['tides-official.js', 'Math.abs(m.t - t) <= 4 * 3600e3', 'Math.abs(m.t - t) <= 99 * 3600e3', ['official tides: model difference in minutes, in local time'], 'official: match window'],
+  ['tides-official.js', 'const t = e.utcMs + utcOffsetSeconds * 1000;', 'const t = e.utcMs;', ['official tides: model difference in minutes, in local time'], 'official: local time'],
+  ['tides-official.js', "if (res.status === 401 || res.status === 403) throw new Error('Admiralty API key was rejected');", '',
+    ['official tides: clear errors for a bad key or no connection', 'official tides: rejected key falls back to the model, with a clear message'], 'official: rejected key message'],
+  ['app.js', '    loadOfficialTides(place);\n', '', ['official tides: with a key, nearest station times replace the model'], 'official: fetched after forecast'],
+  ['app.js', "if (!key) { state.official = null; return; }", "if (false) { state.official = null; return; }", ['official tides: no key, Admiralty never contacted'], 'official: only with a key'],
+  ['app.js', "      level: 'official', area: off.station.name,", "      level: 'medium', area: off.station.name,", ['official tides: with a key, nearest station times replace the model'], 'official: badge'],
+  ['sw.js', "'hazards.js', 'tides-official.js',", "'hazards.js',", ['offline cache lists every file the app loads'], 'offline: official tides file cached'],
+  ['tides-official.js', '.filter((s) => s.id && Number.isFinite(s.lat) && Number.isFinite(s.lon));', '.filter((s) => s.id);',
+    ['official tides: station list parsed, bad entries dropped'], 'official: bad stations dropped'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 
@@ -145,7 +162,7 @@ function freshCopy() {
 }
 
 // Baseline: everything must pass unmutated.
-const base = runTests(freshCopy(), [UNIT, BROWSER]);
+const base = runTests(freshCopy(), [UNIT, UNIT2, BROWSER]);
 if (base.failed.size) {
   console.error('Baseline failing, fix tests first:', [...base.failed]);
   process.exit(1);
@@ -153,7 +170,7 @@ if (base.failed.size) {
 // Parent tests only (browser/unit tests have no nested subtests).
 const allTests = [...base.passed].filter((n) => !n.endsWith('.mjs'));
 const browserTests = new Set(runTests(freshCopy(), [BROWSER]).passed);
-const unitTests = new Set(runTests(freshCopy(), [UNIT]).passed);
+const unitTests = new Set(runTests(freshCopy(), [UNIT, UNIT2]).passed);
 
 const only = process.env.MUTANT_ONLY;
 const selected = only ? MUTANTS.filter((m) => m[4].includes(only)) : MUTANTS;
@@ -176,7 +193,7 @@ for (const [file, find, replace, kills, what] of selected) {
     problems += 1;
     continue;
   }
-  const files = [kills.some((k) => unitTests.has(k)) && UNIT, kills.some((k) => browserTests.has(k)) && BROWSER].filter(Boolean);
+  const files = [kills.some((k) => unitTests.has(k)) && UNIT, kills.some((k) => unitTests.has(k)) && UNIT2, kills.some((k) => browserTests.has(k)) && BROWSER].filter(Boolean);
   // Only the named tests run, so this proves each named test fails.
   const { failed } = runTests(dir, files, kills);
   failed.forEach((t) => killedBy.get(t)?.push(what));
