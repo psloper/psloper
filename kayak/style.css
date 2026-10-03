@@ -94,6 +94,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .badge.medium { background: var(--caution-bg); color: var(--caution); }
 .badge.low, .badge.none { background: var(--nogo-bg); color: var(--nogo); }
 .badge.unchecked { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+#plan-table tr.best td { background: var(--go-bg); font-weight: 600; }
 .pos { font-size: 0.8rem; color: var(--muted); margin-left: 6px; }
 .pos.checked { color: var(--go); }
 .hazard-line { font-weight: 600; }

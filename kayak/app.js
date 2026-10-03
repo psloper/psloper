@@ -7,6 +7,7 @@ import {
 import { hazardsNear, HAZARD_RADIUS_KM } from './hazards.js';
 import { fetchOfficialTides, compareWithModel } from './tides-official.js';
 import { forecastUrls, geocodeUrl } from './requests.js';
+import { planDepartures } from './planner.js';
 
 const HOURS_SHOWN = 72;
 const LIMIT_KEYS = ['maxWindKn', 'maxGustKn', 'maxWaveM', 'maxOffshoreKn', 'maxCurrentKn'];
@@ -27,7 +28,7 @@ function loadPrefs() {
 function savePrefs() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
-      place: state.place, profile: $('profile').value, seaBearing: $('sea-bearing').value, limits: readLimits(),
+      place: state.place, profile: $('profile').value, seaBearing: $('sea-bearing').value, limits: readLimits(), plan: readPlan(),
     }));
   } catch { /* storage unavailable: settings just won't persist */ }
 }
@@ -57,6 +58,22 @@ function loadStations() {
 }
 function saveStations(stations) {
   try { localStorage.setItem(STATIONS_KEY, JSON.stringify({ savedAt: Date.now(), stations })); } catch { /* not kept */ }
+}
+
+// ---------- trip planner inputs ----------
+const PLAN_IDS = ['plan-bearing', 'plan-distance', 'plan-speed', 'plan-type'];
+function readPlan() {
+  return {
+    bearing: Number($('plan-bearing').value), distanceNm: parseFloat($('plan-distance').value),
+    speedKn: parseFloat($('plan-speed').value), roundTrip: $('plan-type').value === 'return',
+  };
+}
+function writePlan(p) {
+  if (!p) return;
+  $('plan-bearing').value = p.bearing;
+  $('plan-distance').value = p.distanceNm;
+  $('plan-speed').value = p.speedKn;
+  $('plan-type').value = p.roundTrip ? 'return' : 'oneway';
 }
 
 // ---------- settings ----------
@@ -246,6 +263,7 @@ function render() {
   renderDaylight(daylight, hourStart);
   renderChart(rows, daylight, limits);
   renderTable(rows, daylight);
+  renderPlan(rows, daylight);
 }
 
 function renderSeaPoint(cov) {
@@ -377,6 +395,36 @@ function renderTides(all, hourStart) {
     t.secondT ? el('span', { class: 'fine' }, `  double ${t.type === 'high' ? 'high' : 'low'} water, second peak ${formatLocal(t.secondT)}`) : null,
     t.t < hourStart ? el('span', { class: 'fine' }, ' (passed)') : null,
   )));
+}
+
+function formatDuration(hours) {
+  const min = Math.round(hours * 60);
+  return `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, '0')} min`;
+}
+
+function renderPlan(rows, daylight) {
+  const opts = readPlan();
+  const body = $('plan-table').querySelector('tbody');
+  const note = $('plan-note');
+  if (!(opts.distanceNm > 0) || !(opts.speedKn > 0)) {
+    body.replaceChildren();
+    note.textContent = 'Enter a distance and paddling speed above zero.';
+    return;
+  }
+  const { best, infeasible } = planDepartures(rows, daylight, opts);
+  const dayTime = (t) => formatLocal(t, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  body.replaceChildren(...best.slice(0, 6).map((p, i) => el('tr', { class: i === 0 ? 'best' : '' },
+    el('td', {}, dayTime(p.start)),
+    el('td', {}, `${dayTime(p.end)}${p.endsInDaylight ? '' : ' (dark)'}`),
+    el('td', {}, formatDuration(p.hours)),
+    el('td', {}, `${p.avgAssistKn >= 0 ? '+' : ''}${p.avgAssistKn.toFixed(1)} kn`),
+    el('td', {}, el('span', { class: `pill ${p.worst}` }, RATING_LABEL[p.worst])),
+    el('td', { class: 'why' }, p.reasons.join(', ')),
+  )));
+  const parts = [];
+  if (!best.length) parts.push('No daylight departure in the forecast finishes this trip.');
+  if (infeasible.length) parts.push(`${infeasible.length} daylight departure${infeasible.length === 1 ? '' : 's'} left out: ${infeasible[0].why}${infeasible.length > 1 ? ', and others' : ''}.`);
+  note.textContent = parts.join(' ');
 }
 
 function renderWindows(rows) {
@@ -528,6 +576,8 @@ function init() {
   $('profile').addEventListener('change', () => { writeLimits(PROFILES[$('profile').value]); onSettingsChange(); });
   $('sea-bearing').addEventListener('change', onSettingsChange);
   LIMIT_KEYS.forEach((k) => $(k).addEventListener('input', onSettingsChange));
+  writePlan(prefs.plan);
+  PLAN_IDS.forEach((id) => $(id).addEventListener('input', onSettingsChange));
 
   $('admiralty-key').value = getAdmiraltyKey();
   $('admiralty-form').addEventListener('submit', (e) => {

@@ -368,6 +368,25 @@ test('tides: double high water shown once, with its second peak', async () => {
   await page.close();
 });
 
+test('trip planner: durations follow the tide, best departure first', async () => {
+  const spot = SPOTS[2]; // Portland Bill
+  // Fake current: 0.5 km/h (0.27 kn) towards north, all day. Defaults: north, 6 nm, 3 kn.
+  const { page, errors } = await openPage({ geo: spot.results, data: fakeData({ sea: spot.sea }) });
+  await searchAndPickFirst(page, spot.query);
+  const firstRow = () => page.locator('#plan-table tbody tr').first().textContent();
+  assert.ok(await page.locator('#plan-table tbody tr').count() >= 1);
+  assert.equal(await page.locator('#plan-table tbody tr.best').count(), 1);
+  assert.match(await firstRow(), /1 h 50 min\s*\+0\.3 kn\s*GO/); // 6 nm at 3.27 kn
+  await page.selectOption('#plan-bearing', '180');
+  assert.match(await firstRow(), /2 h 12 min\s*-0\.3 kn\s*GO/); // 6 nm at 2.73 kn
+  await page.selectOption('#plan-type', 'return');
+  assert.match(await firstRow(), /2 h 01 min/); // 3 nm at 2.73 kn, then 3 nm at 3.27 kn
+  await page.fill('#plan-speed', '0');
+  assert.match(await page.textContent('#plan-note'), /above zero/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test('overloaded marine service is retried once', async () => {
   const spot = SPOTS[2];
   let calls = 0;

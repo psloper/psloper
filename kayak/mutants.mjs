@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const REPO = fileURLToPath(new URL('..', import.meta.url));
 // Inside the repo so the copy still finds node_modules/playwright.
 const SCRATCH = join(REPO, '.mutants');
-const UNITS = ['logic.test.mjs', 'tides-official.test.mjs', 'live-check.test.mjs'];
+const UNITS = ['logic.test.mjs', 'tides-official.test.mjs', 'live-check.test.mjs', 'planner.test.mjs'];
 const BROWSER = 'browser.test.mjs';
 
 const SPOTS = ['Oban', 'Rhoscolyn', 'Portland Bill', 'Hamble', 'Itchen', 'Poole'].map((s) => `UK spot: ${s}`);
@@ -157,6 +157,21 @@ const MUTANTS = [
   ['logic.js', 'export const MIN_TIDE_RANGE_M = 0.15;', 'export const MIN_TIDE_RANGE_M = 0.6;', ['tides: real highs and lows are never merged'], 'tides: real tides kept'],
   ['logic.js', '      turns.splice(i + 1, 2);', '      turns.splice(i, 2);', ['tides: double high water shown as one high, first peak kept'], 'tides: first peak kept'],
   ['app.js', "    t.secondT ? el('span', { class: 'fine' }", "    false ? el('span', { class: 'fine' }", ['tides: double high water shown once, with its second peak'], 'tides: double label'],
+  ['planner.js', 'return currentKn * Math.cos((diff * Math.PI) / 180);', 'return currentKn;',
+    ['planner: current along the route', 'planner: tide with you and against you', 'trip planner: durations follow the tide, best departure first'], 'planner: current direction'],
+  ['planner.js', 'const heading = outbound ? bearing : (bearing + 180) % 360;', 'const heading = bearing;',
+    ['planner: out and back turns round at half way', 'trip planner: durations follow the tide, best departure first'], 'planner: turn at half way'],
+  ['planner.js', 'if (ground < MIN_PROGRESS_KN) {', 'if (false) {', ['planner: tide with you and against you'], 'planner: held by the tide'],
+  ['planner.js', '    if (done + ground * dt > target) dt = (target - done) / ground;\n', '',
+    ['planner: still water takes distance / speed', 'planner: out and back turns round at half way', 'trip planner: durations follow the tide, best departure first'], 'planner: exact finish and turn'],
+  ['planner.js', 'if (ORDER.indexOf(h.rating) > ORDER.indexOf(worst)) worst = h.rating;', '', ['planner: worst rating met on the way'], 'planner: worst rating'],
+  ['planner.js', "if (!h || (t - start) / 3600e3 > MAX_TRIP_H) {", "if ((t - start) / 3600e3 > 99) {", ['planner: beyond the forecast is not a plan'], 'planner: end of forecast'],
+  ['planner.js', '    if (!isDaylight(h.t, daylight)) return;\n', '', ['planner: daylight departures, best first'], 'planner: daylight starts only'],
+  ['planner.js', 'const feasible = plans.filter((p) => p.feasible).sort((a, b) => ORDER.indexOf(a.worst) - ORDER.indexOf(b.worst)\n    || ',
+    'const feasible = plans.filter((p) => p.feasible).sort((a, b) => ', ['planner: daylight departures, best first'], 'planner: safest first'],
+  ['app.js', "el('tr', { class: i === 0 ? 'best' : '' }", "el('tr', { class: '' }", ['trip planner: durations follow the tide, best departure first'], 'planner: best highlighted'],
+  ['app.js', "    note.textContent = 'Enter a distance and paddling speed above zero.';", "    note.textContent = '';", ['trip planner: durations follow the tide, best departure first'], 'planner: bad input message'],
+  ['sw.js', "'requests.js', 'planner.js',", "'requests.js',", ['offline cache lists every file the app loads'], 'offline: planner file cached'],
   ['style.css', '.chart { overflow-x: auto; }', '', ['offshore wind and editable limits (phone, dark)'], 'phone layout'],
 ];
 
